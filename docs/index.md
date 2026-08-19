@@ -45,29 +45,17 @@ doc = (
 doc.save("demographics.rtf")
 ```
 
-From a DataFrame with automatic pagination:
+## Where to next
 
-```python
-import pandas as pd
-from rtfreporter import RtfDocument, as_rtftables
+<div class="grid cards" markdown>
 
-df = pd.DataFrame({"Arm": ["A"] * 40 + ["B"] * 40, "Subject": range(80)})
-pages = as_rtftables(df, split="group_force", group_col="Arm", max_rows=25)
+- **[Getting started](getting-started.md)** — install and a five-minute tour.
+- **[Importing tables](importing-tables.md)** — `as_rtftable` / `as_rtftables`.
+- **[Pagination](pagination.md)** — split strategies and `(Cont.)` markers.
+- **[Borders and rules](borders.md)** — presets, zones, and per-cell control.
+- **[Headers and footers](headers-footers.md)** — sections and page tokens.
+- **[Figures](figures.md)** — embed PNG / JPEG.
+- **[Styling](styling.md)** — the post-hoc style verbs.
+- **[API reference](reference.md)** — every public symbol.
 
-doc = RtfDocument()
-for page in pages:
-    doc.add_table(page, title=["Listing 16.1"])
-doc.save("listing.rtf")
-```
-
-## Documentation
-
-Full documentation, including per-topic guides and the API reference, lives at
-<https://ichirio.github.io/rtfreporter-py/>.
-
-Runnable end-to-end examples are in [`examples/`](examples/):
-`demographics.py`, `pagination.py`, and `styling.py`.
-
-## License
-
-Apache-2.0. See [LICENSE](LICENSE).
+</div>
