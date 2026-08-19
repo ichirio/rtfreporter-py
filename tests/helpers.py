@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from rtfreporter.render import render_rtftable
+
 
 def assert_valid_rtf(rtf: str) -> None:
     """Assert an RTF string is well-formed enough to open in a word processor."""
@@ -10,3 +12,8 @@ def assert_valid_rtf(rtf: str) -> None:
     assert rtf.count("{") == rtf.count("}"), "unbalanced RTF group braces"
     assert all(ord(c) < 128 for c in rtf), "RTF must be ASCII-safe"
     assert rtf.count("\\trowd") == rtf.count("\\row"), "unbalanced \\trowd/\\row"
+
+
+def render(tbl, writable: int = 12000, **kwargs) -> str:
+    """Render an RtfTable to a single joined RTF string (no document chrome)."""
+    return "".join(render_rtftable(tbl, writable, **kwargs))
