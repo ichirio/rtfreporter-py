@@ -26,3 +26,9 @@ examples/*.rtf
 .DS_Store
 .idea/
 .vscode/
+
+# coverage artifacts
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
