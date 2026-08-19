@@ -380,7 +380,7 @@ def _render_data_row(
         if row_cell_styles:
             cs = row_cell_styles
 
-            def pick(key, cur):
+            def pick(key, cur, j=j, cs=cs):
                 seq = cs.get(key)
                 if seq is not None and j < len(seq) and seq[j] is not None:
                     return seq[j]
