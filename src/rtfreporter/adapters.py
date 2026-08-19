@@ -1,0 +1,630 @@
+"""Input adapters and pagination: ``as_rtftable`` / ``as_rtftables``.
+
+Ported (Pythonically, MVP scope) from ``R/as_rtftable.R``, ``R/as_rtftables.R``
+and ``R/paginate.R``.  Turns a pandas DataFrame (core), a polars DataFrame, a
+``great_tables`` GT object, or a plain dict/records into one or more
+:class:`~rtfreporter.table.RtfTable` page objects, applying:
+
+* spanning column headers reconstructed from delimited column names,
+* an indented clinical *stub* built from hierarchy columns,
+* row sorting, dropped carrier columns, repeat-value collapsing,
+* pagination (by rows, by group, or one page per value) with ``(Cont.)``
+  continuation markers, and blank separator rows between groups.
+"""
+
+from __future__ import annotations
+
+from dataclasses import replace
+from typing import Any
+
+from .blank_rows import blank_rows_by_change
+from .table import HeaderRow, RtfTable, SpanCell, rtftable
+
+_DEFAULT_HEADER_SEPS = ("____", "___tlang_delim___")
+
+
+# ============================================================================
+#  Input coercion
+# ============================================================================
+
+
+def _coerce_input(x, read_meta: bool, header_sep):
+    """Return ``(column_names, rows, auto_header, titles, footnotes)``.
+
+    ``auto_header`` is a list of :class:`HeaderRow` reconstructed from delimited
+    names, or ``None`` when a flat header suffices.
+    """
+    titles = footnotes = None
+
+    if _is_gt(x):
+        column_names, rows, auto_header, titles, footnotes = _from_gt(x, read_meta)
+        return column_names, rows, auto_header, titles, footnotes
+
+    if hasattr(x, "to_pandas") and hasattr(x, "columns"):  # polars
+        x = x.to_pandas()
+
+    if hasattr(x, "columns") and hasattr(x, "itertuples"):  # pandas
+        column_names, rows = _pandas_to_rows(x)
+    elif isinstance(x, dict):
+        column_names = list(x.keys())
+        cols = [list(v) for v in x.values()]
+        n = max((len(c) for c in cols), default=0)
+        rows = [[cols[j][i] if i < len(cols[j]) else None for j in range(len(column_names))]
+                for i in range(n)]
+    elif isinstance(x, (list, tuple)) and x and isinstance(x[0], dict):
+        column_names = []
+        for rec in x:
+            for k in rec:
+                if k not in column_names:
+                    column_names.append(k)
+        rows = [[rec.get(k) for k in column_names] for rec in x]
+    else:
+        raise TypeError(
+            "as_rtftables() supports pandas/polars DataFrames, great_tables GT "
+            "objects, dicts of columns, or lists of row dicts."
+        )
+
+    auto_header = _split_names_to_col_header(column_names, header_sep)
+    return column_names, rows, auto_header, titles, footnotes
+
+
+def _pandas_to_rows(df):
+    import math
+
+    names = [str(c) for c in df.columns]
+    rows = []
+    for rec in df.itertuples(index=False, name=None):
+        row = []
+        for v in rec:
+            if v is None or (isinstance(v, float) and math.isnan(v)):
+                row.append(None)
+            else:
+                row.append(v)
+        rows.append(row)
+    return names, rows
+
+
+# ============================================================================
+#  great_tables (GT) adapter -- best effort
+# ============================================================================
+
+
+def _is_gt(x) -> bool:
+    return type(x).__name__ == "GT" and hasattr(x, "_tbl_data")
+
+
+def _from_gt(gt, read_meta: bool):
+    """Read a great_tables GT object's data + spanner/label metadata.
+
+    Carried: the underlying data frame, column *labels*, and one level of
+    column *spanners* (as a spanning header row).  NOT carried: cell-level
+    formatting/styling, footnotes, summary rows, row groups.
+    """
+    data = gt._tbl_data
+    if hasattr(data, "to_pandas"):
+        data = data.to_pandas()
+    column_names, rows = _pandas_to_rows(data)
+
+    titles = _gt_title_block(gt) if read_meta else None
+
+    if not read_meta:
+        return column_names, rows, None, titles, None
+
+    # Column labels (stub/boxhead) -> display header labels.
+    labels = list(column_names)
+    boxhead = getattr(gt, "_boxhead", None)
+    if boxhead is not None:
+        for info in boxhead:
+            var = getattr(info, "var", None)
+            lab = getattr(info, "column_label", None)
+            if var in column_names and lab:
+                labels[column_names.index(var)] = _flatten_label(lab)
+
+    # Spanners -> one spanning header row above the labels.
+    spanners = getattr(gt, "_spanners", None)
+    auto_header = None
+    span_cells = []
+    if spanners:
+        for sp in spanners:
+            var_ids = getattr(sp, "vars", None) or []
+            label = _flatten_label(getattr(sp, "spanner_label", "") or "")
+            idxs = [column_names.index(v) for v in var_ids if v in column_names]
+            if idxs:
+                span_cells.append(
+                    SpanCell(start=min(idxs), end=max(idxs), label=label)
+                )
+    if span_cells:
+        # Fill uncovered columns as single cells so the row spans all columns.
+        covered = set()
+        for c in span_cells:
+            covered.update(range(c.start, c.end + 1))
+        for j in range(len(column_names)):
+            if j not in covered:
+                span_cells.append(SpanCell(start=j, end=j, label=""))
+        span_cells.sort(key=lambda c: c.start)
+        auto_header = [
+            HeaderRow(kind="spanning", spans=span_cells),
+            HeaderRow(kind="labels", labels=labels),
+        ]
+    elif labels != column_names:
+        auto_header = [HeaderRow(kind="labels", labels=labels)]
+
+    return column_names, rows, auto_header, titles, None
+
+
+def _flatten_label(label) -> str:
+    if isinstance(label, (list, tuple)):
+        return " ".join(str(x) for x in label)
+    return str(label)
+
+
+def _gt_title_block(gt):
+    heading = getattr(gt, "_heading", None)
+    if heading is None:
+        return None
+    lines = []
+    title = getattr(heading, "title", None)
+    subtitle = getattr(heading, "subtitle", None)
+    if title:
+        lines.append(_flatten_label(title))
+    if subtitle:
+        lines.append(_flatten_label(subtitle))
+    return lines or None
+
+
+# ============================================================================
+#  Spanning header from delimited names
+# ============================================================================
+
+
+def _split_names_to_col_header(names: list[str], seps) -> list[HeaderRow] | None:
+    if not seps or not names:
+        return None
+    seps = [s for s in ([seps] if isinstance(seps, str) else list(seps)) if s]
+    if not seps:
+        return None
+    seps = sorted(seps, key=len, reverse=True)
+
+    import re
+
+    pattern = "|".join(re.escape(s) for s in seps)
+    segs = [re.split(pattern, name) for name in names]
+    depth = max(len(s) for s in segs)
+    if depth <= 1:
+        return None
+
+    ncol = len(names)
+    # Bottom-align each column's segments; None = "no cell", "" = blank label.
+    M = [[None] * ncol for _ in range(depth)]
+    for j, s in enumerate(segs):
+        for r, seg in enumerate(s):
+            M[depth - len(s) + r][j] = seg
+
+    def same(a, b):
+        return (a is None and b is None) or (a is not None and b is not None and a == b)
+
+    header_rows: list[HeaderRow] = []
+    for r in range(depth - 1):
+        spans = []
+        j = 0
+        while j < ncol:
+            k = j
+            while (
+                k + 1 < ncol
+                and same(M[r][k + 1], M[r][j])
+                and [M[x][k + 1] for x in range(r)] == [M[x][j] for x in range(r)]
+            ):
+                k += 1
+            label = "" if M[r][j] is None else M[r][j]
+            spans.append(SpanCell(start=j, end=k, label=label))
+            j = k + 1
+        header_rows.append(HeaderRow(kind="spanning", spans=spans))
+
+    bottom = ["" if M[depth - 1][j] is None else M[depth - 1][j] for j in range(ncol)]
+    header_rows.append(HeaderRow(kind="labels", labels=bottom))
+    return header_rows
+
+
+# ============================================================================
+#  Column resolution helpers
+# ============================================================================
+
+
+def _resolve_index(ref, names: list[str]) -> int:
+    if isinstance(ref, str):
+        if ref not in names:
+            raise ValueError(f"Unknown column name {ref!r}.")
+        return names.index(ref)
+    idx = int(ref)
+    if idx < 0 or idx >= len(names):
+        raise ValueError(f"Column index {idx} out of range.")
+    return idx
+
+
+def _resolve_indices(refs, names) -> list[int]:
+    if refs is None:
+        return []
+    if isinstance(refs, (str, int)):
+        refs = [refs]
+    return [_resolve_index(r, names) for r in refs]
+
+
+# ============================================================================
+#  Stub (indented hierarchy column)
+# ============================================================================
+
+
+def _apply_stub(column_names, rows, stub_cols, stub_label, stub_indent):
+    """Merge ``stub_cols`` (outer->inner) into one indented leading stub column.
+
+    Each non-leaf level emits its own un-indented label row when its value
+    changes; the leaf level becomes the indented stub of each data row.
+    Returns ``(new_names, new_rows)``.
+    """
+    idxs = _resolve_indices(stub_cols, column_names)
+    if not idxs:
+        return column_names, rows
+    keep = [j for j in range(len(column_names)) if j not in idxs]
+    new_names = [stub_label or ""] + [column_names[j] for j in keep]
+    n_levels = len(idxs)
+
+    new_rows = []
+    prev = [None] * n_levels
+    for row in rows:
+        levels = [row[j] for j in idxs]
+        # Emit header rows for changed non-leaf levels.
+        for lv in range(n_levels - 1):
+            if levels[lv] != prev[lv] or any(
+                levels[x] != prev[x] for x in range(lv)
+            ):
+                stub_text = _indent(levels[lv], lv, stub_indent)
+                new_rows.append([stub_text] + [None] * len(keep))
+        leaf_indent = (n_levels - 1) if n_levels > 1 else 0
+        stub_text = _indent(levels[-1], leaf_indent, stub_indent)
+        new_rows.append([stub_text] + [row[j] for j in keep])
+        prev = levels
+    return new_names, new_rows
+
+
+def _indent(value, level: int, stub_indent: int) -> str:
+    text = "" if value is None else str(value)
+    if level <= 0:
+        return text
+    return " " * (level * stub_indent) + text
+
+
+# ============================================================================
+#  Sorting / collapse
+# ============================================================================
+
+
+def _sort_rows(rows, sort_idx, sort_desc):
+    if not sort_idx:
+        return rows
+    order = list(range(len(rows)))
+    for k in reversed(range(len(sort_idx))):
+        col = sort_idx[k]
+        desc = sort_desc[k] if sort_desc and k < len(sort_desc) else False
+        order.sort(key=lambda i: _sort_key(rows[i][col]), reverse=desc)
+    return [rows[i] for i in order]
+
+
+def _sort_key(v):
+    if v is None:
+        return (1, "")
+    if isinstance(v, (int, float)):
+        return (0, v)
+    return (0, str(v))
+
+
+def _collapse_repeats(rows, collapse_idx):
+    if not collapse_idx:
+        return rows
+    out = [list(r) for r in rows]
+    prev = {c: object() for c in collapse_idx}
+    for row in out:
+        for c in collapse_idx:
+            if row[c] == prev[c]:
+                row[c] = ""
+            else:
+                prev[c] = row[c]
+    return out
+
+
+# ============================================================================
+#  Pagination
+# ============================================================================
+
+
+def _paginate(rows, group_keys, split, split_rows, max_rows, min_group_rows, cont_label):
+    """Return a list of ``(page_rows, page_name)`` tuples."""
+    n = len(rows)
+    if split == "none":
+        return [(rows, None)]
+
+    if split == "rows":
+        cuts = _row_cut_points(split_rows, max_rows, n)
+        pages = []
+        start = 0
+        for cut in cuts + [n]:
+            if cut > start:
+                pages.append((rows[start:cut], None))
+                start = cut
+        return pages or [(rows, None)]
+
+    if split == "by_value":
+        pages = []
+        seen_order = []
+        buckets: dict[Any, list] = {}
+        for i, key in enumerate(group_keys):
+            if key not in buckets:
+                buckets[key] = []
+                seen_order.append(key)
+            buckets[key].append(rows[i])
+        for key in seen_order:
+            grp = buckets[key]
+            name = "" if key is None else str(key)
+            if max_rows and len(grp) > max_rows:
+                pages.extend(_split_group_rows(grp, max_rows, name, cont_label, group_col=0))
+            else:
+                pages.append((grp, name))
+        return pages
+
+    if split in ("group_safe", "group_force"):
+        if not max_rows:
+            raise ValueError(f'`max_rows` is required for split="{split}".')
+        return _paginate_groups(rows, group_keys, max_rows, split == "group_force", cont_label)
+
+    raise ValueError(f"Unknown split strategy {split!r}.")
+
+
+def _row_cut_points(split_rows, max_rows, n):
+    if split_rows is not None:
+        if isinstance(split_rows, int):
+            step = split_rows
+            return list(range(step, n, step))
+        return sorted(int(c) for c in split_rows if 0 < int(c) < n)
+    if max_rows:
+        return list(range(max_rows, n, max_rows))
+    return []
+
+
+def _group_runs(group_keys):
+    runs = []
+    start = 0
+    for i in range(1, len(group_keys) + 1):
+        if i == len(group_keys) or group_keys[i] != group_keys[start]:
+            runs.append((start, i))  # [start, end)
+            start = i
+    return runs
+
+
+def _paginate_groups(rows, group_keys, max_rows, force, cont_label):
+    runs = _group_runs(group_keys)
+    pages = []
+    current: list = []
+    for (s, e) in runs:
+        grp = rows[s:e]
+        if len(grp) > max_rows and force:
+            if current:
+                pages.append((current, None))
+                current = []
+            name = str(group_keys[s]) if group_keys[s] is not None else ""
+            pages.extend(_split_group_rows(grp, max_rows, name, cont_label, group_col=None))
+            continue
+        if current and len(current) + len(grp) > max_rows:
+            pages.append((current, None))
+            current = []
+        current.extend(grp)
+    if current:
+        pages.append((current, None))
+    return pages
+
+
+def _split_group_rows(grp, max_rows, name, cont_label, group_col):
+    """Split one oversized group across pages, marking continuations."""
+    pages = []
+    start = 0
+    first = True
+    while start < len(grp):
+        chunk = [list(r) for r in grp[start : start + max_rows]]
+        if not first and group_col is not None and chunk:
+            cell = chunk[0][group_col]
+            chunk[0][group_col] = (str(cell) if cell not in (None, "") else name) + cont_label
+        page_name = name if first else (name + cont_label if name else None)
+        pages.append((chunk, page_name))
+        start += max_rows
+        first = False
+    return pages
+
+
+# ============================================================================
+#  Public entry points
+# ============================================================================
+
+
+def as_rtftables(
+    x,
+    *,
+    read_meta: bool = True,
+    split: str = "none",
+    split_rows=None,
+    max_rows: int | None = None,
+    group_col=None,
+    sort_by=None,
+    sort_desc=None,
+    cont_label: str = " (Cont.)",
+    min_group_rows: int = 2,
+    blank_rows=None,
+    blank_row_first: bool = False,
+    blank_row_end: bool = False,
+    collapse_repeats=None,
+    drop_cols=None,
+    stub_cols=None,
+    stub_label=None,
+    stub_indent: int = 4,
+    header_sep=_DEFAULT_HEADER_SEPS,
+    border="tfl",
+    **table_kwargs,
+) -> list[RtfTable]:
+    """Convert tabular input into a list of paginated :class:`RtfTable` pages.
+
+    Args:
+        x: A pandas/polars DataFrame, a ``great_tables`` GT object, a dict of
+            columns, or a list of row dicts.
+        read_meta: Read column labels / spanners (GT) into the header.
+        split: ``"none"`` (default), ``"rows"``, ``"by_value"``,
+            ``"group_safe"``, or ``"group_force"``.
+        split_rows: For ``split="rows"`` -- an int page size or explicit cut
+            positions.
+        max_rows: Max data rows per page (required by the group splits).
+        group_col: The grouping column (index or name) for group/value splits,
+            ``collapse_repeats`` grouping, and between-group blank rows.
+        sort_by, sort_desc: Column(s) to sort rows by, and per-column descending
+            flags, applied before pagination.
+        cont_label: Continuation marker appended to a group that spills over.
+        blank_rows: Blank-row spec applied per page (int positions or a
+            :mod:`~rtfreporter.blank_rows` spec).  If ``None`` and ``group_col``
+            is set, blanks are inserted where the group value changes.
+        blank_row_first, blank_row_end: Add a blank row at the top/bottom of
+            each page.
+        collapse_repeats: Column(s) whose repeated consecutive values are
+            blanked (per page).
+        drop_cols: Carrier column(s) used for grouping/sorting but not printed.
+        stub_cols: Hierarchy columns (outer->inner) merged into one indented
+            clinical stub column.
+        stub_label, stub_indent: Stub column header, and per-level indent (spaces).
+        header_sep: Delimiters used to reconstruct spanning headers from names.
+        border: Passed to :func:`~rtfreporter.rtftable`.
+        **table_kwargs: Extra keyword arguments forwarded to
+            :func:`~rtfreporter.rtftable` for every page.
+
+    Returns:
+        A list of :class:`RtfTable` objects, one per page.  When a page carries
+        a name (group value), it is stored on the table's ``name`` attribute.
+    """
+    if isinstance(x, (list, tuple)) and not (x and isinstance(x[0], dict)):
+        # A plain list of frames -> concatenate the conversions.
+        out: list[RtfTable] = []
+        for item in x:
+            out.extend(
+                as_rtftables(
+                    item, read_meta=read_meta, split=split, split_rows=split_rows,
+                    max_rows=max_rows, group_col=group_col, sort_by=sort_by,
+                    sort_desc=sort_desc, cont_label=cont_label,
+                    min_group_rows=min_group_rows, blank_rows=blank_rows,
+                    blank_row_first=blank_row_first, blank_row_end=blank_row_end,
+                    collapse_repeats=collapse_repeats, drop_cols=drop_cols,
+                    stub_cols=stub_cols, stub_label=stub_label,
+                    stub_indent=stub_indent, header_sep=header_sep,
+                    border=border, **table_kwargs,
+                )
+            )
+        return out
+
+    column_names, rows, auto_header, titles, footnotes = _coerce_input(x, read_meta, header_sep)
+
+    # Stub: reshape BEFORE any index-based resolution below.
+    if stub_cols is not None:
+        column_names, rows = _apply_stub(column_names, rows, stub_cols, stub_label, stub_indent)
+        auto_header = None  # names changed; a flat header is used
+
+    # Resolve carrier / grouping / sort columns on the (possibly reshaped) body.
+    drop_idx = _resolve_indices(drop_cols, column_names)
+    group_idx = _resolve_index(group_col, column_names) if group_col is not None else None
+    sort_idx = _resolve_indices(sort_by, column_names)
+    collapse_idx = _resolve_indices(collapse_repeats, column_names)
+
+    if sort_idx:
+        rows = _sort_rows(rows, sort_idx, sort_desc)
+
+    group_keys = [row[group_idx] for row in rows] if group_idx is not None else [None] * len(rows)
+
+    pages = _paginate(rows, group_keys, split, split_rows, max_rows, min_group_rows, cont_label)
+
+    # Per-page blank spec: explicit blank_rows wins; else derive from group_col.
+    page_blank = blank_rows
+    if page_blank is None and group_idx is not None and split not in ("by_value",):
+        page_blank = blank_rows_by_change(group_idx)
+
+    from .table import _resolve_blank_rows
+
+    out: list[RtfTable] = []
+    for page_rows, page_name in pages:
+        prows = _collapse_repeats(page_rows, collapse_idx) if collapse_idx else [list(r) for r in page_rows]
+
+        # Resolve blank positions on the FULL page body (index-stable even when
+        # the grouping column is later dropped) into plain integer positions.
+        blank_positions = _resolve_blank_rows(page_blank, column_names, page_rows)
+        if blank_row_first:
+            blank_positions = sorted(set(blank_positions) | {0})
+        if blank_row_end:
+            blank_positions = sorted(set(blank_positions) | {len(page_rows)})
+
+        # Drop carrier columns from the printed body + reindex the header.
+        if drop_idx:
+            prows, printed_names, printed_header = _drop_columns(
+                prows, column_names, auto_header, drop_idx
+            )
+        else:
+            printed_names, printed_header = column_names, auto_header
+
+        col_header = printed_header if printed_header is not None else None
+        kwargs = dict(table_kwargs)
+        if col_header is not None and "col_header" not in kwargs:
+            kwargs["col_header"] = col_header
+
+        tbl = rtftable(
+            (printed_names, prows),
+            border=border,
+            blank_rows=blank_positions or None,
+            **kwargs,
+        )
+        if titles is not None:
+            tbl.titles = titles
+        if footnotes is not None:
+            tbl.footnotes = footnotes
+        if page_name:
+            setattr(tbl, "name", page_name)
+        out.append(tbl)
+    return out
+
+
+def _drop_columns(rows, names, header, drop_idx):
+    keep = [j for j in range(len(names)) if j not in drop_idx]
+    new_names = [names[j] for j in keep]
+    new_rows = [[r[j] for j in keep] for r in rows]
+    new_header = _reindex_header(header, keep) if header is not None else None
+    return new_rows, new_names, new_header
+
+
+def _reindex_header(header, keep):
+    remap = {old: new for new, old in enumerate(keep)}
+    out = []
+    for row in header:
+        if row.kind == "labels":
+            out.append(HeaderRow(kind="labels", labels=[row.labels[j] for j in keep]))
+        else:
+            spans = []
+            for sp in row.spans:
+                covered = [j for j in range(sp.start, sp.end + 1) if j in remap]
+                if covered:
+                    spans.append(
+                        replace(sp, start=remap[covered[0]], end=remap[covered[-1]])
+                    )
+            out.append(HeaderRow(kind="spanning", spans=spans))
+    return out
+
+
+def as_rtftable(x, *, read_meta: bool = True, border="tfl", **kwargs) -> RtfTable:
+    """Convert a single table input to one :class:`RtfTable` (no pagination).
+
+    A convenience wrapper over :func:`as_rtftables` with ``split="none"`` that
+    returns the single page.
+    """
+    pages = as_rtftables(x, read_meta=read_meta, split="none", border=border, **kwargs)
+    if len(pages) != 1:
+        raise ValueError(
+            f"as_rtftable() produced {len(pages)} pages; use as_rtftables()."
+        )
+    return pages[0]

@@ -1,0 +1,54 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "rtfreporter"
+version = "0.1.0"
+description = "Clinical RTF Reporting Toolkit for Tables, Listings and Figures (Python port)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [
+    { name = "Yoichi Masui", email = "ichi.r.pro@gmail.com" },
+]
+keywords = ["rtf", "clinical", "tables", "tfl", "reporting", "cdisc"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = []
+
+[project.optional-dependencies]
+pandas = ["pandas"]
+polars = ["polars"]
+gt = ["great_tables"]
+all = ["pandas", "polars", "great_tables"]
+dev = ["pandas", "polars", "great_tables", "pytest", "ruff"]
+docs = ["mkdocs-material", "mkdocstrings[python]"]
+
+[project.urls]
+Homepage = "https://github.com/ichirio/rtfreporter-py"
+Documentation = "https://ichirio.github.io/rtfreporter-py/"
+Repository = "https://github.com/ichirio/rtfreporter-py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/rtfreporter"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = ["E501", "B008"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

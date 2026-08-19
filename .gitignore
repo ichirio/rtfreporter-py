@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+*.egg
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Docs build
+site/
+
+# Generated example output
+examples/*.rtf
+*.rtf.tmp
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
