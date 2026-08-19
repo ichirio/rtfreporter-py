@@ -40,8 +40,15 @@ def _coerce_input(x, read_meta: bool, header_sep):
         column_names, rows, auto_header, titles, footnotes = _from_gt(x, read_meta)
         return column_names, rows, auto_header, titles, footnotes
 
-    if hasattr(x, "to_pandas") and hasattr(x, "columns"):  # polars
-        x = x.to_pandas()
+    if type(x).__module__.split(".")[0] == "polars":  # polars (no pyarrow needed)
+        data = x.to_dict(as_series=False)
+        column_names = list(data.keys())
+        n = max((len(v) for v in data.values()), default=0)
+        rows = [[data[c][i] if i < len(data[c]) else None for c in column_names]
+                for i in range(n)]
+        rows = [[_clean(v) for v in r] for r in rows]
+        auto_header = _split_names_to_col_header(column_names, header_sep)
+        return column_names, rows, auto_header, titles, footnotes
 
     if hasattr(x, "columns") and hasattr(x, "itertuples"):  # pandas
         column_names, rows = _pandas_to_rows(x)
@@ -68,19 +75,17 @@ def _coerce_input(x, read_meta: bool, header_sep):
     return column_names, rows, auto_header, titles, footnotes
 
 
-def _pandas_to_rows(df):
+def _clean(v):
     import math
 
+    if v is None or (isinstance(v, float) and math.isnan(v)):
+        return None
+    return v
+
+
+def _pandas_to_rows(df):
     names = [str(c) for c in df.columns]
-    rows = []
-    for rec in df.itertuples(index=False, name=None):
-        row = []
-        for v in rec:
-            if v is None or (isinstance(v, float) and math.isnan(v)):
-                row.append(None)
-            else:
-                row.append(v)
-        rows.append(row)
+    rows = [[_clean(v) for v in rec] for rec in df.itertuples(index=False, name=None)]
     return names, rows
 
 
@@ -336,9 +341,11 @@ def _collapse_repeats(rows, collapse_idx):
 # ============================================================================
 
 
-def _paginate(rows, group_keys, split, split_rows, max_rows, min_group_rows, cont_label):
+def _paginate(rows, group_keys, split, split_rows, max_rows, min_group_rows, cont_label,
+              group_idx=None):
     """Return a list of ``(page_rows, page_name)`` tuples."""
     n = len(rows)
+    cont_col = group_idx if group_idx is not None else 0
     if split == "none":
         return [(rows, None)]
 
@@ -365,7 +372,7 @@ def _paginate(rows, group_keys, split, split_rows, max_rows, min_group_rows, con
             grp = buckets[key]
             name = "" if key is None else str(key)
             if max_rows and len(grp) > max_rows:
-                pages.extend(_split_group_rows(grp, max_rows, name, cont_label, group_col=0))
+                pages.extend(_split_group_rows(grp, max_rows, name, cont_label, group_col=cont_col))
             else:
                 pages.append((grp, name))
         return pages
@@ -373,7 +380,9 @@ def _paginate(rows, group_keys, split, split_rows, max_rows, min_group_rows, con
     if split in ("group_safe", "group_force"):
         if not max_rows:
             raise ValueError(f'`max_rows` is required for split="{split}".')
-        return _paginate_groups(rows, group_keys, max_rows, split == "group_force", cont_label)
+        return _paginate_groups(
+            rows, group_keys, max_rows, split == "group_force", cont_label, cont_col
+        )
 
     raise ValueError(f"Unknown split strategy {split!r}.")
 
@@ -399,7 +408,7 @@ def _group_runs(group_keys):
     return runs
 
 
-def _paginate_groups(rows, group_keys, max_rows, force, cont_label):
+def _paginate_groups(rows, group_keys, max_rows, force, cont_label, cont_col):
     runs = _group_runs(group_keys)
     pages = []
     current: list = []
@@ -410,7 +419,7 @@ def _paginate_groups(rows, group_keys, max_rows, force, cont_label):
                 pages.append((current, None))
                 current = []
             name = str(group_keys[s]) if group_keys[s] is not None else ""
-            pages.extend(_split_group_rows(grp, max_rows, name, cont_label, group_col=None))
+            pages.extend(_split_group_rows(grp, max_rows, name, cont_label, group_col=cont_col))
             continue
         if current and len(current) + len(grp) > max_rows:
             pages.append((current, None))
@@ -540,7 +549,9 @@ def as_rtftables(
 
     group_keys = [row[group_idx] for row in rows] if group_idx is not None else [None] * len(rows)
 
-    pages = _paginate(rows, group_keys, split, split_rows, max_rows, min_group_rows, cont_label)
+    pages = _paginate(
+        rows, group_keys, split, split_rows, max_rows, min_group_rows, cont_label, group_idx
+    )
 
     # Per-page blank spec: explicit blank_rows wins; else derive from group_col.
     page_blank = blank_rows
@@ -585,7 +596,7 @@ def as_rtftables(
         if footnotes is not None:
             tbl.footnotes = footnotes
         if page_name:
-            setattr(tbl, "name", page_name)
+            tbl.name = page_name
         out.append(tbl)
     return out
 

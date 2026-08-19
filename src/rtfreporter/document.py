@@ -10,7 +10,7 @@ of ``R/generate_rtfreport.R``.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from . import _commands as C
 from . import render as R

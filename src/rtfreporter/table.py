@@ -478,10 +478,11 @@ def rtftable(
 def _coerce_data(data) -> tuple[list[str], list[list[Any]]]:
     """Coerce accepted inputs to ``(column_names, rows)``."""
     # pandas / polars DataFrame (duck-typed to avoid a hard dependency).
-    if hasattr(data, "to_dict") and hasattr(data, "columns") and hasattr(data, "iloc"):
+    if type(data).__module__.split(".")[0] == "polars":
+        cols = data.to_dict(as_series=False)
+        return _coerce_data(cols)
+    if hasattr(data, "columns") and hasattr(data, "itertuples"):  # pandas
         return _from_pandas(data)
-    if hasattr(data, "to_pandas") and hasattr(data, "columns"):  # polars
-        return _from_pandas(data.to_pandas())
     if isinstance(data, dict):
         names = list(data.keys())
         cols = [list(v) for v in data.values()]

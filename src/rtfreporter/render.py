@@ -11,16 +11,13 @@ from __future__ import annotations
 
 from . import _commands as C
 from ._escape import (
-    escape,
     format_cell_text,
     render_tokens,
     resolve_markup,
-    uses_static_page_token,
 )
 from .borders import (
     Border,
     BorderSide,
-    TableBorder,
     collect_border_colors,
     collect_table_border_colors,
     merge_border,
