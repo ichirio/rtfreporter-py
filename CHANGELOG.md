@@ -4,6 +4,28 @@ All notable changes to this project are documented here.  The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Full-featured `great_tables` (GT) adapter** (`rtfreporter.gt_adapter`).
+  The GT path now reads the rendered/display body (`fmt_*` formatted values,
+  hidden columns dropped), **multi-level / nested spanners**, **row groups**
+  (rendered as full-width group-label rows with children indented into a
+  leading stub), per-column **alignment** and **widths**, **title + subtitle**,
+  **footnotes + source notes**, and per-cell **styles** from `tab_style()`
+  (bold / italic / underline / align / text colour and cell borders) mapped to
+  the model's `cell_styles` and header channels. Border mapping follows the R
+  package (solid/double/dashed/dotted/hidden → single/double/dash/dot/none,
+  px×15 / pt×20 twips, black omitted); a **transparent / zero-alpha border
+  yields no border**. Best-effort grand-summary rows where great_tables exposes
+  them.
+- **`read_meta` token mechanism for GT** — `True` / `False` / a list of
+  `GT_META_TOKENS` (`col_header`, `alignment`, `spanning`, `widths`, `titles`,
+  `footnotes`, `styles`) to opt in/out of individual metadata channels; the
+  clean reshaped body is always produced.
+- `RtfTable.name` is now a real field (used for section naming).
+
 ## [0.1.0] — 2026-08-19
 
 Initial release: a Pythonic port of the R package

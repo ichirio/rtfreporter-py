@@ -14,9 +14,10 @@ and ``R/paginate.R``.  Turns a pandas DataFrame (core), a polars DataFrame, a
 
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from typing import Any
 
+from . import gt_adapter
 from .blank_rows import blank_rows_by_change
 from .table import HeaderRow, RtfTable, SpanCell, rtftable
 
@@ -28,17 +29,40 @@ _DEFAULT_HEADER_SEPS = ("____", "___tlang_delim___")
 # ============================================================================
 
 
-def _coerce_input(x, read_meta: bool, header_sep):
-    """Return ``(column_names, rows, auto_header, titles, footnotes)``.
+@dataclass
+class _Coerced:
+    """Normalised input: a body plus any metadata channels an adapter read."""
+
+    column_names: list[str]
+    rows: list[list[Any]]
+    auto_header: list[HeaderRow] | None = None
+    titles: list[str] | None = None
+    footnotes: list[str] | None = None
+    col_spec: list[dict] | None = None
+    cell_styles: list | None = None
+    col_rel_width: list[float] | None = None
+    column_widths_twips: list[int] | None = None
+
+
+def _coerce_input(x, read_meta, header_sep) -> _Coerced:
+    """Normalise a supported input to a :class:`_Coerced` record.
 
     ``auto_header`` is a list of :class:`HeaderRow` reconstructed from delimited
-    names, or ``None`` when a flat header suffices.
+    names (or read from a GT object), or ``None`` when a flat header suffices.
     """
-    titles = footnotes = None
-
-    if _is_gt(x):
-        column_names, rows, auto_header, titles, footnotes = _from_gt(x, read_meta)
-        return column_names, rows, auto_header, titles, footnotes
+    if gt_adapter.is_gt(x):
+        res = gt_adapter.gt_to_result(x, read_meta)
+        return _Coerced(
+            column_names=res.column_names,
+            rows=res.rows,
+            auto_header=res.col_header,
+            titles=res.titles,
+            footnotes=res.footnotes,
+            col_spec=res.col_spec,
+            cell_styles=res.cell_styles,
+            col_rel_width=res.col_rel_width,
+            column_widths_twips=res.column_widths_twips,
+        )
 
     if type(x).__module__.split(".")[0] == "polars":  # polars (no pyarrow needed)
         data = x.to_dict(as_series=False)
@@ -48,7 +72,7 @@ def _coerce_input(x, read_meta: bool, header_sep):
                 for i in range(n)]
         rows = [[_clean(v) for v in r] for r in rows]
         auto_header = _split_names_to_col_header(column_names, header_sep)
-        return column_names, rows, auto_header, titles, footnotes
+        return _Coerced(column_names, rows, auto_header)
 
     if hasattr(x, "columns") and hasattr(x, "itertuples"):  # pandas
         column_names, rows = _pandas_to_rows(x)
@@ -72,7 +96,7 @@ def _coerce_input(x, read_meta: bool, header_sep):
         )
 
     auto_header = _split_names_to_col_header(column_names, header_sep)
-    return column_names, rows, auto_header, titles, footnotes
+    return _Coerced(column_names, rows, auto_header)
 
 
 def _clean(v):
@@ -87,94 +111,6 @@ def _pandas_to_rows(df):
     names = [str(c) for c in df.columns]
     rows = [[_clean(v) for v in rec] for rec in df.itertuples(index=False, name=None)]
     return names, rows
-
-
-# ============================================================================
-#  great_tables (GT) adapter -- best effort
-# ============================================================================
-
-
-def _is_gt(x) -> bool:
-    return type(x).__name__ == "GT" and hasattr(x, "_tbl_data")
-
-
-def _from_gt(gt, read_meta: bool):
-    """Read a great_tables GT object's data + spanner/label metadata.
-
-    Carried: the underlying data frame, column *labels*, and one level of
-    column *spanners* (as a spanning header row).  NOT carried: cell-level
-    formatting/styling, footnotes, summary rows, row groups.
-    """
-    data = gt._tbl_data
-    if hasattr(data, "to_pandas"):
-        data = data.to_pandas()
-    column_names, rows = _pandas_to_rows(data)
-
-    titles = _gt_title_block(gt) if read_meta else None
-
-    if not read_meta:
-        return column_names, rows, None, titles, None
-
-    # Column labels (stub/boxhead) -> display header labels.
-    labels = list(column_names)
-    boxhead = getattr(gt, "_boxhead", None)
-    if boxhead is not None:
-        for info in boxhead:
-            var = getattr(info, "var", None)
-            lab = getattr(info, "column_label", None)
-            if var in column_names and lab:
-                labels[column_names.index(var)] = _flatten_label(lab)
-
-    # Spanners -> one spanning header row above the labels.
-    spanners = getattr(gt, "_spanners", None)
-    auto_header = None
-    span_cells = []
-    if spanners:
-        for sp in spanners:
-            var_ids = getattr(sp, "vars", None) or []
-            label = _flatten_label(getattr(sp, "spanner_label", "") or "")
-            idxs = [column_names.index(v) for v in var_ids if v in column_names]
-            if idxs:
-                span_cells.append(
-                    SpanCell(start=min(idxs), end=max(idxs), label=label)
-                )
-    if span_cells:
-        # Fill uncovered columns as single cells so the row spans all columns.
-        covered = set()
-        for c in span_cells:
-            covered.update(range(c.start, c.end + 1))
-        for j in range(len(column_names)):
-            if j not in covered:
-                span_cells.append(SpanCell(start=j, end=j, label=""))
-        span_cells.sort(key=lambda c: c.start)
-        auto_header = [
-            HeaderRow(kind="spanning", spans=span_cells),
-            HeaderRow(kind="labels", labels=labels),
-        ]
-    elif labels != column_names:
-        auto_header = [HeaderRow(kind="labels", labels=labels)]
-
-    return column_names, rows, auto_header, titles, None
-
-
-def _flatten_label(label) -> str:
-    if isinstance(label, (list, tuple)):
-        return " ".join(str(x) for x in label)
-    return str(label)
-
-
-def _gt_title_block(gt):
-    heading = getattr(gt, "_heading", None)
-    if heading is None:
-        return None
-    lines = []
-    title = getattr(heading, "title", None)
-    subtitle = getattr(heading, "subtitle", None)
-    if title:
-        lines.append(_flatten_label(title))
-    if subtitle:
-        lines.append(_flatten_label(subtitle))
-    return lines or None
 
 
 # ============================================================================
@@ -455,7 +391,7 @@ def _split_group_rows(grp, max_rows, name, cont_label, group_col):
 def as_rtftables(
     x,
     *,
-    read_meta: bool = True,
+    read_meta=True,
     split: str = "none",
     split_rows=None,
     max_rows: int | None = None,
@@ -481,7 +417,12 @@ def as_rtftables(
     Args:
         x: A pandas/polars DataFrame, a ``great_tables`` GT object, a dict of
             columns, or a list of row dicts.
-        read_meta: Read column labels / spanners (GT) into the header.
+        read_meta: For a great_tables ``GT`` object, which metadata channels to
+            read: ``True`` (all), ``False`` (none -- clean body only), or a list
+            of :data:`~rtfreporter.gt_adapter.GT_META_TOKENS`
+            (``"col_header"``, ``"alignment"``, ``"spanning"``, ``"widths"``,
+            ``"titles"``, ``"footnotes"``, ``"styles"``).  Ignored for
+            plain-frame input.
         split: ``"none"`` (default), ``"rows"``, ``"by_value"``,
             ``"group_safe"``, or ``"group_force"``.
         split_rows: For ``split="rows"`` -- an int page size or explicit cut
@@ -531,7 +472,27 @@ def as_rtftables(
             )
         return out
 
-    column_names, rows, auto_header, titles, footnotes = _coerce_input(x, read_meta, header_sep)
+    coerced = _coerce_input(x, read_meta, header_sep)
+    column_names = coerced.column_names
+    rows = coerced.rows
+    auto_header = coerced.auto_header
+    titles = coerced.titles
+    footnotes = coerced.footnotes
+
+    # A metadata-rich source (great_tables) may bring per-cell styles + column
+    # specs the plain-frame path never produces.  cell_styles are carried
+    # *with* their row (appended as a trailing element) so sorting and
+    # pagination keep every style aligned to its cell; they are split back off
+    # per page below.
+    carry_styles = coerced.cell_styles is not None
+    if carry_styles:
+        if stub_cols is not None or drop_cols is not None:
+            raise ValueError(
+                "`stub_cols` / `drop_cols` are not supported for great_tables "
+                "input; the GT adapter already reshapes the body (row groups "
+                "become an indented stub and hidden columns are dropped)."
+            )
+        rows = [list(r) + [coerced.cell_styles[i]] for i, r in enumerate(rows)]
 
     # Stub: reshape BEFORE any index-based resolution below.
     if stub_cols is not None:
@@ -572,6 +533,12 @@ def as_rtftables(
         if blank_row_end:
             blank_positions = sorted(set(blank_positions) | {len(page_rows)})
 
+        # Split the trailing cell-style element back off each row.
+        page_cell_styles = None
+        if carry_styles:
+            page_cell_styles = [r[-1] for r in prows]
+            prows = [r[:-1] for r in prows]
+
         # Drop carrier columns from the printed body + reindex the header.
         if drop_idx:
             prows, printed_names, printed_header = _drop_columns(
@@ -584,6 +551,14 @@ def as_rtftables(
         kwargs = dict(table_kwargs)
         if col_header is not None and "col_header" not in kwargs:
             kwargs["col_header"] = col_header
+        if coerced.col_spec is not None and "col_spec" not in kwargs:
+            kwargs["col_spec"] = coerced.col_spec
+        if coerced.col_rel_width is not None and "col_rel_width" not in kwargs:
+            kwargs["col_rel_width"] = coerced.col_rel_width
+        if coerced.column_widths_twips is not None and "column_widths_twips" not in kwargs:
+            kwargs["column_widths_twips"] = coerced.column_widths_twips
+        if page_cell_styles is not None:
+            kwargs["cell_styles"] = page_cell_styles
 
         tbl = rtftable(
             (printed_names, prows),
@@ -627,7 +602,7 @@ def _reindex_header(header, keep):
     return out
 
 
-def as_rtftable(x, *, read_meta: bool = True, border="tfl", **kwargs) -> RtfTable:
+def as_rtftable(x, *, read_meta=True, border="tfl", **kwargs) -> RtfTable:
     """Convert a single table input to one :class:`RtfTable` (no pagination).
 
     A convenience wrapper over :func:`as_rtftables` with ``split="none"`` that

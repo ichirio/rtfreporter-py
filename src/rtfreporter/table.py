@@ -346,6 +346,7 @@ class RtfTable:
     markup: frozenset | None = None
     titles: list[str] | None = None
     footnotes: list[str] | None = None
+    name: str | None = None
 
     @property
     def ncols(self) -> int:

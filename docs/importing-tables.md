@@ -32,8 +32,8 @@ single = as_rtftable(df)   # convenience: exactly one page, else an error
 
 - a **pandas** `DataFrame`,
 - a **polars** `DataFrame`,
-- a **great_tables** `GT` object (column labels and one level of spanners are
-  read into the header; titles/subtitles become the title block),
+- a **great_tables** `GT` object (fully featured — see
+  [Importing a great_tables `GT`](#importing-a-great_tables-gt) below),
 - a plain **dict** of columns,
 - a **list of row dicts**, or
 - a **list** of any of the above (flattened to one page set each).
@@ -102,9 +102,77 @@ as_rtftable(df, group_col="grp")                 # blank row inserted at A→B c
 `NaN` / `None` cells are normalised to blank cells during conversion, so a
 pandas `float` column with gaps renders cleanly.
 
-## What is *not* carried
+## Importing a great_tables `GT`
 
-The adapters are MVP-scoped. Cell-level styling from a `GT` object, footnotes,
-summary rows and row groups are **not** read; only the data body, column labels,
-one spanner level, and the title block are. Anything else can be reapplied with
-the [style verbs](styling.md) or `rtftable()` arguments.
+The `GT` adapter is **full-featured**: it reads the rendered table and the
+metadata channels the RTF renderer can reproduce.
+
+```python
+import pandas as pd
+from great_tables import GT, style, loc
+from rtfreporter import as_rtftable
+
+df = pd.DataFrame({"grp": ["A", "A", "B"], "lbl": ["x", "y", "z"],
+                   "n": [1, 2, 3], "pct": [0.1, 0.25, 1.0]})
+gt = (
+    GT(df, rowname_col="lbl", groupname_col="grp")
+    .tab_header(title="Table 14.1", subtitle="Demographics")
+    .tab_spanner(label="Statistics", columns=["n", "pct"])
+    .cols_label(n="Count", pct="Percent")
+    .fmt_percent("pct", decimals=1)
+    .tab_style(style=style.text(weight="bold"), locations=loc.body("n", rows=[0]))
+    .tab_source_note("Source: ADSL")
+)
+tbl = as_rtftable(gt)
+```
+
+### What **is** carried
+
+| GT feature | Mapped to |
+|------------|-----------|
+| `fmt_*` formatted values | the **rendered/display** cell text (not the raw data) |
+| hidden columns (`cols_hide`) | dropped |
+| `cols_label` | column-header labels |
+| `tab_spanner` (**multiple / nested levels**) | stacked spanning header rows |
+| row groups (`groupname_col`) | full-width group-label rows with children indented into a leading stub (same convention as `stub_cols`) |
+| `rowname_col` | the leading stub column |
+| per-column alignment | `ColSpec.align` |
+| `cols_width` (all `px`, or all `%`) | `column_widths_twips` / `col_rel_width` |
+| `tab_style(style.text(...))` — bold / italic / underline / align / colour | the per-cell `cell_styles` channel (body) or `header_*` (labels) |
+| `tab_style(style.borders(...))` — solid/double/dashed/dotted/hidden, px×15 / pt×20 twips | per-cell / per-header `Border` |
+| `tab_header` title + subtitle | the title block |
+| `tab_footnote` + `tab_source_note` text | the footnote block |
+| grand-summary rows (where exposed) | best-effort labelled rows |
+
+Border colour handling mirrors the R package: **black is omitted** (the RTF
+default), and a **transparent or zero-alpha (`#RRGGBB00`) border yields *no*
+border** — `tfrmt` overlays transparent borders to hide a theme's default rules,
+and carrying them through would print spurious black lines.
+
+### What is **not** carried
+
+Cell **fills**, fonts and font sizes, Markdown, and great_tables' own *theme*
+borders (`tab_options`) have no RTF counterpart and are ignored. In-cell
+footnote **marks** (the superscript reference beside a value) are not injected;
+the footnote *text* is still collected into the footnote block.
+
+### Choosing what to read: `read_meta`
+
+`read_meta` controls which metadata channels are read. The clean, reshaped body
+(formatted values, hidden columns dropped, row groups interleaved) is **always**
+produced; only the channels below are gated:
+
+```python
+as_rtftable(gt, read_meta=True)                 # everything (default)
+as_rtftable(gt, read_meta=False)                # clean body only
+as_rtftable(gt, read_meta=["titles", "styles"]) # just these channels
+```
+
+The tokens are `"col_header"`, `"alignment"`, `"spanning"`, `"widths"`,
+`"titles"`, `"footnotes"`, and `"styles"`
+(`rtfreporter.gt_adapter.GT_META_TOKENS`). An unknown token raises `ValueError`.
+
+Because the `GT` adapter already reshapes the body, `stub_cols` / `drop_cols`
+are rejected for `GT` input (row groups and hidden columns are handled for you).
+Pagination (`split=`) and blank-row options still apply, and per-cell styles
+stay aligned to their cells across page splits.

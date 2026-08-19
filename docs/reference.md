@@ -33,6 +33,14 @@ directly from the top-level `rtfreporter` package.
 
 ::: rtfreporter.adapters.as_rtftables
 
+### great_tables adapter
+
+::: rtfreporter.gt_adapter.gt_to_result
+
+::: rtfreporter.gt_adapter.resolve_meta_tokens
+
+::: rtfreporter.gt_adapter.GT_META_TOKENS
+
 ## Headers and footers
 
 ::: rtfreporter.header_footer.header
