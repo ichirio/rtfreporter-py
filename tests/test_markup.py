@@ -12,7 +12,6 @@ from rtfreporter._escape import (
 )
 from rtfreporter.header_footer import header
 
-
 # -- escaping -----------------------------------------------------------------
 
 def test_escape_braces_and_backslash():
