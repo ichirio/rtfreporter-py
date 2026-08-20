@@ -60,6 +60,13 @@ from .document import (
     to_rtf,
 )
 from .figure import Figure, rtfplot
+from .format_count_pct import (
+    fmt_count_paren,
+    fmt_count_paren_bare,
+    fmt_right_align,
+    format_count_pct,
+    realign_count_pct,
+)
 from .header_footer import HeaderFooter, rtf_footer, rtf_header
 from .page import DefaultFormat, Page, rtf_page
 from .style_verbs import style_body, style_cols, style_header, style_zone
@@ -129,6 +136,12 @@ __all__ = [
     "BlankRowsByRule",
     "blank_rows_by_change",
     "blank_rows_by_rule",
+    # count / percent formatters
+    "format_count_pct",
+    "realign_count_pct",
+    "fmt_count_paren",
+    "fmt_count_paren_bare",
+    "fmt_right_align",
     # style verbs
     "style_body",
     "style_cols",

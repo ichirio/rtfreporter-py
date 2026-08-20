@@ -267,7 +267,6 @@ def test_stub_vars_argument():
     [
         {"group_by": "indent"},
         {"count_blank_rows": True},
-        {"cell_format": lambda x: x},
         {"auto_width": True},
         {"stub_group_summary": "parent"},
     ],

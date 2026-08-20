@@ -120,6 +120,18 @@ the named constants `BEFORE_FIRST` / `AFTER_LAST`.
 
 ::: rtfreporter.blank_rows.BlankRowsByRule
 
+## Count / percent formatters
+
+::: rtfreporter.format_count_pct.format_count_pct
+
+::: rtfreporter.format_count_pct.realign_count_pct
+
+::: rtfreporter.format_count_pct.fmt_count_paren
+
+::: rtfreporter.format_count_pct.fmt_count_paren_bare
+
+::: rtfreporter.format_count_pct.fmt_right_align
+
 ## Style verbs
 
 ::: rtfreporter.style_verbs.style_body

@@ -446,11 +446,14 @@ def as_rtftables(
             flags, applied before pagination.
         count_blank_rows: When ``True``, blank separator rows count toward
             ``max_rows`` during pagination.  Not yet implemented (raises).
-        align_count_pct: When ``True``, right-align ``count (pct%)`` cells within
-            each column (see :func:`~rtfreporter.realign_count_pct`).  Wired in
-            the count/percent formatting phase.
-        cell_format: An optional per-column re-formatter (a callable or a list of
-            callables, one per column).  Not yet implemented (raises).
+        align_count_pct: When ``True``, realign ``count (pct)`` cells to a
+            uniform width in every column except the first (see
+            :func:`~rtfreporter.realign_count_pct`).  Applied before pagination;
+            superseded by ``cell_format`` when both are given.
+        cell_format: An optional per-column re-formatter -- a single callable
+            (applied to columns ``1..n-1``) or a list of callables taken
+            positionally.  Each takes one column (a list) and returns a list of
+            the same length; see :func:`~rtfreporter.fmt_count_paren`.
         stub_group_summary: Forwarded to the stub builder -- ``"empty"`` (default)
             or ``"parent"``.  Only ``"empty"`` is implemented.
         auto_width: When ``True``, size columns to their widest content.  Not yet
@@ -490,10 +493,6 @@ def as_rtftables(
     if count_blank_rows:
         raise NotImplementedError(
             "as_rtftables(count_blank_rows=True) is not implemented."
-        )
-    if cell_format is not None:
-        raise NotImplementedError(
-            "as_rtftables(cell_format=...) is not implemented."
         )
     if auto_width:
         raise NotImplementedError("as_rtftables(auto_width=True) is not implemented.")
@@ -562,6 +561,25 @@ def as_rtftables(
 
     if sort_idx:
         rows = _sort_rows(rows, sort_idx, sort_desc)
+
+    # Optional cell-format pass BEFORE pagination, column-by-column, so every
+    # page inherits the cleaned-up cells.  `cell_format` takes precedence;
+    # `align_count_pct=True` is the shorthand for the built-in "n (xx.x)"
+    # realigner (see R paginate()).
+    if cell_format is not None or align_count_pct:
+        from .format_count_pct import (
+            apply_cell_format,
+            realign_count_pct_df,
+            resolve_cell_format,
+        )
+
+        rows = [list(r) for r in rows]
+        if cell_format is not None:
+            fl = resolve_cell_format(cell_format, len(column_names))
+            if fl is not None:
+                apply_cell_format(rows, column_names, fl)
+        elif align_count_pct:
+            realign_count_pct_df(rows, column_names)
 
     group_keys = [row[group_idx] for row in rows] if group_idx is not None else [None] * len(rows)
 

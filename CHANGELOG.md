@@ -46,6 +46,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   than `"auto"`, `count_blank_rows=True`, `cell_format`, `auto_width`,
   `stub_group_summary="parent"`) raise a clear `NotImplementedError`.
 - **`BEFORE_FIRST` / `AFTER_LAST`** blank-row sentinel constants.
+- **Count / percent display-width formatters** (`rtfreporter.format_count_pct`):
+  `format_count_pct`, `realign_count_pct`, `fmt_count_paren`,
+  `fmt_count_paren_bare`, and `fmt_right_align`, ported from R.  Wired into
+  `as_rtftables()` via `align_count_pct=True` (the `"n (xx.x)"` realigner) and
+  the general `cell_format=` per-column re-formatter.
 
 ### Added
 
