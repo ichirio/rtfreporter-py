@@ -25,7 +25,7 @@ def test_style_body_returns_copy():
 def test_style_body_by_index():
     t = style_body(rtftable({"A": [1], "B": [2]}), cols=1, align="right")
     assert t.col_spec[1].align == "right"
-    assert t.col_spec[0].align is None
+    assert t.col_spec[0].align == "left"  # row-title column default
 
 
 def test_style_body_by_name():
@@ -98,8 +98,8 @@ def test_chained_verbs_compose():
     t2 = style_header(style_body(t, cols=1, align="right"), bold=True)
     assert t2.col_spec[1].align == "right"
     assert t2.col_spec[0].header_bold is True
-    # original untouched
-    assert t.col_spec[1].align is None
+    # original untouched (col B keeps its center default)
+    assert t.col_spec[1].align == "center"
 
 
 def test_style_body_unknown_column_raises():

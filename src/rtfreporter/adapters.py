@@ -392,10 +392,11 @@ def as_rtftables(
     x,
     *,
     read_meta=True,
-    split: str = "none",
+    split="none",
     split_rows=None,
     max_rows: int | None = None,
     group_col=None,
+    group_by: str = "auto",
     sort_by=None,
     sort_desc=None,
     cont_label: str = " (Cont.)",
@@ -403,13 +404,20 @@ def as_rtftables(
     blank_rows=None,
     blank_row_first: bool = False,
     blank_row_end: bool = False,
+    count_blank_rows: bool = False,
+    align_count_pct: bool = False,
+    cell_format=None,
     collapse_repeats=None,
     drop_cols=None,
-    stub_cols=None,
+    stub_vars=None,
     stub_label=None,
     stub_indent: int = 4,
+    stub_group_summary: str = "empty",
     header_sep=_DEFAULT_HEADER_SEPS,
+    auto_width: bool = False,
+    table_width_twips=None,
     border="tfl",
+    style=None,
     **table_kwargs,
 ) -> list[RtfTable]:
     """Convert tabular input into a list of paginated :class:`RtfTable` pages.
@@ -430,8 +438,26 @@ def as_rtftables(
         max_rows: Max data rows per page (required by the group splits).
         group_col: The grouping column (index or name) for group/value splits,
             ``collapse_repeats`` grouping, and between-group blank rows.
+        group_by: How a group boundary is detected on ``group_col`` -- one of
+            ``"auto"`` (default), ``"indent"``, ``"value"``, ``"filled"``.  Only
+            ``"auto"`` (value-change detection) is implemented; the others raise
+            ``NotImplementedError``.
         sort_by, sort_desc: Column(s) to sort rows by, and per-column descending
             flags, applied before pagination.
+        count_blank_rows: When ``True``, blank separator rows count toward
+            ``max_rows`` during pagination.  Not yet implemented (raises).
+        align_count_pct: When ``True``, right-align ``count (pct%)`` cells within
+            each column (see :func:`~rtfreporter.realign_count_pct`).  Wired in
+            the count/percent formatting phase.
+        cell_format: An optional per-column re-formatter (a callable or a list of
+            callables, one per column).  Not yet implemented (raises).
+        stub_group_summary: Forwarded to the stub builder -- ``"empty"`` (default)
+            or ``"parent"``.  Only ``"empty"`` is implemented.
+        auto_width: When ``True``, size columns to their widest content.  Not yet
+            implemented (raises).
+        table_width_twips: Total table width in twips, forwarded to
+            :func:`~rtfreporter.rtftable`.
+        style: A shared table style forwarded to :func:`~rtfreporter.rtftable`.
         cont_label: Continuation marker appended to a group that spills over.
         blank_rows: Blank-row spec applied per page (int positions or a
             :mod:`~rtfreporter.blank_rows` spec).  If ``None`` and ``group_col``
@@ -441,8 +467,9 @@ def as_rtftables(
         collapse_repeats: Column(s) whose repeated consecutive values are
             blanked (per page).
         drop_cols: Carrier column(s) used for grouping/sorting but not printed.
-        stub_cols: Hierarchy columns (outer->inner) merged into one indented
-            clinical stub column.
+        stub_vars: Hierarchy columns (outer->inner) merged into one indented
+            clinical stub column (the R ``stub_vars`` argument; the standalone
+            :func:`~rtfreporter.stub_cols` helper is a separate function).
         stub_label, stub_indent: Stub column header, and per-level indent (spaces).
         header_sep: Delimiters used to reconstruct spanning headers from names.
         border: Passed to :func:`~rtfreporter.rtftable`.
@@ -453,6 +480,33 @@ def as_rtftables(
         A list of :class:`RtfTable` objects, one per page.  When a page carries
         a name (group value), it is stored on the table's ``name`` attribute.
     """
+    # Guard the not-yet-implemented R argument paths with a clear error rather
+    # than silently ignoring them.
+    if group_by != "auto":
+        raise NotImplementedError(
+            f"as_rtftables(group_by={group_by!r}) is not implemented; only "
+            "'auto' (value-change detection) is supported."
+        )
+    if count_blank_rows:
+        raise NotImplementedError(
+            "as_rtftables(count_blank_rows=True) is not implemented."
+        )
+    if cell_format is not None:
+        raise NotImplementedError(
+            "as_rtftables(cell_format=...) is not implemented."
+        )
+    if auto_width:
+        raise NotImplementedError("as_rtftables(auto_width=True) is not implemented.")
+    if stub_group_summary != "empty":
+        raise NotImplementedError(
+            f"as_rtftables(stub_group_summary={stub_group_summary!r}) is not "
+            "implemented; only 'empty' is supported."
+        )
+    if table_width_twips is not None:
+        table_kwargs = {**table_kwargs, "table_width_twips": table_width_twips}
+    if style is not None:
+        table_kwargs = {**table_kwargs, "style": style}
+
     if isinstance(x, (list, tuple)) and not (x and isinstance(x[0], dict)):
         # A plain list of frames -> concatenate the conversions.
         out: list[RtfTable] = []
@@ -464,8 +518,9 @@ def as_rtftables(
                     sort_desc=sort_desc, cont_label=cont_label,
                     min_group_rows=min_group_rows, blank_rows=blank_rows,
                     blank_row_first=blank_row_first, blank_row_end=blank_row_end,
+                    align_count_pct=align_count_pct,
                     collapse_repeats=collapse_repeats, drop_cols=drop_cols,
-                    stub_cols=stub_cols, stub_label=stub_label,
+                    stub_vars=stub_vars, stub_label=stub_label,
                     stub_indent=stub_indent, header_sep=header_sep,
                     border=border, **table_kwargs,
                 )
@@ -486,17 +541,17 @@ def as_rtftables(
     # per page below.
     carry_styles = coerced.cell_styles is not None
     if carry_styles:
-        if stub_cols is not None or drop_cols is not None:
+        if stub_vars is not None or drop_cols is not None:
             raise ValueError(
-                "`stub_cols` / `drop_cols` are not supported for great_tables "
+                "`stub_vars` / `drop_cols` are not supported for great_tables "
                 "input; the GT adapter already reshapes the body (row groups "
                 "become an indented stub and hidden columns are dropped)."
             )
         rows = [list(r) + [coerced.cell_styles[i]] for i, r in enumerate(rows)]
 
     # Stub: reshape BEFORE any index-based resolution below.
-    if stub_cols is not None:
-        column_names, rows = _apply_stub(column_names, rows, stub_cols, stub_label, stub_indent)
+    if stub_vars is not None:
+        column_names, rows = _apply_stub(column_names, rows, stub_vars, stub_label, stub_indent)
         auto_header = None  # names changed; a flat header is used
 
     # Resolve carrier / grouping / sort columns on the (possibly reshaped) body.
@@ -563,7 +618,7 @@ def as_rtftables(
         tbl = rtftable(
             (printed_names, prows),
             border=border,
-            blank_rows=blank_positions or None,
+            _blank_positions=blank_positions or None,
             **kwargs,
         )
         if titles is not None:

@@ -109,7 +109,7 @@ def test_stub_merges_hierarchy():
         "Stat": ["n", "Mean", "Male"],
         "Val": [86, 75, 40],
     })
-    t = rr.as_rtftable(df, stub_cols=["Group", "Stat"], stub_label="")
+    t = rr.as_rtftable(df, stub_vars=["Group", "Stat"], stub_label="")
     stub = [r[0] for r in t.rows]
     assert "Age" in stub
     assert any(s.strip() == "n" and s != "n" for s in stub)  # indented
@@ -117,20 +117,20 @@ def test_stub_merges_hierarchy():
 
 def test_stub_label_becomes_first_col_name():
     df = pd.DataFrame({"Group": ["A"], "Stat": ["n"], "Val": [1]})
-    t = rr.as_rtftable(df, stub_cols=["Group", "Stat"], stub_label="Characteristic")
+    t = rr.as_rtftable(df, stub_vars=["Group", "Stat"], stub_label="Characteristic")
     assert t.column_names[0] == "Characteristic"
 
 
 def test_stub_indent_width():
     df = pd.DataFrame({"Group": ["A"], "Stat": ["n"], "Val": [1]})
-    t = rr.as_rtftable(df, stub_cols=["Group", "Stat"], stub_label="", stub_indent=2)
+    t = rr.as_rtftable(df, stub_vars=["Group", "Stat"], stub_label="", stub_indent=2)
     leaf = [r[0] for r in t.rows if r[0].strip() == "n"][0]
     assert leaf.startswith("  n")
 
 
 def test_stub_single_level_no_indent():
     df = pd.DataFrame({"Group": ["A", "B"], "Val": [1, 2]})
-    t = rr.as_rtftable(df, stub_cols=["Group"], stub_label="")
+    t = rr.as_rtftable(df, stub_vars=["Group"], stub_label="")
     assert [r[0] for r in t.rows] == ["A", "B"]
 
 

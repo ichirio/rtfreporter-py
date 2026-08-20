@@ -86,7 +86,9 @@ def test_blank_rows_by_rule_before():
 
 
 def test_blank_rows_integer_positions():
-    tbl = rtftable({"A": [1, 2, 3]}, blank_rows=[0, -1])
+    from rtfreporter import AFTER_LAST, BEFORE_FIRST
+
+    tbl = rtftable({"A": [1, 2, 3]}, blank_rows=[BEFORE_FIRST, AFTER_LAST])
     assert 0 in tbl.blank_rows and 3 in tbl.blank_rows
 
 

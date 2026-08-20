@@ -77,6 +77,33 @@ class Page:
         }
 
 
+def rtf_page(
+    paper_size: str = "letter",
+    orientation: str = "landscape",
+    width_in: float | None = None,
+    height_in: float | None = None,
+    margin_top_in: float = 0.75,
+    margin_bottom_in: float = 0.75,
+    margin_left_in: float = 0.75,
+    margin_right_in: float = 0.75,
+    header_dist_in: float | None = None,
+    footer_dist_in: float | None = None,
+) -> Page:
+    """Build a :class:`Page` (mirrors R's ``rtf_page()``)."""
+    return Page(
+        paper_size=paper_size,
+        orientation=orientation,
+        width_in=width_in,
+        height_in=height_in,
+        margin_top_in=margin_top_in,
+        margin_bottom_in=margin_bottom_in,
+        margin_left_in=margin_left_in,
+        margin_right_in=margin_right_in,
+        header_dist_in=header_dist_in,
+        footer_dist_in=footer_dist_in,
+    )
+
+
 def _resolve_geometry(
     paper_size: str | None,
     orientation: str | None,

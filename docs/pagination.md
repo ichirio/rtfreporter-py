@@ -104,7 +104,7 @@ Each page is an ordinary `RtfTable`; feed them to a document in order:
 from rtfreporter import RtfDocument, header
 
 doc = RtfDocument().add_section(
-    header=header([{"r": "Page {AUTO_PAGE} of {AUTO_TOTAL_PAGES}"}])
+    header=rtf_header([{"r": "Page {AUTO_PAGE} of {AUTO_TOTAL_PAGES}"}])
 )
 for page in pages:
     doc.add_table(page, title=["Listing 16.2.1"])

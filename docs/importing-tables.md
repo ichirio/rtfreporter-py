@@ -73,7 +73,7 @@ df = pd.DataFrame({
     "Stat":  ["n", "Mean", "Male"],
     "Value": [86, 75.1, 40],
 })
-tbl = as_rtftable(df, stub_cols=["Group", "Stat"], stub_label="", stub_indent=4)
+tbl = as_rtftable(df, stub_vars=["Group", "Stat"], stub_label="", stub_indent=4)
 # stub column -> "Age", "    n", "    Mean", "Sex", "    Male"
 ```
 

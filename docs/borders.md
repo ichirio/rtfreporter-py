@@ -8,9 +8,9 @@ one-word preset down to a single cell.
 The border objects are immutable records, so a border you build can be reused
 across tables safely. The vocabulary is small:
 
-- [`border_side(style, width, color)`](reference.md#rtfreporter.borders.border_side)
+- [`rtf_border_side(style, width, color)`](reference.md#rtfreporter.borders.border_side)
   — one **edge** (a line).
-- [`border(top, bottom, left, right)`](reference.md#rtfreporter.borders.border)
+- [`rtf_border(top, bottom, left, right)`](reference.md#rtfreporter.borders.border)
   — the four edges of one **cell/row** ([`Border`][border]).
 - [`TableBorder`][tableborder] — the per-**zone** borders of a whole table.
 
@@ -34,7 +34,7 @@ tbl = rtftable({"Parameter": ["Age"], "Value": ["75.1"]}, border="tfl")
   borders. This is the default.
 - `"none"` (or `None`) — no borders anywhere.
 
-`"tfl"` is exactly [`border_tfl()`](reference.md#rtfreporter.borders.border_tfl).
+`"tfl"` is exactly [`rtf_border_tfl()`](reference.md#rtfreporter.borders.border_tfl).
 
 ## Level 2 — zones with `TableBorder`
 
@@ -97,7 +97,7 @@ navy_rule = Border(bottom=BorderSide("single", 20, "#003366"))
 ```
 
 Convenience constructors cover the common shapes:
-[`border_top`](reference.md#rtfreporter.borders.border_top),
-[`border_bottom`](reference.md#rtfreporter.borders.border_bottom),
-[`border_box`](reference.md#rtfreporter.borders.border_box),
-[`border_none`](reference.md#rtfreporter.borders.border_none).
+[`rtf_border_top`](reference.md#rtfreporter.borders.border_top),
+[`rtf_border_bottom`](reference.md#rtfreporter.borders.border_bottom),
+[`rtf_border_box`](reference.md#rtfreporter.borders.border_box),
+[`rtf_border_none`](reference.md#rtfreporter.borders.border_none).

@@ -2,7 +2,7 @@
 
 import pytest
 
-from rtfreporter import Border, BorderSide, border_side, border_tfl
+from rtfreporter import Border, BorderSide, rtf_border_side, rtf_border_tfl
 from rtfreporter.render import build_border_commands
 
 
@@ -44,11 +44,11 @@ def test_border_color_command_with_map():
 
 
 def test_border_tfl_preset():
-    tb = border_tfl()
+    tb = rtf_border_tfl()
     assert tb.header is not None
     assert tb.header.top is not None and tb.header.bottom is not None
     assert tb.body is None and tb.last_row is None
 
 
 def test_border_side_functional_alias():
-    assert border_side("thick", 40) == BorderSide("thick", 40)
+    assert rtf_border_side("thick", 40) == BorderSide("thick", 40)

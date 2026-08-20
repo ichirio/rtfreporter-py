@@ -103,12 +103,12 @@ class TableBorder:
 # -- Convenience constructors -------------------------------------------------
 
 
-def border_side(style: str = "single", width: int = 15, color: str | None = None) -> BorderSide:
+def rtf_border_side(style: str = "single", width: int = 15, color: str | None = None) -> BorderSide:
     """Build a :class:`BorderSide` (functional alias)."""
     return BorderSide(style, width, color)
 
 
-def border(
+def rtf_border(
     top: BorderSide | None = None,
     bottom: BorderSide | None = None,
     left: BorderSide | None = None,
@@ -118,28 +118,28 @@ def border(
     return Border(top, bottom, left, right)
 
 
-def border_none() -> Border:
+def rtf_border_none() -> Border:
     """A :class:`Border` with all sides unset."""
     return Border()
 
 
-def border_top(style: str = "single", width: int = 15, color: str | None = None) -> Border:
+def rtf_border_top(style: str = "single", width: int = 15, color: str | None = None) -> Border:
     """A top-edge-only border."""
     return Border(top=BorderSide(style, width, color))
 
 
-def border_bottom(style: str = "single", width: int = 15, color: str | None = None) -> Border:
+def rtf_border_bottom(style: str = "single", width: int = 15, color: str | None = None) -> Border:
     """A bottom-edge-only border."""
     return Border(bottom=BorderSide(style, width, color))
 
 
-def border_box(style: str = "single", width: int = 15, color: str | None = None) -> Border:
+def rtf_border_box(style: str = "single", width: int = 15, color: str | None = None) -> Border:
     """A four-edge box border."""
     s = BorderSide(style, width, color)
     return Border(top=s, bottom=s, left=s, right=s)
 
 
-def border_tfl(style: str = "single", width: int = 15, color: str | None = None) -> TableBorder:
+def rtf_border_tfl(style: str = "single", width: int = 15, color: str | None = None) -> TableBorder:
     """The standard clinical TFL border preset.
 
     Borders on the column-header block only: a top rule on the topmost header
@@ -149,6 +149,27 @@ def border_tfl(style: str = "single", width: int = 15, color: str | None = None)
     """
     s = BorderSide(style, width, color)
     return TableBorder(header=Border(top=s, bottom=s))
+
+
+def rtf_table_border(
+    header: Border | None = None,
+    spanning: Border | None = None,
+    body: Border | None = None,
+    first_row: Border | None = None,
+    last_row: Border | None = None,
+) -> TableBorder:
+    """Build a :class:`TableBorder` with per-zone borders.
+
+    Mirrors the R ``rtf_table_border()`` constructor.  ``first_row`` /
+    ``last_row`` are overrides merged on top of ``body``.
+    """
+    return TableBorder(
+        header=header,
+        spanning=spanning,
+        body=body,
+        first_row=first_row,
+        last_row=last_row,
+    )
 
 
 # -- Merge / colour helpers ---------------------------------------------------
@@ -209,7 +230,7 @@ def normalize_table_border(spec) -> TableBorder | None:
         return None
     if isinstance(spec, str):
         if spec == "tfl":
-            return border_tfl()
+            return rtf_border_tfl()
         raise ValueError(f"Unknown border preset {spec!r}; use 'tfl' or 'none'.")
     if isinstance(spec, TableBorder):
         return spec

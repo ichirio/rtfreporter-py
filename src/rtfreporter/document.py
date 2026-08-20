@@ -40,12 +40,12 @@ class RtfDocument:
     footer that apply from a given page onward.
 
     Example:
-        >>> from rtfreporter import RtfDocument, header, footer
+        >>> from rtfreporter import RtfDocument, rtf_header, rtf_footer
         >>> doc = (
         ...     RtfDocument()
         ...     .add_section(
-        ...         header=header([{"l": "Protocol XYZ", "r": "Page {AUTO_PAGE}"}]),
-        ...         footer=footer([{"c": "CONFIDENTIAL"}]),
+        ...         header=rtf_header([{"l": "Protocol XYZ", "r": "Page {AUTO_PAGE}"}]),
+        ...         footer=rtf_footer([{"c": "CONFIDENTIAL"}]),
         ...     )
         ...     .add_table({"Subject": ["001"], "Age": [34]},
         ...                title=["Demographics"])
@@ -76,8 +76,8 @@ class RtfDocument:
         """Start a new section with a running ``header`` / ``footer``.
 
         Args:
-            header, footer: Bands built with :func:`~rtfreporter.header` /
-                :func:`~rtfreporter.footer`.  ``None`` inherits the previous
+            header, footer: Bands built with :func:`~rtfreporter.rtf_header` /
+                :func:`~rtfreporter.rtf_footer`.  ``None`` inherits the previous
                 section's band.
             from_page: 1-based first page of the section.  ``None`` uses the
                 next page to be added.
@@ -194,13 +194,145 @@ class RtfDocument:
 # -- functional layer ---------------------------------------------------------
 
 
-def document(
+def rtf_document(
     page: Page | None = None,
     default_format: DefaultFormat | None = None,
     color_table: list[str] | None = None,
 ) -> RtfDocument:
-    """Create a new :class:`RtfDocument` (functional alias)."""
+    """Create a new :class:`RtfDocument` (mirrors R's ``rtf_document()``).
+
+    This is the head of the module-level "pipe" API
+    (``rtf_document() -> rtf_tables() -> ... -> generate_rtfreport()``); the
+    fluent :class:`RtfDocument` methods are an equivalent convenience.
+    """
     return RtfDocument(page=page, default_format=default_format, color_table=color_table)
+
+
+def rtf_tables(
+    doc: RtfDocument,
+    tables,
+    titles=None,
+    footnotes=None,
+    **table_kwargs,
+) -> RtfDocument:
+    """Add one or more table content pages to ``doc`` (mirrors R ``rtf_tables()``).
+
+    Args:
+        doc: The :class:`RtfDocument` to add to.
+        tables: A single table input (an :class:`~rtfreporter.RtfTable`, dict of
+            columns, or DataFrame) or a list/tuple of them (one page each).
+        titles, footnotes: A parallel list (one per table) or a single block
+            applied to every table.
+        **table_kwargs: Forwarded to :func:`~rtfreporter.rtftable`.
+
+    Returns:
+        ``doc`` (for chaining).
+    """
+    if not isinstance(doc, RtfDocument):
+        raise TypeError("`doc` must be an RtfDocument.")
+    items = _as_table_list(tables)
+    n = len(items)
+    tlist = _broadcast_blocks(titles, n)
+    flist = _broadcast_blocks(footnotes, n)
+    for i, tbl in enumerate(items):
+        doc.add_table(
+            tbl,
+            title=tlist[i] if tlist is not None else None,
+            footnote=flist[i] if flist is not None else None,
+            **table_kwargs,
+        )
+    return doc
+
+
+def rtf_figures(
+    doc: RtfDocument,
+    figures,
+    titles=None,
+    footnotes=None,
+    **fig_kwargs,
+) -> RtfDocument:
+    """Add one or more figure content pages to ``doc`` (mirrors R ``rtf_figures()``)."""
+    if not isinstance(doc, RtfDocument):
+        raise TypeError("`doc` must be an RtfDocument.")
+    if not isinstance(figures, (list, tuple)):
+        figures = [figures]
+    n = len(figures)
+    tlist = _broadcast_blocks(titles, n)
+    flist = _broadcast_blocks(footnotes, n)
+    for i, fig in enumerate(figures):
+        doc.add_figure(
+            fig,
+            title=tlist[i] if tlist is not None else None,
+            footnote=flist[i] if flist is not None else None,
+            **fig_kwargs,
+        )
+    return doc
+
+
+def rtf_titles(doc: RtfDocument, titles) -> RtfDocument:
+    """Assign per-page titles (mirrors R ``rtf_titles()``).
+
+    ``titles`` is a list of one block per page, or a single block common to all.
+    """
+    if not isinstance(doc, RtfDocument):
+        raise TypeError("`doc` must be an RtfDocument.")
+    n = len(doc._pages)
+    if n == 0:
+        raise ValueError("Cannot set titles before any content has been added.")
+    blocks = _broadcast_blocks(titles, n, require_list=True)
+    doc.titles(blocks)
+    return doc
+
+
+def rtf_footnotes(doc: RtfDocument, footnotes) -> RtfDocument:
+    """Assign per-page footnotes (mirrors R ``rtf_footnotes()``)."""
+    if not isinstance(doc, RtfDocument):
+        raise TypeError("`doc` must be an RtfDocument.")
+    n = len(doc._pages)
+    if n == 0:
+        raise ValueError("Cannot set footnotes before any content has been added.")
+    blocks = _broadcast_blocks(footnotes, n, require_list=True)
+    doc.footnotes(blocks)
+    return doc
+
+
+def rtf_section(
+    doc: RtfDocument,
+    page: int | None = None,
+    header=None,
+    footer=None,
+) -> RtfDocument:
+    """Attach a running header/footer from a given page onward (R ``rtf_section()``).
+
+    Args:
+        doc: The :class:`RtfDocument`.
+        page: 1-based first *page number* of the section (``None`` = the next
+            page to be added).  Page numbers are 1-based (they are page numbers,
+            not zero-based indices).
+        header, footer: Bands built with :func:`~rtfreporter.rtf_header` /
+            :func:`~rtfreporter.rtf_footer`.  ``None`` inherits the previous
+            section's band.
+    """
+    if not isinstance(doc, RtfDocument):
+        raise TypeError("`doc` must be an RtfDocument.")
+    doc.add_section(header=header, footer=footer, from_page=page)
+    return doc
+
+
+def generate_rtfreport(doc: RtfDocument, file_path: str, overwrite: bool = False) -> str:
+    """Render ``doc`` and write it to ``file_path`` (mirrors R ``generate_rtfreport()``).
+
+    Args:
+        doc: The :class:`RtfDocument` to render.
+        file_path: Destination ``.rtf`` path (required, as in R).
+        overwrite: When ``False`` (the R default), raise if ``file_path`` exists.
+
+    Returns:
+        The path written.
+    """
+    if not isinstance(doc, RtfDocument):
+        raise TypeError("`doc` must be an RtfDocument.")
+    return doc.save(file_path, overwrite=overwrite)
 
 
 def to_rtf(doc: RtfDocument) -> str:
@@ -211,6 +343,40 @@ def to_rtf(doc: RtfDocument) -> str:
 def save(doc: RtfDocument, path: str, overwrite: bool = True) -> str:
     """Render and write an :class:`RtfDocument` (functional alias)."""
     return doc.save(path, overwrite=overwrite)
+
+
+def _as_table_list(tables) -> list:
+    """A single table input -> ``[table]``; a list/tuple of tables -> as-is."""
+    if isinstance(tables, RtfTable):
+        return [tables]
+    if isinstance(tables, dict):
+        return [tables]
+    if isinstance(tables, (list, tuple)):
+        # A list of row-dicts is a single table; a list of frames/tables is many.
+        if tables and isinstance(tables[0], dict):
+            return [tables]
+        return list(tables)
+    return [tables]
+
+
+def _broadcast_blocks(blocks, n: int, require_list: bool = False):
+    """Normalise a ``titles`` / ``footnotes`` argument to length ``n`` or ``None``."""
+    if blocks is None:
+        return None
+    if require_list and not isinstance(blocks, (list, tuple)):
+        raise TypeError("`titles`/`footnotes` must be a list (one block per page).")
+    if isinstance(blocks, (list, tuple)):
+        if len(blocks) == n:
+            return list(blocks)
+        if len(blocks) == 1:
+            return list(blocks) * n
+        if not require_list and all(isinstance(b, (str, dict)) for b in blocks):
+            # A single block expressed as a list of rows, common to all pages.
+            return [blocks] * n
+        raise ValueError(
+            f"Expected {n} blocks (one per page) or 1 (common to all); got {len(blocks)}."
+        )
+    return [blocks] * n
 
 
 # -- render driver ------------------------------------------------------------

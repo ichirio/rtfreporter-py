@@ -5,9 +5,18 @@ from rtfreporter import rtftable, style_header
 
 
 def test_default_header_alignment_center():
-    t = rtftable({"A": [1]})
-    assert t.col_spec[0].header_align is None  # resolves to center at render
-    assert "\\qc\\li0\\ri0 A\\cell" in render(t)
+    # A non-row-title column defaults to center for both body and header.
+    t = rtftable({"A": [1], "B": [2]})
+    assert t.col_spec[1].header_align == "center"
+    assert "\\qc\\li0\\ri0 B\\cell" in render(t)
+
+
+def test_row_title_column_header_left():
+    # The first (row-title) column defaults to left, and the header follows.
+    t = rtftable({"A": [1], "B": [2]})
+    assert t.col_spec[0].align == "left"
+    assert t.col_spec[0].header_align == "left"
+    assert "\\ql\\li0\\ri0 A\\cell" in render(t)
 
 
 def test_col_header_align_string_broadcast():
@@ -67,8 +76,8 @@ def test_header_italic_flag_renders():
 
 
 def test_body_align_does_not_leak_to_header_render_when_center():
-    t = rtftable({"A": [1]})  # both default
+    # An explicit centered body column keeps its header centered too.
+    t = rtftable({"A": [1], "B": [2]}, col_spec=[{"col": 1, "align": "center"}])
     rtf = render(t)
-    # header centered, data left
-    assert "\\qc\\li0\\ri0 A\\cell" in rtf   # header
-    assert "\\ql\\li0\\ri0 1\\cell" in rtf   # data
+    assert "\\qc\\li0\\ri0 B\\cell" in rtf   # header follows center body align
+    assert "\\qc\\li0\\ri0 2\\cell" in rtf   # data

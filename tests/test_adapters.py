@@ -103,7 +103,7 @@ def test_stub_cols_indented():
     df = pd.DataFrame(
         {"Group": ["Age", "Age", "Sex"], "Stat": ["n", "Mean", "Male"], "Val": [86, 75, 40]}
     )
-    t = rr.as_rtftable(df, stub_cols=["Group", "Stat"], stub_label="")
+    t = rr.as_rtftable(df, stub_vars=["Group", "Stat"], stub_label="")
     stub_col = [r[0] for r in t.rows]
     assert "Age" in stub_col
     assert any(s.strip() == "n" and s.startswith(" ") for s in stub_col)

@@ -32,8 +32,8 @@ from rtfreporter import RtfDocument, header, footer
 doc = (
     RtfDocument()
     .add_section(
-        header=header([{"l": "Protocol XYZ", "r": "Page {AUTO_PAGE} of {AUTO_TOTAL_PAGES}"}]),
-        footer=footer([{"c": "CONFIDENTIAL"}]),
+        header=rtf_header([{"l": "Protocol XYZ", "r": "Page {AUTO_PAGE} of {AUTO_TOTAL_PAGES}"}]),
+        footer=rtf_footer([{"c": "CONFIDENTIAL"}]),
     )
     .add_table(
         {"Subject": ["001", "002", "003"], "Age": [34, 45, 28], "Sex": ["M", "F", "M"]},

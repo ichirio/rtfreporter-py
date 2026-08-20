@@ -1,7 +1,11 @@
 """Blank separator rows: specs, resolution, and rendering (blank-rows, set-blank-rows)."""
 
+import pytest
+
 from helpers import render
 from rtfreporter import (
+    AFTER_LAST,
+    BEFORE_FIRST,
     blank_rows_by_change,
     blank_rows_by_rule,
     rtftable,
@@ -10,23 +14,30 @@ from rtfreporter.blank_rows import BlankRowsByChange, BlankRowsByRule
 
 
 def test_integer_position_after_first():
+    # 0-based: position 1 = after data row 1 -> internal position 2.
     t = rtftable({"A": [1, 2, 3]}, blank_rows=[1])
-    assert t.blank_rows == [1]
+    assert t.blank_rows == [2]
 
 
-def test_integer_before_first_zero():
-    t = rtftable({"A": [1, 2]}, blank_rows=[0])
+def test_before_first_sentinel():
+    t = rtftable({"A": [1, 2]}, blank_rows=[BEFORE_FIRST])
     assert 0 in t.blank_rows
 
 
-def test_negative_one_is_after_last():
-    t = rtftable({"A": [1, 2, 3]}, blank_rows=[-1])
+def test_after_last_sentinel():
+    t = rtftable({"A": [1, 2, 3]}, blank_rows=[AFTER_LAST])
     assert t.blank_rows == [3]
 
 
+def test_bare_negative_int_raises():
+    with pytest.raises(ValueError, match="AFTER_LAST"):
+        rtftable({"A": [1, 2, 3]}, blank_rows=[-1])
+
+
 def test_multiple_positions_sorted_unique():
+    # after rows 3 and 1 -> internal 4 and 2.
     t = rtftable({"A": [1, 2, 3, 4]}, blank_rows=[3, 1, 1])
-    assert t.blank_rows == [1, 3]
+    assert t.blank_rows == [2, 4]
 
 
 def test_positions_clamped_to_valid_range():
@@ -88,7 +99,7 @@ def test_by_rule_bad_where_raises():
 def test_mixed_spec_list_unions_positions():
     t = rtftable(
         {"g": ["A", "A", "B"]},
-        blank_rows=[0, blank_rows_by_change("g")],
+        blank_rows=[BEFORE_FIRST, blank_rows_by_change("g")],
     )
     assert 0 in t.blank_rows and 2 in t.blank_rows
 
@@ -105,7 +116,7 @@ def test_blank_row_rendered_in_rtf():
 
 
 def test_blank_row_before_first_rendered():
-    t = rtftable({"A": [1]}, blank_rows=[0])
+    t = rtftable({"A": [1]}, blank_rows=[BEFORE_FIRST])
     rtf = render(t)
     assert rtf.count("\\row") == 3  # header + blank + data
 

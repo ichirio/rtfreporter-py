@@ -6,6 +6,47 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Breaking changes
+
+- **The public API was renamed to match the R package (a clean break; no
+  aliases were kept).**  The un-prefixed constructor names are gone; use the
+  `rtf_`-prefixed R spellings instead:
+  `border_side → rtf_border_side`, `border → rtf_border`,
+  `border_none → rtf_border_none`, `border_top → rtf_border_top`,
+  `border_bottom → rtf_border_bottom`, `border_box → rtf_border_box`,
+  `border_tfl → rtf_border_tfl`, `header → rtf_header`, `footer → rtf_footer`,
+  `document → rtf_document`.  The Python class names (`RtfTable`, `RtfDocument`,
+  `ColSpec`, ...) and the fluent `RtfDocument` methods are unchanged.
+- **`blank_rows` positions are now 0-based** (position `i` inserts a blank row
+  *after* data row `i`) and the two R sentinels are the named, importable
+  constants **`BEFORE_FIRST`** (R's `0`) and **`AFTER_LAST`** (R's `-1`).  A
+  bare negative integer now raises an error pointing at `AFTER_LAST`.  Previous
+  code passing `0` / `-1` must switch to `BEFORE_FIRST` / `AFTER_LAST`, and a
+  bare integer `k` now means "after data row `k`" (one row later than before).
+- **`as_rtftables()` / `as_rtftable()`: the `stub_cols=` argument was renamed to
+  `stub_vars=`** (matching R, where `stub_vars` is the argument and `stub_cols()`
+  is a separate function).
+- **Default column alignment now follows R's `row_title` rule**: the first
+  column (the row-title/stub column) defaults to left-aligned and every other
+  column defaults to centre-aligned, with the column header following the body
+  alignment.  Previously every column defaulted to left.
+
+### Added
+
+- **R-aligned module-level API (the primary documented surface).**  New
+  constructors mirroring the R exports: `rtf_document`, `rtf_tables`,
+  `rtf_figures`, `rtf_titles`, `rtf_footnotes`, `rtf_section`,
+  `generate_rtfreport` (the R pipe API), plus `rtf_page`, `rtf_col_header`, and
+  `rtf_table_border`.
+- **New `rtftable()` arguments** matching R: `spanning_header`, `row_title`,
+  `read_attributes`, `style`, and `table_width_pct_of_writable`.
+- **New `as_rtftables()` arguments** matching R: `group_by`, `align_count_pct`,
+  `cell_format`, `auto_width`, `table_width_twips`, `stub_group_summary`,
+  `count_blank_rows`, and `style`.  The not-yet-ported paths (`group_by` other
+  than `"auto"`, `count_blank_rows=True`, `cell_format`, `auto_width`,
+  `stub_group_summary="parent"`) raise a clear `NotImplementedError`.
+- **`BEFORE_FIRST` / `AFTER_LAST`** blank-row sentinel constants.
+
 ### Added
 
 - **Full-featured `great_tables` (GT) adapter** (`rtfreporter.gt_adapter`).

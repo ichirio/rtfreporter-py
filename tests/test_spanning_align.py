@@ -5,14 +5,17 @@ from rtfreporter import col_cell, rtftable
 
 
 def _span_table(**cell_kwargs):
+    # Span covers B/C (non-row-title, so they default to center alignment); the
+    # first column A is the row-title column and defaults to left.
     return rtftable(
         {"A": [1], "B": [2], "C": [3]},
-        col_header=[[col_cell((0, 1), "Span", **cell_kwargs), col_cell(2, "C")], ["A", "B", "C"]],
+        col_header=[[col_cell(0, "A"), col_cell((1, 2), "Span", **cell_kwargs)], ["A", "B", "C"]],
         border="none",
     )
 
 
 def test_span_default_center():
+    # The leftmost covered column (B) defaults to center, so the span does too.
     assert "\\qc\\li0\\ri0 Span\\cell" in render(_span_table())
 
 

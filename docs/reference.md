@@ -3,11 +3,28 @@
 Auto-generated from the source docstrings. Everything here is importable
 directly from the top-level `rtfreporter` package.
 
-## Document
+The module-level functions mirror the R API (`rtf_document`, `rtf_tables`,
+`rtf_header`, `rtf_border`, ...). Two deliberate divergences from R:
+**all index-taking arguments are 0-based**, and the `blank_rows` sentinels are
+the named constants `BEFORE_FIRST` / `AFTER_LAST`.
+
+## Document and the pipe API
 
 ::: rtfreporter.document.RtfDocument
 
-::: rtfreporter.document.document
+::: rtfreporter.document.rtf_document
+
+::: rtfreporter.document.rtf_tables
+
+::: rtfreporter.document.rtf_figures
+
+::: rtfreporter.document.rtf_titles
+
+::: rtfreporter.document.rtf_footnotes
+
+::: rtfreporter.document.rtf_section
+
+::: rtfreporter.document.generate_rtfreport
 
 ::: rtfreporter.document.to_rtf
 
@@ -27,6 +44,8 @@ directly from the top-level `rtfreporter` package.
 
 ::: rtfreporter.table.col_cell
 
+::: rtfreporter.table.rtf_col_header
+
 ## Adapters
 
 ::: rtfreporter.adapters.as_rtftable
@@ -43,13 +62,15 @@ directly from the top-level `rtfreporter` package.
 
 ## Headers and footers
 
-::: rtfreporter.header_footer.header
+::: rtfreporter.header_footer.rtf_header
 
-::: rtfreporter.header_footer.footer
+::: rtfreporter.header_footer.rtf_footer
 
 ::: rtfreporter.header_footer.HeaderFooter
 
 ## Page and defaults
+
+::: rtfreporter.page.rtf_page
 
 ::: rtfreporter.page.Page
 
@@ -63,19 +84,21 @@ directly from the top-level `rtfreporter` package.
 
 ::: rtfreporter.borders.TableBorder
 
-::: rtfreporter.borders.border_side
+::: rtfreporter.borders.rtf_border_side
 
-::: rtfreporter.borders.border
+::: rtfreporter.borders.rtf_border
 
-::: rtfreporter.borders.border_none
+::: rtfreporter.borders.rtf_border_none
 
-::: rtfreporter.borders.border_top
+::: rtfreporter.borders.rtf_border_top
 
-::: rtfreporter.borders.border_bottom
+::: rtfreporter.borders.rtf_border_bottom
 
-::: rtfreporter.borders.border_box
+::: rtfreporter.borders.rtf_border_box
 
-::: rtfreporter.borders.border_tfl
+::: rtfreporter.borders.rtf_border_tfl
+
+::: rtfreporter.borders.rtf_table_border
 
 ## Figures
 
@@ -84,6 +107,10 @@ directly from the top-level `rtfreporter` package.
 ::: rtfreporter.figure.Figure
 
 ## Blank rows
+
+::: rtfreporter.blank_rows.BEFORE_FIRST
+
+::: rtfreporter.blank_rows.AFTER_LAST
 
 ::: rtfreporter.blank_rows.blank_rows_by_change
 

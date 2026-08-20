@@ -97,8 +97,9 @@ def test_none_labels_become_empty_strings():
 
 
 def test_spanning_label_centered_by_default():
+    # A span over non-row-title columns (B, C) defaults to center alignment.
     t = rtftable(
-        {"A": [1], "B": [2]},
-        col_header=[[col_cell((0, 1), "Center")], ["A", "B"]],
+        {"A": [1], "B": [2], "C": [3]},
+        col_header=[[col_cell(0, "A"), col_cell((1, 2), "Center")], ["A", "B", "C"]],
     )
     assert "\\qc\\li0\\ri0 Center\\cell" in render(t)

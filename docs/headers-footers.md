@@ -17,8 +17,8 @@ from rtfreporter import RtfDocument, header, footer
 doc = (
     RtfDocument()
     .add_section(
-        header=header([{"l": "Protocol XYZ-001", "r": "Confidential"}]),
-        footer=footer([{"c": "ACME Pharma, Inc."}]),
+        header=rtf_header([{"l": "Protocol XYZ-001", "r": "Confidential"}]),
+        footer=rtf_footer([{"c": "ACME Pharma, Inc."}]),
     )
     .add_table({"A": [1, 2, 3]})
 )
@@ -36,9 +36,9 @@ Start a second section at a later page with `from_page`:
 ```python
 doc = (
     RtfDocument()
-    .add_section(header=header([{"c": "Section 1"}]), from_page=1)
+    .add_section(header=rtf_header([{"c": "Section 1"}]), from_page=1)
     .add_table({"A": [1]})
-    .add_section(header=header([{"c": "Section 2"}]), from_page=2)
+    .add_section(header=rtf_header([{"c": "Section 2"}]), from_page=2)
     .add_table({"A": [2]})
 )
 ```
@@ -52,11 +52,11 @@ A band is a stack of rows; each row has one to three columns keyed by position:
 - a short **sequence** → `[c]`, `[l, r]`, or `[l, c, r]`.
 
 ```python
-hdr = header([
+hdr = rtf_header([
     {"l": "Protocol XYZ-001", "r": "Confidential"},
     {"l": "Table 14.1.1",     "r": "Page {AUTO_PAGE} of {AUTO_TOTAL_PAGES}"},
 ])
-ftr = footer(["ACME Pharma, Inc."])
+ftr = rtf_footer(["ACME Pharma, Inc."])
 ```
 
 ## Page-number tokens
@@ -77,8 +77,8 @@ numbers during rendering; using `{PAGE}` causes each page to be emitted as its
 own section so the number bakes in distinctly.
 
 ```python
-header([{"r": "Page {AUTO_PAGE} of {AUTO_TOTAL_PAGES}"}])   # live field
-header([{"r": "Page {PAGE}"}])                              # baked number
+rtf_header([{"r": "Page {AUTO_PAGE} of {AUTO_TOTAL_PAGES}"}])   # live field
+rtf_header([{"r": "Page {PAGE}"}])                              # baked number
 ```
 
 ## Band options

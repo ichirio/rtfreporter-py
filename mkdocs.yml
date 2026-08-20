@@ -57,6 +57,7 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Getting started: getting-started.md
+  - Differences from R: r-differences.md
   - Articles:
       - Importing tables: importing-tables.md
       - Pagination: pagination.md

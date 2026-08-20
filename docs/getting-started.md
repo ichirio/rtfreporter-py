@@ -83,8 +83,8 @@ from rtfreporter import RtfDocument, header, footer
 doc = (
     RtfDocument()
     .add_section(
-        header=header([{"l": "Protocol XYZ", "r": "Page {AUTO_PAGE} of {AUTO_TOTAL_PAGES}"}]),
-        footer=footer([{"c": "CONFIDENTIAL"}]),
+        header=rtf_header([{"l": "Protocol XYZ", "r": "Page {AUTO_PAGE} of {AUTO_TOTAL_PAGES}"}]),
+        footer=rtf_footer([{"c": "CONFIDENTIAL"}]),
     )
     .add_table({"A": [1, 2, 3]})
 )

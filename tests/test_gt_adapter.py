@@ -372,7 +372,7 @@ def test_stub_cols_rejected_for_gt(base_df):
         style=style.text(weight="bold"), locations=loc.body(columns="n", rows=[0])
     )
     with pytest.raises(ValueError, match="not supported for great_tables"):
-        rr.as_rtftables(t, stub_cols=[0])
+        rr.as_rtftables(t, stub_vars=[0])
 
 
 # -- end-to-end ---------------------------------------------------------------

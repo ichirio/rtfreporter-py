@@ -6,8 +6,8 @@ from rtfreporter import (
     Page,
     RtfDocument,
     col_cell,
-    footer,
-    header,
+    rtf_footer,
+    rtf_header,
     rtftable,
 )
 from rtfreporter.render import compute_cellx
@@ -57,8 +57,8 @@ def test_header_footer_bands():
     doc = (
         RtfDocument()
         .add_section(
-            header=header([{"l": "Proto", "r": "Page {AUTO_PAGE}"}]),
-            footer=footer([{"c": "CONF"}]),
+            header=rtf_header([{"l": "Proto", "r": "Page {AUTO_PAGE}"}]),
+            footer=rtf_footer([{"c": "CONF"}]),
         )
         .add_table({"A": [1]})
     )
@@ -77,9 +77,9 @@ def test_pagination_multiple_pages_page_break():
 def test_sections_use_section_break():
     doc = (
         RtfDocument()
-        .add_section(header=header([{"c": "Sec1"}]), from_page=1)
+        .add_section(header=rtf_header([{"c": "Sec1"}]), from_page=1)
         .add_table({"A": [1]})
-        .add_section(header=header([{"c": "Sec2"}]), from_page=2)
+        .add_section(header=rtf_header([{"c": "Sec2"}]), from_page=2)
         .add_table({"A": [2]})
     )
     rtf = doc.to_rtf()
@@ -90,7 +90,7 @@ def test_sections_use_section_break():
 def test_static_page_token_promotes_to_sections():
     doc = (
         RtfDocument()
-        .add_section(header=header([{"r": "Page {PAGE}"}]))
+        .add_section(header=rtf_header([{"r": "Page {PAGE}"}]))
         .add_tables([{"A": [1]}, {"A": [2]}])
     )
     rtf = doc.to_rtf()

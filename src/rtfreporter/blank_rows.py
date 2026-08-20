@@ -1,15 +1,64 @@
 """Blank separator-row specifications.
 
-Ported from ``R/blank_rows.R``.  Blank-row positions are 1-based "insert after
-data row *p*" markers, with ``0`` meaning "before the first row" and ``-1`` /
-``nrows`` meaning "after the last row".  Specs are resolved against the table
-body at construction time.
+Ported from ``R/blank_rows.R``.
+
+**0-based position convention (a deliberate divergence from R).**  A bare
+integer position ``i`` means *insert a blank row after data row* ``i`` (rows are
+0-based, so ``0`` is the first data row).  The two R sentinels ``0`` (before the
+first row) and ``-1`` (after the last row) are replaced by the named,
+importable constants :data:`BEFORE_FIRST` and :data:`AFTER_LAST`.  They are
+distinct sentinel objects -- **not** bare integers -- so a stray ``-1`` cannot
+be silently misread as "after the last row"; passing a bare negative integer
+raises a clear error pointing at :data:`AFTER_LAST`.
+
+Example::
+
+    rtftable(data, blank_rows=[BEFORE_FIRST, 2, AFTER_LAST])
+
+inserts a blank row before the first data row, after data row ``2`` (the third
+row), and after the last data row.
+
+R-to-Python mapping:
+
+===================  ==========================
+R ``blank_rows``     Python ``blank_rows``
+===================  ==========================
+``0``                ``BEFORE_FIRST``
+``k`` (1-based)      ``k - 1`` (0-based int)
+``-1``               ``AFTER_LAST``
+===================  ==========================
+
+Specs are resolved against the table body at construction time.
 """
 
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+
+
+class _BlankRowSentinel:
+    """A distinct, importable blank-row position marker.
+
+    Used for :data:`BEFORE_FIRST` and :data:`AFTER_LAST` so that positions like
+    "before the first row" / "after the last row" are explicit named values
+    rather than magic integers.
+    """
+
+    __slots__ = ("_name",)
+
+    def __init__(self, name: str) -> None:
+        self._name = name
+
+    def __repr__(self) -> str:  # pragma: no cover - trivial
+        return self._name
+
+
+#: Insert a blank row *before* the first data row (R's ``0`` sentinel).
+BEFORE_FIRST = _BlankRowSentinel("BEFORE_FIRST")
+
+#: Insert a blank row *after* the last data row (R's ``-1`` sentinel).
+AFTER_LAST = _BlankRowSentinel("AFTER_LAST")
 
 
 @dataclass

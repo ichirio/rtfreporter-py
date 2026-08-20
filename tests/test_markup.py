@@ -10,7 +10,7 @@ from rtfreporter._escape import (
     resolve_markup,
     uses_static_page_token,
 )
-from rtfreporter.header_footer import header
+from rtfreporter.header_footer import rtf_header
 
 # -- escaping -----------------------------------------------------------------
 
@@ -131,11 +131,11 @@ def test_token_section_pages_field():
 
 
 def test_uses_static_page_token_true():
-    assert uses_static_page_token(header([{"r": "Page {PAGE}"}]))
+    assert uses_static_page_token(rtf_header([{"r": "Page {PAGE}"}]))
 
 
 def test_uses_static_page_token_false_for_auto():
-    assert not uses_static_page_token(header([{"r": "Page {AUTO_PAGE}"}]))
+    assert not uses_static_page_token(rtf_header([{"r": "Page {AUTO_PAGE}"}]))
 
 
 def test_uses_static_page_token_none():

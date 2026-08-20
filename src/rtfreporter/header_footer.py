@@ -68,7 +68,7 @@ class HeaderFooter:
         self.rows = [_normalize_row(r) for r in self.rows]
 
 
-def header(
+def rtf_header(
     rows,
     border: Border | None = None,
     row_height_twips: int | None = None,
@@ -94,7 +94,7 @@ def header(
     )
 
 
-def footer(
+def rtf_footer(
     rows,
     border: Border | None = None,
     row_height_twips: int | None = None,
@@ -102,7 +102,7 @@ def footer(
     cell_padding_right_twips: int | None = None,
     width_twips: int | None = None,
 ) -> HeaderFooter:
-    """Build a page-footer band (same shape as :func:`header`)."""
+    """Build a page-footer band (same shape as :func:`rtf_header`)."""
     return HeaderFooter(
         rows=list(rows),
         border=border,

@@ -16,7 +16,7 @@ import os
 
 import pandas as pd
 
-from rtfreporter import RtfDocument, footer, header
+from rtfreporter import RtfDocument, rtf_footer, rtf_header
 
 
 def make_data(n_per_group: int = 8) -> pd.DataFrame:
@@ -43,8 +43,8 @@ def build() -> RtfDocument:
     pages = as_rtftables_pages(df)
 
     doc = RtfDocument().add_section(
-        header=header([{"l": "Protocol XYZ-123", "r": "Page {AUTO_PAGE} of {AUTO_TOTAL_PAGES}"}]),
-        footer=footer([{"c": "Confidential -- Draft"}]),
+        header=rtf_header([{"l": "Protocol XYZ-123", "r": "Page {AUTO_PAGE} of {AUTO_TOTAL_PAGES}"}]),
+        footer=rtf_footer([{"c": "Confidential -- Draft"}]),
     )
     for page in pages:
         doc.add_table(

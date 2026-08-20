@@ -5,9 +5,9 @@ from rtfreporter import (
     DefaultFormat,
     Page,
     RtfDocument,
-    document,
-    footer,
-    header,
+    rtf_document,
+    rtf_footer,
+    rtf_header,
     rtftable,
     save,
     to_rtf,
@@ -84,8 +84,8 @@ def test_two_pages_page_break():
 def test_header_and_footer_bands():
     doc = (
         RtfDocument()
-        .add_section(header=header([{"l": "P", "r": "Page {AUTO_PAGE}"}]),
-                     footer=footer([{"c": "CONF"}]))
+        .add_section(header=rtf_header([{"l": "P", "r": "Page {AUTO_PAGE}"}]),
+                     footer=rtf_footer([{"c": "CONF"}]))
         .add_table({"A": [1]})
     )
     rtf = doc.to_rtf()
@@ -97,7 +97,7 @@ def test_header_and_footer_bands():
 def test_static_page_token_bakes_numbers():
     doc = (
         RtfDocument()
-        .add_section(header=header([{"r": "Page {PAGE}"}]))
+        .add_section(header=rtf_header([{"r": "Page {PAGE}"}]))
         .add_tables([{"A": [1]}, {"A": [2]}])
     )
     rtf = doc.to_rtf()
@@ -107,7 +107,7 @@ def test_static_page_token_bakes_numbers():
 def test_section_inherits_previous_header():
     doc = (
         RtfDocument()
-        .add_section(header=header([{"c": "Hdr"}]), from_page=1)
+        .add_section(header=rtf_header([{"c": "Hdr"}]), from_page=1)
         .add_table({"A": [1]})
         .add_section(from_page=2)  # header=None -> inherit
         .add_table({"A": [2]})
@@ -119,9 +119,9 @@ def test_section_inherits_previous_header():
 def test_two_sections_distinct_headers():
     doc = (
         RtfDocument()
-        .add_section(header=header([{"c": "Sec1"}]), from_page=1)
+        .add_section(header=rtf_header([{"c": "Sec1"}]), from_page=1)
         .add_table({"A": [1]})
-        .add_section(header=header([{"c": "Sec2"}]), from_page=2)
+        .add_section(header=rtf_header([{"c": "Sec2"}]), from_page=2)
         .add_table({"A": [2]})
     )
     rtf = doc.to_rtf()
@@ -136,13 +136,13 @@ def test_empty_document_valid():
 # -- functional layer ---------------------------------------------------------
 
 def test_functional_document_and_to_rtf():
-    doc = document().add_table({"A": [1]})
+    doc = rtf_document().add_table({"A": [1]})
     assert to_rtf(doc) == doc.to_rtf()
 
 
 def test_save_writes_file(tmp_path):
     p = tmp_path / "out.rtf"
-    doc = document().add_table({"A": [1]})
+    doc = rtf_document().add_table({"A": [1]})
     save(doc, str(p))
     text = p.read_text()
     assert text.startswith("{\\rtf1")
