@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://ichirio.github.io/rtfreporter-py/borders/">
+        <link rel="canonical" href="https://ichirio.github.io/rtfreporter-py/r-differences/">
       
       
-        <link rel="prev" href="../pagination/">
+        <link rel="prev" href="../getting-started/">
       
       
-        <link rel="next" href="../headers-footers/">
+        <link rel="next" href="../importing-tables/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Borders and rules - rtfreporter</title>
+        <title>Differences from R - rtfreporter</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#borders-and-rules" class="md-skip">
+        <a href="#differences-from-the-r-package" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Borders and rules
+              Differences from R
             
           </span>
         </div>
@@ -313,10 +313,37 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../r-differences/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Differences from R
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -332,6 +359,76 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-indices-are-0-based" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Indices are 0-based
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-blank_rows-sentinels-are-named-constants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. blank_rows sentinels are named constants
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. blank_rows sentinels are named constants">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#r-python-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R → Python mapping
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#everything-else-matches-r" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Everything else matches R
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -340,8 +437,6 @@
       
   
   
-    
-  
   
   
     
@@ -354,11 +449,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
           <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
@@ -379,7 +474,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
@@ -450,37 +545,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Borders and rules
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../borders/" class="md-nav__link">
         
   
   
@@ -496,70 +564,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#level-1-a-preset" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Level 1 — a preset
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#level-2-zones-with-tableborder" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Level 2 — zones with TableBorder
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#level-3-one-cell-column" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Level 3 — one cell / column
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#side-styles-widths-and-colours" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Side styles, widths and colours
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -738,10 +742,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#level-1-a-preset" class="md-nav__link">
+  <a href="#1-indices-are-0-based" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Level 1 — a preset
+        1. Indices are 0-based
       
     </span>
   </a>
@@ -749,32 +753,38 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#level-2-zones-with-tableborder" class="md-nav__link">
+  <a href="#2-blank_rows-sentinels-are-named-constants" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Level 2 — zones with TableBorder
+        2. blank_rows sentinels are named constants
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. blank_rows sentinels are named constants">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#r-python-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R → Python mapping
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#level-3-one-cell-column" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Level 3 — one cell / column
-      
-    </span>
-  </a>
+        
+      </ul>
+    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#side-styles-widths-and-colours" class="md-nav__link">
+  <a href="#everything-else-matches-r" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Side styles, widths and colours
+        Everything else matches R
       
     </span>
   </a>
@@ -801,109 +811,67 @@
   
 
 
-<h1 id="borders-and-rules">Borders and rules<a class="headerlink" href="#borders-and-rules" title="Permanent link">&para;</a></h1>
-<p>Clinical tables live and die by their rules: a top and bottom line around the
-column header, a group underline beneath a spanning label, an occasional rule
-under the last data row. <code>rtfreporter</code> gives three levels of control, from a
-one-word preset down to a single cell.</p>
-<p>The border objects are immutable records, so a border you build can be reused
-across tables safely. The vocabulary is small:</p>
+<h1 id="differences-from-the-r-package">Differences from the R package<a class="headerlink" href="#differences-from-the-r-package" title="Permanent link">&para;</a></h1>
+<p><code>rtfreporter</code> (Python) follows the R package's function names, argument names,
+argument order, and defaults as closely as possible.  There are <strong>two
+deliberate divergences</strong>, both chosen for Pythonic ergonomics.</p>
+<h2 id="1-indices-are-0-based">1. Indices are 0-based<a class="headerlink" href="#1-indices-are-0-based" title="Permanent link">&para;</a></h2>
+<p>Every index-taking argument is <strong>0-based</strong> (R is 1-based).  A column <em>name</em> may
+be used anywhere an index is accepted.  This applies to, among others:</p>
 <ul>
-<li><a href="../reference/#rtfreporter.borders.border_side"><code>rtf_border_side(style, width, color)</code></a>
-  — one <strong>edge</strong> (a line).</li>
-<li><a href="../reference/#rtfreporter.borders.border"><code>rtf_border(top, bottom, left, right)</code></a>
-  — the four edges of one <strong>cell/row</strong> (<a href="../reference/#rtfreporter.borders.Border"><code>Border</code></a>).</li>
-<li><a href="../reference/#rtfreporter.borders.TableBorder"><code>TableBorder</code></a> — the per-<strong>zone</strong> borders of a whole table.</li>
+<li><code>drop_cols</code>, <code>sort_by</code>, <code>group_col</code>, <code>collapse_repeats</code>, <code>stub_vars</code></li>
+<li><code>col_cell(pos=...)</code> — the R <strong>inclusive</strong> two-element range semantics are
+  kept, just 0-based: <code>col_cell((1, 3), "Treatment")</code> spans columns 1, 2, and 3.
+  Validation requires <code>start &gt;= 0</code> and <code>start &lt;= end</code>.</li>
+<li><code>row_title</code></li>
+<li><code>cell_styles</code> row keys</li>
 </ul>
-<h2 id="level-1-a-preset">Level 1 — a preset<a class="headerlink" href="#level-1-a-preset" title="Permanent link">&para;</a></h2>
-<p>The <code>border</code> argument of <code>rtftable()</code> (and <code>as_rtftables()</code>) accepts a shorthand
-string:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="n">rtftable</span>
+<p>For example, R's <code>col_cell(pos = c(2, 5), "Treatment")</code> becomes
+<code>col_cell((1, 4), "Treatment")</code> in Python.</p>
+<h2 id="2-blank_rows-sentinels-are-named-constants">2. <code>blank_rows</code> sentinels are named constants<a class="headerlink" href="#2-blank_rows-sentinels-are-named-constants" title="Permanent link">&para;</a></h2>
+<p>R uses magic integers for the two special blank-row positions: <code>0</code> = <em>before
+the first row</em> and <code>-1</code> = <em>after the last row</em>.  Python replaces these with two
+<strong>distinct, importable sentinel objects</strong> so a stray <code>-1</code> cannot be silently
+misread:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="n">rtftable</span><span class="p">,</span> <span class="n">BEFORE_FIRST</span><span class="p">,</span> <span class="n">AFTER_LAST</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">tbl</span> <span class="o">=</span> <span class="n">rtftable</span><span class="p">({</span><span class="s2">"Parameter"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Age"</span><span class="p">],</span> <span class="s2">"Value"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"75.1"</span><span class="p">]},</span> <span class="n">border</span><span class="o">=</span><span class="s2">"tfl"</span><span class="p">)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">rtftable</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">blank_rows</span><span class="o">=</span><span class="p">[</span><span class="n">BEFORE_FIRST</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">AFTER_LAST</span><span class="p">])</span>
 </code></pre></div>
-<ul>
-<li><code>"tfl"</code> — the clinical preset: a rule on <strong>top of the first</strong> header row and
-  <strong>below the last</strong> header row; a multi-column spanning cell gets an automatic
-  group underline where the grouping changes below it; the data area has <strong>no</strong>
-  borders. This is the default.</li>
-<li><code>"none"</code> (or <code>None</code>) — no borders anywhere.</li>
-</ul>
-<p><code>"tfl"</code> is exactly <a href="../reference/#rtfreporter.borders.border_tfl"><code>rtf_border_tfl()</code></a>.</p>
-<h2 id="level-2-zones-with-tableborder">Level 2 — zones with <code>TableBorder</code><a class="headerlink" href="#level-2-zones-with-tableborder" title="Permanent link">&para;</a></h2>
-<p>When the preset is not enough, build the zones yourself. A table has five border
-zones:</p>
+<p>A bare integer position is <strong>0-based</strong> and means "insert a blank row <em>after</em>
+data row <code>i</code>".  A bare negative integer raises an error pointing at
+<code>AFTER_LAST</code>.</p>
+<h3 id="r-python-mapping">R → Python mapping<a class="headerlink" href="#r-python-mapping" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
-<th>Zone</th>
-<th>Applies to</th>
+<th>R <code>blank_rows</code></th>
+<th>Python <code>blank_rows</code></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>header</code></td>
-<td>the column-header label rows</td>
+<td><code>0</code></td>
+<td><code>BEFORE_FIRST</code></td>
 </tr>
 <tr>
-<td><code>spanning</code></td>
-<td>the spanning-header rows</td>
+<td><code>k</code> (1-based, after row <code>k</code>)</td>
+<td><code>k - 1</code> (0-based int)</td>
 </tr>
 <tr>
-<td><code>body</code></td>
-<td>every data row</td>
-</tr>
-<tr>
-<td><code>first_row</code></td>
-<td>override merged on top of the first data row</td>
-</tr>
-<tr>
-<td><code>last_row</code></td>
-<td>override merged on top of the last data row</td>
+<td><code>-1</code></td>
+<td><code>AFTER_LAST</code></td>
 </tr>
 </tbody>
 </table>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="n">rtftable</span><span class="p">,</span> <span class="n">TableBorder</span><span class="p">,</span> <span class="n">Border</span><span class="p">,</span> <span class="n">BorderSide</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">thin</span> <span class="o">=</span> <span class="n">BorderSide</span><span class="p">(</span><span class="s2">"single"</span><span class="p">,</span> <span class="mi">15</span><span class="p">)</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">tb</span> <span class="o">=</span> <span class="n">TableBorder</span><span class="p">(</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">header</span><span class="o">=</span><span class="n">Border</span><span class="p">(</span><span class="n">top</span><span class="o">=</span><span class="n">thin</span><span class="p">,</span> <span class="n">bottom</span><span class="o">=</span><span class="n">thin</span><span class="p">),</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">last_row</span><span class="o">=</span><span class="n">Border</span><span class="p">(</span><span class="n">bottom</span><span class="o">=</span><span class="n">BorderSide</span><span class="p">(</span><span class="s2">"single"</span><span class="p">,</span> <span class="mi">20</span><span class="p">)),</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="p">)</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="n">tbl</span> <span class="o">=</span> <span class="n">rtftable</span><span class="p">({</span><span class="s2">"Parameter"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Age"</span><span class="p">],</span> <span class="s2">"Value"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"75.1"</span><span class="p">]},</span> <span class="n">border</span><span class="o">=</span><span class="n">tb</span><span class="p">)</span>
-</code></pre></div>
-<p><code>first_row</code> / <code>last_row</code> are <em>overrides</em> merged on top of <code>body</code>, so you can set
-a body rule and still special-case the edges.</p>
-<h2 id="level-3-one-cell-column">Level 3 — one cell / column<a class="headerlink" href="#level-3-one-cell-column" title="Permanent link">&para;</a></h2>
-<p>A single <code>Border</code> passed as the <code>border</code> argument applies to the <strong>header</strong> zone
-(a common shorthand). For per-column control, set the <code>border</code> field of a
-<code>col_spec</code> entry, or use the <a href="../styling/"><code>style_zone</code></a> verb after construction:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="n">rtftable</span><span class="p">,</span> <span class="n">style_zone</span><span class="p">,</span> <span class="n">Border</span><span class="p">,</span> <span class="n">BorderSide</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">tbl</span> <span class="o">=</span> <span class="n">rtftable</span><span class="p">({</span><span class="s2">"A"</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">"B"</span><span class="p">:</span> <span class="p">[</span><span class="mi">2</span><span class="p">]},</span> <span class="n">border</span><span class="o">=</span><span class="s2">"tfl"</span><span class="p">)</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">tbl</span> <span class="o">=</span> <span class="n">style_zone</span><span class="p">(</span><span class="n">tbl</span><span class="p">,</span> <span class="s2">"last_row"</span><span class="p">,</span> <span class="n">Border</span><span class="p">(</span><span class="n">bottom</span><span class="o">=</span><span class="n">BorderSide</span><span class="p">(</span><span class="s2">"double"</span><span class="p">,</span> <span class="mi">20</span><span class="p">)))</span>
-</code></pre></div>
-<h2 id="side-styles-widths-and-colours">Side styles, widths and colours<a class="headerlink" href="#side-styles-widths-and-colours" title="Permanent link">&para;</a></h2>
-<p>A <code>BorderSide</code> has three fields:</p>
-<ul>
-<li><code>style</code> — <code>"single"</code> (default), <code>"double"</code>, <code>"thick"</code>, <code>"dash"</code>, <code>"dot"</code>, or
-  <code>"none"</code>;</li>
-<li><code>width</code> — line weight in twips (default <code>15</code> ≈ 0.5 pt);</li>
-<li><code>color</code> — <code>None</code> (black) or a 6-digit hex string such as <code>"#003366"</code>.</li>
-</ul>
-<p><code>style="none"</code> is an <strong>explicit no-line</strong> that <em>removes</em> an inherited border when
-merged on top of another spec — distinct from <code>None</code>, which simply leaves the
-side unset. Any colour you reference is automatically collected into the RTF
-colour table.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="n">BorderSide</span><span class="p">,</span> <span class="n">Border</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">navy_rule</span> <span class="o">=</span> <span class="n">Border</span><span class="p">(</span><span class="n">bottom</span><span class="o">=</span><span class="n">BorderSide</span><span class="p">(</span><span class="s2">"single"</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="s2">"#003366"</span><span class="p">))</span>
-</code></pre></div>
-<p>Convenience constructors cover the common shapes:
-<a href="../reference/#rtfreporter.borders.border_top"><code>rtf_border_top</code></a>,
-<a href="../reference/#rtfreporter.borders.border_bottom"><code>rtf_border_bottom</code></a>,
-<a href="../reference/#rtfreporter.borders.border_box"><code>rtf_border_box</code></a>,
-<a href="../reference/#rtfreporter.borders.border_none"><code>rtf_border_none</code></a>.</p>
+<p>So R's <code>blank_rows = c(0, 2, -1)</code> (before first; after data row 2; after last)
+becomes Python <code>blank_rows=[BEFORE_FIRST, 1, AFTER_LAST]</code>.</p>
+<h2 id="everything-else-matches-r">Everything else matches R<a class="headerlink" href="#everything-else-matches-r" title="Permanent link">&para;</a></h2>
+<p>The module-level functions (<code>rtf_document</code>, <code>rtf_tables</code>, <code>rtf_header</code>,
+<code>rtf_border</code>, <code>generate_rtfreport</code>, ...) mirror the R exports.  The Python class
+names (<code>RtfTable</code>, <code>RtfDocument</code>, <code>ColSpec</code>, ...) are Python-only types — R has
+no exposed classes (it is pure S3), so there is nothing to match — and the
+fluent <code>RtfDocument</code> methods are an additional convenience layer over the
+R-named functions.</p>
 
 
 

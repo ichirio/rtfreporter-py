@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://ichirio.github.io/rtfreporter-py/importing-tables/">
       
       
-        <link rel="prev" href="../getting-started/">
+        <link rel="prev" href="../r-differences/">
       
       
         <link rel="next" href="../pagination/">
@@ -313,6 +313,33 @@
       
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../r-differences/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Differences from R
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -331,10 +358,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
             
   
   
@@ -352,8 +379,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_3">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -485,6 +512,29 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#importing-a-great_tables-gt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Importing a great_tables GT
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Importing a great_tables GT">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-is-carried" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is carried
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#what-is-not-carried" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -492,6 +542,22 @@
       
     </span>
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#choosing-what-to-read-read_meta" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choosing what to read: read_meta
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -644,6 +710,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../assembling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assembling deliverables
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -760,6 +854,29 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#importing-a-great_tables-gt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Importing a great_tables GT
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Importing a great_tables GT">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-is-carried" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is carried
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#what-is-not-carried" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -767,6 +884,22 @@
       
     </span>
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#choosing-what-to-read-read_meta" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choosing what to read: read_meta
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -819,8 +952,8 @@ guide: <a href="../pagination/">Pagination</a>.</p>
 <ul>
 <li>a <strong>pandas</strong> <code>DataFrame</code>,</li>
 <li>a <strong>polars</strong> <code>DataFrame</code>,</li>
-<li>a <strong>great_tables</strong> <code>GT</code> object (column labels and one level of spanners are
-  read into the header; titles/subtitles become the title block),</li>
+<li>a <strong>great_tables</strong> <code>GT</code> object (fully featured — see
+  <a href="#importing-a-great_tables-gt">Importing a great_tables <code>GT</code></a> below),</li>
 <li>a plain <strong>dict</strong> of columns,</li>
 <li>a <strong>list of row dicts</strong>, or</li>
 <li>a <strong>list</strong> of any of the above (flattened to one page set each).</li>
@@ -852,7 +985,7 @@ leaf level becomes the indented stub of each data row.</p>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="s2">"Stat"</span><span class="p">:</span>  <span class="p">[</span><span class="s2">"n"</span><span class="p">,</span> <span class="s2">"Mean"</span><span class="p">,</span> <span class="s2">"Male"</span><span class="p">],</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="s2">"Value"</span><span class="p">:</span> <span class="p">[</span><span class="mi">86</span><span class="p">,</span> <span class="mf">75.1</span><span class="p">,</span> <span class="mi">40</span><span class="p">],</span>
 <a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="p">})</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">tbl</span> <span class="o">=</span> <span class="n">as_rtftable</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">stub_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">"Group"</span><span class="p">,</span> <span class="s2">"Stat"</span><span class="p">],</span> <span class="n">stub_label</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span> <span class="n">stub_indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">tbl</span> <span class="o">=</span> <span class="n">as_rtftable</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">stub_vars</span><span class="o">=</span><span class="p">[</span><span class="s2">"Group"</span><span class="p">,</span> <span class="s2">"Stat"</span><span class="p">],</span> <span class="n">stub_label</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span> <span class="n">stub_indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
 <a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># stub column -&gt; "Age", "    n", "    Mean", "Sex", "    Male"</span>
 </code></pre></div>
 <h2 id="reshaping-knobs">Reshaping knobs<a class="headerlink" href="#reshaping-knobs" title="Permanent link">&para;</a></h2>
@@ -893,11 +1026,113 @@ leaf level becomes the indented stub of each data row.</p>
 <h2 id="missing-values">Missing values<a class="headerlink" href="#missing-values" title="Permanent link">&para;</a></h2>
 <p><code>NaN</code> / <code>None</code> cells are normalised to blank cells during conversion, so a
 pandas <code>float</code> column with gaps renders cleanly.</p>
-<h2 id="what-is-not-carried">What is <em>not</em> carried<a class="headerlink" href="#what-is-not-carried" title="Permanent link">&para;</a></h2>
-<p>The adapters are MVP-scoped. Cell-level styling from a <code>GT</code> object, footnotes,
-summary rows and row groups are <strong>not</strong> read; only the data body, column labels,
-one spanner level, and the title block are. Anything else can be reapplied with
-the <a href="../styling/">style verbs</a> or <code>rtftable()</code> arguments.</p>
+<h2 id="importing-a-great_tables-gt">Importing a great_tables <code>GT</code><a class="headerlink" href="#importing-a-great_tables-gt" title="Permanent link">&para;</a></h2>
+<p>The <code>GT</code> adapter is <strong>full-featured</strong>: it reads the rendered table and the
+metadata channels the RTF renderer can reproduce.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">style</span><span class="p">,</span> <span class="n">loc</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="n">as_rtftable</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">"grp"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"A"</span><span class="p">,</span> <span class="s2">"A"</span><span class="p">,</span> <span class="s2">"B"</span><span class="p">],</span> <span class="s2">"lbl"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"x"</span><span class="p">,</span> <span class="s2">"y"</span><span class="p">,</span> <span class="s2">"z"</span><span class="p">],</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>                   <span class="s2">"n"</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="s2">"pct"</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]})</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="n">gt</span> <span class="o">=</span> <span class="p">(</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    <span class="n">GT</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">rowname_col</span><span class="o">=</span><span class="s2">"lbl"</span><span class="p">,</span> <span class="n">groupname_col</span><span class="o">=</span><span class="s2">"grp"</span><span class="p">)</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">"Table 14.1"</span><span class="p">,</span> <span class="n">subtitle</span><span class="o">=</span><span class="s2">"Demographics"</span><span class="p">)</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>    <span class="o">.</span><span class="n">tab_spanner</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s2">"Statistics"</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">"n"</span><span class="p">,</span> <span class="s2">"pct"</span><span class="p">])</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>    <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="s2">"Count"</span><span class="p">,</span> <span class="n">pct</span><span class="o">=</span><span class="s2">"Percent"</span><span class="p">)</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>    <span class="o">.</span><span class="n">fmt_percent</span><span class="p">(</span><span class="s2">"pct"</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>    <span class="o">.</span><span class="n">tab_style</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="n">style</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">weight</span><span class="o">=</span><span class="s2">"bold"</span><span class="p">),</span> <span class="n">locations</span><span class="o">=</span><span class="n">loc</span><span class="o">.</span><span class="n">body</span><span class="p">(</span><span class="s2">"n"</span><span class="p">,</span> <span class="n">rows</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>    <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">"Source: ADSL"</span><span class="p">)</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="p">)</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="n">tbl</span> <span class="o">=</span> <span class="n">as_rtftable</span><span class="p">(</span><span class="n">gt</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="what-is-carried">What <strong>is</strong> carried<a class="headerlink" href="#what-is-carried" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>GT feature</th>
+<th>Mapped to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fmt_*</code> formatted values</td>
+<td>the <strong>rendered/display</strong> cell text (not the raw data)</td>
+</tr>
+<tr>
+<td>hidden columns (<code>cols_hide</code>)</td>
+<td>dropped</td>
+</tr>
+<tr>
+<td><code>cols_label</code></td>
+<td>column-header labels</td>
+</tr>
+<tr>
+<td><code>tab_spanner</code> (<strong>multiple / nested levels</strong>)</td>
+<td>stacked spanning header rows</td>
+</tr>
+<tr>
+<td>row groups (<code>groupname_col</code>)</td>
+<td>full-width group-label rows with children indented into a leading stub (same convention as <code>stub_cols</code>)</td>
+</tr>
+<tr>
+<td><code>rowname_col</code></td>
+<td>the leading stub column</td>
+</tr>
+<tr>
+<td>per-column alignment</td>
+<td><code>ColSpec.align</code></td>
+</tr>
+<tr>
+<td><code>cols_width</code> (all <code>px</code>, or all <code>%</code>)</td>
+<td><code>column_widths_twips</code> / <code>col_rel_width</code></td>
+</tr>
+<tr>
+<td><code>tab_style(style.text(...))</code> — bold / italic / underline / align / colour</td>
+<td>the per-cell <code>cell_styles</code> channel (body) or <code>header_*</code> (labels)</td>
+</tr>
+<tr>
+<td><code>tab_style(style.borders(...))</code> — solid/double/dashed/dotted/hidden, px×15 / pt×20 twips</td>
+<td>per-cell / per-header <code>Border</code></td>
+</tr>
+<tr>
+<td><code>tab_header</code> title + subtitle</td>
+<td>the title block</td>
+</tr>
+<tr>
+<td><code>tab_footnote</code> + <code>tab_source_note</code> text</td>
+<td>the footnote block</td>
+</tr>
+<tr>
+<td>grand-summary rows (where exposed)</td>
+<td>best-effort labelled rows</td>
+</tr>
+</tbody>
+</table>
+<p>Border colour handling mirrors the R package: <strong>black is omitted</strong> (the RTF
+default), and a <strong>transparent or zero-alpha (<code>#RRGGBB00</code>) border yields <em>no</em>
+border</strong> — <code>tfrmt</code> overlays transparent borders to hide a theme's default rules,
+and carrying them through would print spurious black lines.</p>
+<h3 id="what-is-not-carried">What is <strong>not</strong> carried<a class="headerlink" href="#what-is-not-carried" title="Permanent link">&para;</a></h3>
+<p>Cell <strong>fills</strong>, fonts and font sizes, Markdown, and great_tables' own <em>theme</em>
+borders (<code>tab_options</code>) have no RTF counterpart and are ignored. In-cell
+footnote <strong>marks</strong> (the superscript reference beside a value) are not injected;
+the footnote <em>text</em> is still collected into the footnote block.</p>
+<h3 id="choosing-what-to-read-read_meta">Choosing what to read: <code>read_meta</code><a class="headerlink" href="#choosing-what-to-read-read_meta" title="Permanent link">&para;</a></h3>
+<p><code>read_meta</code> controls which metadata channels are read. The clean, reshaped body
+(formatted values, hidden columns dropped, row groups interleaved) is <strong>always</strong>
+produced; only the channels below are gated:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">as_rtftable</span><span class="p">(</span><span class="n">gt</span><span class="p">,</span> <span class="n">read_meta</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>                 <span class="c1"># everything (default)</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">as_rtftable</span><span class="p">(</span><span class="n">gt</span><span class="p">,</span> <span class="n">read_meta</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>                <span class="c1"># clean body only</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">as_rtftable</span><span class="p">(</span><span class="n">gt</span><span class="p">,</span> <span class="n">read_meta</span><span class="o">=</span><span class="p">[</span><span class="s2">"titles"</span><span class="p">,</span> <span class="s2">"styles"</span><span class="p">])</span> <span class="c1"># just these channels</span>
+</code></pre></div>
+<p>The tokens are <code>"col_header"</code>, <code>"alignment"</code>, <code>"spanning"</code>, <code>"widths"</code>,
+<code>"titles"</code>, <code>"footnotes"</code>, and <code>"styles"</code>
+(<code>rtfreporter.gt_adapter.GT_META_TOKENS</code>). An unknown token raises <code>ValueError</code>.</p>
+<p>Because the <code>GT</code> adapter already reshapes the body, <code>stub_cols</code> / <code>drop_cols</code>
+are rejected for <code>GT</code> input (row groups and hidden columns are handled for you).
+Pagination (<code>split=</code>) and blank-row options still apply, and per-cell styles
+stay aligned to their cells across page splits.</p>
 
 
 
