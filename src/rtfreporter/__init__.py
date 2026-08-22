@@ -69,6 +69,17 @@ from .format_count_pct import (
 )
 from .header_footer import HeaderFooter, rtf_footer, rtf_header
 from .page import DefaultFormat, Page, rtf_page
+from .pagination import (
+    Frame,
+    PaginationError,
+    add_cont_label,
+    page_split_by_value,
+    page_split_group_force,
+    page_split_group_safe,
+    page_split_none,
+    page_split_rows,
+    paginate,
+)
 from .style_verbs import style_body, style_cols, style_header, style_zone
 from .table import (
     ColSpec,
@@ -142,6 +153,16 @@ __all__ = [
     "fmt_count_paren",
     "fmt_count_paren_bare",
     "fmt_right_align",
+    # pagination
+    "Frame",
+    "PaginationError",
+    "paginate",
+    "add_cont_label",
+    "page_split_none",
+    "page_split_rows",
+    "page_split_by_value",
+    "page_split_group_safe",
+    "page_split_group_force",
     # style verbs
     "style_body",
     "style_cols",

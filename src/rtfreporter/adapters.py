@@ -432,7 +432,12 @@ def as_rtftables(
             ``"titles"``, ``"footnotes"``, ``"styles"``).  Ignored for
             plain-frame input.
         split: ``"none"`` (default), ``"rows"``, ``"by_value"``,
-            ``"group_safe"``, or ``"group_force"``.
+            ``"group_safe"``, or ``"group_force"`` -- or a custom split
+            **callable** (the R ``split=<function>`` hook, see
+            :mod:`rtfreporter.pagination`): a function taking a single
+            :class:`~rtfreporter.pagination.Frame` and returning a list of
+            :class:`~rtfreporter.pagination.Frame` (one per page).  The
+            ``page_split_*`` factory functions return such callables.
         split_rows: For ``split="rows"`` -- an int page size or explicit cut
             positions.
         max_rows: Max data rows per page (required by the group splits).
@@ -583,13 +588,31 @@ def as_rtftables(
 
     group_keys = [row[group_idx] for row in rows] if group_idx is not None else [None] * len(rows)
 
-    pages = _paginate(
-        rows, group_keys, split, split_rows, max_rows, min_group_rows, cont_label, group_idx
-    )
+    if callable(split):
+        # Custom split hook (or a page_split_* factory passed directly): build a
+        # Frame, run the split, and normalise the returned frames to the same
+        # ``(rows, page_name)`` shape the string strategies produce.
+        from .pagination import Frame, run_split
+
+        frames = run_split(
+            split,
+            Frame(column_names, rows),
+            split_rows=split_rows,
+            max_rows=max_rows,
+            group_col=group_col,
+            group_by=group_by,
+            cont_label=cont_label,
+            min_group_rows=min_group_rows,
+        )
+        pages = [(f.rows, f.name) for f in frames]
+    else:
+        pages = _paginate(
+            rows, group_keys, split, split_rows, max_rows, min_group_rows, cont_label, group_idx
+        )
 
     # Per-page blank spec: explicit blank_rows wins; else derive from group_col.
     page_blank = blank_rows
-    if page_blank is None and group_idx is not None and split not in ("by_value",):
+    if page_blank is None and group_idx is not None and not callable(split) and split not in ("by_value",):
         page_blank = blank_rows_by_change(group_idx)
 
     from .table import _resolve_blank_rows

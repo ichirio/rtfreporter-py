@@ -96,6 +96,46 @@ pages = as_rtftables(df, split="rows", split_rows=4,
 Blank positions are resolved on the *full* page body — so they stay correct even
 when a grouping column is later removed with `drop_cols`.
 
+## Custom split hooks
+
+The built-in strategies are exposed as **factory functions** that return a
+callable, on the same footing as a hand-written splitter. Pass either the
+string name or the callable to `split=`:
+
+```python
+from rtfreporter import as_rtftables, page_split_group_safe
+
+# These two calls are equivalent:
+pages = as_rtftables(df, split="group_safe", max_rows=20, group_col="visit")
+pages = as_rtftables(df, split=page_split_group_safe(max_rows=20, group_col="visit"))
+```
+
+A **custom split function** takes a single
+[`Frame`][rtfreporter.pagination.Frame] and returns a list of `Frame` — one per
+page. A page's `name` becomes the page/section name. This is the R
+`split=<function>` hook:
+
+```python
+from rtfreporter import Frame, as_rtftables
+
+def first_row_alone(frame: Frame) -> list[Frame]:
+    """Put the first row on its own page, the rest on a second page."""
+    head = Frame(frame.column_names, frame.rows[:1])
+    tail = Frame(frame.column_names, frame.rows[1:])
+    return [head, tail]
+
+pages = as_rtftables(df, split=first_row_alone)
+```
+
+A split function that returns anything other than a list of `Frame` raises
+[`PaginationError`][rtfreporter.pagination.PaginationError].
+[`add_cont_label()`][rtfreporter.pagination.add_cont_label] helps you prepend a
+`" (Cont.)"` label row when a group carries onto the next page.
+
+The standalone [`paginate()`][rtfreporter.pagination.paginate] applies the same
+machinery and returns the per-page `Frame` objects directly (use
+`as_rtftables()` to also build the `RtfTable` pages).
+
 ## Assembling the document
 
 Each page is an ordinary `RtfTable`; feed them to a document in order:

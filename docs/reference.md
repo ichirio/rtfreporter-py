@@ -120,6 +120,26 @@ the named constants `BEFORE_FIRST` / `AFTER_LAST`.
 
 ::: rtfreporter.blank_rows.BlankRowsByRule
 
+## Pagination
+
+::: rtfreporter.pagination.paginate
+
+::: rtfreporter.pagination.Frame
+
+::: rtfreporter.pagination.add_cont_label
+
+::: rtfreporter.pagination.page_split_none
+
+::: rtfreporter.pagination.page_split_rows
+
+::: rtfreporter.pagination.page_split_by_value
+
+::: rtfreporter.pagination.page_split_group_safe
+
+::: rtfreporter.pagination.page_split_group_force
+
+::: rtfreporter.pagination.PaginationError
+
 ## Count / percent formatters
 
 ::: rtfreporter.format_count_pct.format_count_pct
