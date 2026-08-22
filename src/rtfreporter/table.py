@@ -259,7 +259,11 @@ def _spanning_header_row(spanning_header, ncols: int, names: list[str]) -> Heade
 
 
 def _read_attr_blank_rows(data):
-    """Read a ``rtf_blank_rows`` attribute off ``data`` (pandas ``.attrs``)."""
+    """Read a ``rtf_blank_rows`` attribute off ``data`` (pandas ``.attrs`` or Frame)."""
+    # A Frame / stub result carrying blank positions from set_blank_rows().
+    fbr = getattr(data, "blank_rows", None)
+    if fbr is not None and not hasattr(data, "columns"):
+        return fbr
     attrs = getattr(data, "attrs", None)
     if isinstance(attrs, dict):
         return attrs.get("rtf_blank_rows")
@@ -368,14 +372,18 @@ def _normalize_col_spec(
     names: list[str],
     col_header_align=None,
     default_aligns=None,
+    default_spec: ColSpec | None = None,
 ) -> list[ColSpec]:
     """Build a per-column list of :class:`ColSpec` from user input.
 
     ``default_aligns`` (one entry per column) seeds the body alignment of any
     column whose alignment is not set explicitly by ``col_spec``; it is derived
     from ``row_title`` (see :func:`_default_aligns_from_row_title`).
+    ``default_spec`` seeds the per-column decoration defaults (e.g. from a shared
+    ``style``); explicit ``col_spec`` entries override it.
     """
-    specs = [ColSpec() for _ in range(ncols)]
+    base = default_spec if default_spec is not None else ColSpec()
+    specs = [replace(base) for _ in range(ncols)]
 
     if col_spec:
         for entry in col_spec:
@@ -660,8 +668,18 @@ def rtftable(
             header_row_height_twips,
             markup,
         )
+        _style_default_spec = ColSpec(
+            bold=bool(getattr(style, "bold", False)),
+            italic=bool(getattr(style, "italic", False)),
+            underline=bool(getattr(style, "underline", False)),
+            header_bold=bool(getattr(style, "header_bold", False)),
+            header_italic=bool(getattr(style, "header_italic", False)),
+        )
+        if col_header_align is None and getattr(style, "header_align", None) is not None:
+            col_header_align = style.header_align
     else:
         _style_aligns = None
+        _style_default_spec = None
 
     if blank_rows is None and read_attributes:
         blank_rows = _read_attr_blank_rows(data)
@@ -683,7 +701,8 @@ def rtftable(
             _spanning_header_row(spanning_header, ncols, column_names)
         ] + header_rows
     specs = _normalize_col_spec(
-        col_spec, ncols, column_names, col_header_align, default_aligns
+        col_spec, ncols, column_names, col_header_align, default_aligns,
+        default_spec=_style_default_spec,
     )
     border_resolved = normalize_table_border(border) if border != "tfl" else rtf_border_tfl()
 
@@ -760,6 +779,9 @@ def rtftable(
 
 def _coerce_data(data) -> tuple[list[str], list[list[Any]]]:
     """Coerce accepted inputs to ``(column_names, rows)``."""
+    # A pagination Frame / stub_cols result (duck-typed on its two fields).
+    if hasattr(data, "column_names") and hasattr(data, "rows") and not hasattr(data, "columns"):
+        return list(data.column_names), [list(r) for r in data.rows]
     # pandas / polars DataFrame (duck-typed to avoid a hard dependency).
     if type(data).__module__.split(".")[0] == "polars":
         cols = data.to_dict(as_series=False)

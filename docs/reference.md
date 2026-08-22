@@ -68,6 +68,10 @@ the named constants `BEFORE_FIRST` / `AFTER_LAST`.
 
 ::: rtfreporter.header_footer.HeaderFooter
 
+::: rtfreporter.header_footer.update_header_row
+
+::: rtfreporter.header_footer.update_footer_row
+
 ## Page and defaults
 
 ::: rtfreporter.page.rtf_page
@@ -75,6 +79,14 @@ the named constants `BEFORE_FIRST` / `AFTER_LAST`.
 ::: rtfreporter.page.Page
 
 ::: rtfreporter.page.DefaultFormat
+
+::: rtfreporter.page.rtf_default_format
+
+::: rtfreporter.document.rtf_config
+
+::: rtfreporter.config.rtfreporter_options
+
+::: rtfreporter.config.rtfreporter_reset_defaults
 
 ## Borders
 
@@ -98,7 +110,19 @@ the named constants `BEFORE_FIRST` / `AFTER_LAST`.
 
 ::: rtfreporter.borders.rtf_border_tfl
 
+::: rtfreporter.borders.rtf_border_with
+
 ::: rtfreporter.borders.rtf_table_border
+
+## Table style
+
+::: rtfreporter.rtf_table_style.rtf_table_style
+
+::: rtfreporter.rtf_table_style.rtf_table_style_tfl
+
+::: rtfreporter.rtf_table_style.rtf_table_style_with
+
+::: rtfreporter.rtf_table_style.TableStyle
 
 ## Figures
 
@@ -139,6 +163,40 @@ the named constants `BEFORE_FIRST` / `AFTER_LAST`.
 ::: rtfreporter.pagination.page_split_group_force
 
 ::: rtfreporter.pagination.PaginationError
+
+::: rtfreporter.pagination.set_blank_rows
+
+## Post-hoc helpers
+
+::: rtfreporter.post_hoc.rtf_columns
+
+::: rtfreporter.post_hoc.set_col_header
+
+::: rtfreporter.post_hoc.set_header_cell
+
+::: rtfreporter.post_hoc.add_header_row
+
+::: rtfreporter.post_hoc.add_col_header_row
+
+::: rtfreporter.post_hoc.col_header_from_names
+
+::: rtfreporter.post_hoc.collapse_repeats
+
+::: rtfreporter.post_hoc.combine_sections
+
+::: rtfreporter.post_hoc.rtf_header_source
+
+## Stub and column widths
+
+::: rtfreporter.stub.stub_cols
+
+::: rtfreporter.text_width.auto_col_widths
+
+::: rtfreporter.text_width.text_width_in
+
+## Post-processing
+
+::: rtfreporter.rtf_replace_text.rtf_replace_text
 
 ## Count / percent formatters
 

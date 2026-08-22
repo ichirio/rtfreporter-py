@@ -38,11 +38,14 @@ class Frame:
         column_names: Column names.
         rows: A list of rows (each a list of cell values).
         name: Optional page name (a group value, for ``page_split_by_value``).
+        blank_rows: Optional blank-row positions (as attached by
+            :func:`set_blank_rows`), consumed by :func:`~rtfreporter.rtftable`.
     """
 
     column_names: list[str]
     rows: list[list] = field(default_factory=list)
     name: str | None = None
+    blank_rows: list | None = None
 
 
 def as_frame(x) -> Frame:
@@ -260,6 +263,86 @@ def add_cont_label(frame: Frame, label: str, cont_label: str = " (Cont.)", col=0
         [cont_row] + [list(r) for r in frame.rows],
         frame.name,
     )
+
+
+# -- set_blank_rows() ---------------------------------------------------------
+
+
+def set_blank_rows(
+    data,
+    blank_rows=None,
+    blank_row_first: bool = False,
+    blank_row_end: bool = False,
+    group_col=None,
+    group_by: str = "auto",
+) -> Frame:
+    """Resolve a blank-row spec and attach the positions to a frame.
+
+    Mirrors R's ``set_blank_rows()``: resolves ``blank_rows`` (the same spec
+    :func:`~rtfreporter.rtftable` accepts, plus the string ``"between_groups"``)
+    into 0-based positions and stores them on the returned
+    :class:`Frame`'s :attr:`~Frame.blank_rows`, so
+    ``rtftable(set_blank_rows(df, ...))`` picks them up automatically.
+
+    Args:
+        data: A ``(column_names, rows)`` pair, dict, list of row dicts, DataFrame,
+            or :class:`Frame`.
+        blank_rows: ``None``; a 0-based ``int`` / sentinel / list of them;
+            ``"between_groups"`` (a blank at every group-value change); or a
+            :func:`~rtfreporter.blank_rows_by_change` /
+            :func:`~rtfreporter.blank_rows_by_rule` spec.
+        blank_row_first, blank_row_end: Also add a blank at the top / bottom.
+        group_col: Group column (name / 0-based index) for ``"between_groups"``;
+            ``None`` uses column 0.
+        group_by: Group detection: ``"auto"`` / ``"value"`` (implemented);
+            ``"indent"`` / ``"filled"`` raise :class:`NotImplementedError`.
+
+    Returns:
+        A :class:`Frame` with :attr:`~Frame.blank_rows` set (``None`` when the
+        resolved position set is empty).
+    """
+    from .blank_rows import AFTER_LAST, BEFORE_FIRST, BlankRowsByChange, BlankRowsByRule
+    from .table import _resolve_blank_rows
+
+    frame = as_frame(data)
+    names, rows = frame.column_names, frame.rows
+    nrows = len(rows)
+
+    def is_spec_obj(s):
+        return isinstance(s, (BlankRowsByChange, BlankRowsByRule))
+
+    items = list(blank_rows) if isinstance(blank_rows, (list, tuple)) else [blank_rows]
+    internal: set[int] = set()
+    for it in items:
+        if it is None:
+            continue
+        if isinstance(it, str):
+            if it != "between_groups":
+                raise ValueError(f"Unrecognised blank_rows string {it!r}.")
+            if group_by not in ("auto", "value"):
+                raise NotImplementedError(
+                    f"set_blank_rows(group_by={group_by!r}) is not implemented; "
+                    "only 'auto' / 'value' (value-change detection) is supported."
+                )
+            gidx = _resolve_group(group_col, names)
+            from .blank_rows import blank_rows_by_change
+
+            internal.update(blank_rows_by_change(gidx).positions(names, rows))
+        elif is_spec_obj(it) or isinstance(it, (int,)) or it is BEFORE_FIRST or it is AFTER_LAST:
+            internal.update(_resolve_blank_rows(it, names, rows))
+        else:
+            internal.update(_resolve_blank_rows(it, names, rows))
+    if blank_row_first:
+        internal.add(0)
+    if blank_row_end:
+        internal.add(nrows)
+
+    pos = sorted(p for p in internal if 0 <= p <= nrows)
+    # Convert internal positions (p = before data row p) back to the public
+    # convention rtftable() understands: BEFORE_FIRST for the top, else i-1.
+    public = [BEFORE_FIRST if p == 0 else p - 1 for p in pos]
+    frame.blank_rows = public or None
+    return frame
 
 
 # -- Standalone paginate() ----------------------------------------------------

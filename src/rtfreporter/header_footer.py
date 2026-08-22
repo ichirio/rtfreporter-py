@@ -14,7 +14,7 @@ Cells may contain page tokens (``{AUTO_PAGE}``, ``{AUTO_TOTAL_PAGES}``,
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from .borders import Border
 
@@ -112,6 +112,39 @@ def rtf_footer(
         width_twips=width_twips,
         is_footer=True,
     )
+
+
+def _update_hf_rows(hf: HeaderFooter, row: int, content) -> HeaderFooter:
+    if not isinstance(hf, HeaderFooter):
+        raise TypeError("First argument must be an rtf_header() or rtf_footer() object.")
+    row = int(row)
+    if row < 0:
+        raise ValueError("`row` must be >= 0 (0-based; the top row is 0).")
+    rows = list(hf.rows)
+    norm = _normalize_row(content)
+    if row >= len(rows):
+        # Fill any gap with empty centre rows, then place the content at `row`.
+        rows.extend({"c": ""} for _ in range(row - len(rows)))
+        rows.append(norm)
+    else:
+        rows[row] = norm
+    return replace(hf, rows=rows)
+
+
+def update_header_row(header: HeaderFooter, row: int, content) -> HeaderFooter:
+    """Add or replace a single row of a header band (mirrors ``update_header_row()``).
+
+    Returns a **copy** with row ``row`` (0-based; the top row is ``0``) set to
+    ``content`` (a str, an ``l``/``c``/``r`` dict, or a short sequence).  A
+    ``row`` beyond the current rows extends the band, filling any gap with empty
+    centred rows.
+    """
+    return _update_hf_rows(header, row, content)
+
+
+def update_footer_row(footer: HeaderFooter, row: int, content) -> HeaderFooter:
+    """Add or replace a single row of a footer band (see :func:`update_header_row`)."""
+    return _update_hf_rows(footer, row, content)
 
 
 def normalize_hf(value) -> HeaderFooter | None:

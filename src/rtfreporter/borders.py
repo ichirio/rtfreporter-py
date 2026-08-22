@@ -123,6 +123,29 @@ def rtf_border_none() -> Border:
     return Border()
 
 
+def rtf_border_with(
+    border: Border | None,
+    top: BorderSide | None = None,
+    bottom: BorderSide | None = None,
+    left: BorderSide | None = None,
+    right: BorderSide | None = None,
+) -> Border:
+    """Return a copy of ``border`` with the supplied (non-None) sides replaced.
+
+    Mirrors R's ``rtf_border_with()``: a non-mutating side-level override.
+    ``border=None`` starts from an empty :class:`Border`.  Pass
+    ``rtf_border_side("none")`` to explicitly drop a side.
+    """
+    if border is None:
+        border = Border()
+    if not isinstance(border, Border):
+        raise TypeError("`border` must be None or a Border object.")
+    for name, side in (("top", top), ("bottom", bottom), ("left", left), ("right", right)):
+        if side is not None and not isinstance(side, BorderSide):
+            raise TypeError(f"`{name}` must be None or a BorderSide object.")
+    return border.with_sides(top=top, bottom=bottom, left=left, right=right)
+
+
 def rtf_border_top(style: str = "single", width: int = 15, color: str | None = None) -> Border:
     """A top-edge-only border."""
     return Border(top=BorderSide(style, width, color))

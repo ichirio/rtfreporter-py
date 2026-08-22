@@ -10,7 +10,7 @@ of ``R/generate_rtfreport.R``.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from . import _commands as C
 from . import render as R
@@ -206,6 +206,60 @@ def rtf_document(
     fluent :class:`RtfDocument` methods are an equivalent convenience.
     """
     return RtfDocument(page=page, default_format=default_format, color_table=color_table)
+
+
+def rtf_config(
+    doc: RtfDocument,
+    page=None,
+    default_format=None,
+    color_table=None,
+    font_table=None,
+) -> RtfDocument:
+    """Return a copy of ``doc`` with page / default-format / colour overrides.
+
+    Mirrors R's ``rtf_config()``: whole-object replacements for ``color_table``,
+    per-field merges for ``page`` and ``default_format``.  ``page`` /
+    ``default_format`` may each be a full :class:`~rtfreporter.Page` /
+    :class:`~rtfreporter.DefaultFormat` object (replaces the whole object) or a
+    dict of field overrides (merged onto the current object).
+
+    Args:
+        doc: The :class:`RtfDocument` to reconfigure.
+        page: A :class:`~rtfreporter.Page` or a dict of :class:`Page` field
+            overrides.
+        default_format: A :class:`~rtfreporter.DefaultFormat` or a dict of field
+            overrides.
+        color_table: A replacement colour table (list of hex strings).
+        font_table: Accepted for R signature parity; the Python renderer manages
+            fonts automatically, so a non-``None`` value raises
+            :class:`NotImplementedError`.
+
+    Returns:
+        A new :class:`RtfDocument` (the pages and sections are carried over).
+    """
+    if not isinstance(doc, RtfDocument):
+        raise TypeError("`doc` must be an RtfDocument.")
+    if font_table is not None:
+        raise NotImplementedError(
+            "rtf_config(font_table=...) is not supported; the Python renderer "
+            "manages the font table automatically."
+        )
+    new_page = doc.page
+    if page is not None:
+        new_page = replace(doc.page, **page) if isinstance(page, dict) else page
+    new_fmt = doc.default_format
+    if default_format is not None:
+        new_fmt = (
+            replace(doc.default_format, **default_format)
+            if isinstance(default_format, dict)
+            else default_format
+        )
+    new_colors = doc.color_table if color_table is None else color_table
+
+    out = RtfDocument(page=new_page, default_format=new_fmt, color_table=new_colors)
+    out._sections = list(doc._sections)
+    out._pages = list(doc._pages)
+    return out
 
 
 def rtf_tables(

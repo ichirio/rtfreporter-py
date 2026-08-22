@@ -45,11 +45,14 @@ from .borders import (
     rtf_border_side,
     rtf_border_tfl,
     rtf_border_top,
+    rtf_border_with,
     rtf_table_border,
 )
+from .config import rtfreporter_options, rtfreporter_reset_defaults
 from .document import (
     RtfDocument,
     generate_rtfreport,
+    rtf_config,
     rtf_document,
     rtf_figures,
     rtf_footnotes,
@@ -67,8 +70,14 @@ from .format_count_pct import (
     format_count_pct,
     realign_count_pct,
 )
-from .header_footer import HeaderFooter, rtf_footer, rtf_header
-from .page import DefaultFormat, Page, rtf_page
+from .header_footer import (
+    HeaderFooter,
+    rtf_footer,
+    rtf_header,
+    update_footer_row,
+    update_header_row,
+)
+from .page import DefaultFormat, Page, rtf_default_format, rtf_page
 from .pagination import (
     Frame,
     PaginationError,
@@ -79,7 +88,27 @@ from .pagination import (
     page_split_none,
     page_split_rows,
     paginate,
+    set_blank_rows,
 )
+from .post_hoc import (
+    add_col_header_row,
+    add_header_row,
+    col_header_from_names,
+    collapse_repeats,
+    combine_sections,
+    rtf_columns,
+    rtf_header_source,
+    set_col_header,
+    set_header_cell,
+)
+from .rtf_replace_text import rtf_replace_text
+from .rtf_table_style import (
+    TableStyle,
+    rtf_table_style,
+    rtf_table_style_tfl,
+    rtf_table_style_with,
+)
+from .stub import stub_cols
 from .style_verbs import style_body, style_cols, style_header, style_zone
 from .table import (
     ColSpec,
@@ -90,6 +119,7 @@ from .table import (
     rtf_col_header,
     rtftable,
 )
+from .text_width import auto_col_widths, text_width_in
 
 __version__ = "0.1.0"
 
@@ -121,10 +151,16 @@ __all__ = [
     "HeaderFooter",
     "rtf_header",
     "rtf_footer",
-    # page / format
+    "update_header_row",
+    "update_footer_row",
+    # page / format / config
     "Page",
     "rtf_page",
     "DefaultFormat",
+    "rtf_default_format",
+    "rtf_config",
+    "rtfreporter_options",
+    "rtfreporter_reset_defaults",
     # borders
     "Border",
     "BorderSide",
@@ -136,7 +172,28 @@ __all__ = [
     "rtf_border_bottom",
     "rtf_border_box",
     "rtf_border_tfl",
+    "rtf_border_with",
     "rtf_table_border",
+    # table style
+    "TableStyle",
+    "rtf_table_style",
+    "rtf_table_style_tfl",
+    "rtf_table_style_with",
+    # post-hoc verbs / helpers
+    "set_col_header",
+    "set_header_cell",
+    "add_header_row",
+    "add_col_header_row",
+    "col_header_from_names",
+    "rtf_columns",
+    "rtf_header_source",
+    "collapse_repeats",
+    "combine_sections",
+    "stub_cols",
+    "set_blank_rows",
+    "auto_col_widths",
+    "text_width_in",
+    "rtf_replace_text",
     # figures
     "Figure",
     "rtfplot",

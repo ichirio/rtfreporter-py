@@ -10,6 +10,7 @@ from dataclasses import dataclass
 
 from . import _commands as C
 from ._escape import resolve_markup
+from .config import _UNSET, _resolve
 
 
 @dataclass
@@ -78,27 +79,31 @@ class Page:
 
 
 def rtf_page(
-    paper_size: str = "letter",
-    orientation: str = "landscape",
+    paper_size=_UNSET,
+    orientation=_UNSET,
     width_in: float | None = None,
     height_in: float | None = None,
-    margin_top_in: float = 0.75,
-    margin_bottom_in: float = 0.75,
-    margin_left_in: float = 0.75,
-    margin_right_in: float = 0.75,
+    margin_top_in=_UNSET,
+    margin_bottom_in=_UNSET,
+    margin_left_in=_UNSET,
+    margin_right_in=_UNSET,
     header_dist_in: float | None = None,
     footer_dist_in: float | None = None,
 ) -> Page:
-    """Build a :class:`Page` (mirrors R's ``rtf_page()``)."""
+    """Build a :class:`Page` (mirrors R's ``rtf_page()``).
+
+    Any argument left unset falls back to the ``rtfreporter.page.*`` option and
+    then the factory default (see :func:`~rtfreporter.rtfreporter_options`).
+    """
     return Page(
-        paper_size=paper_size,
-        orientation=orientation,
+        paper_size=_resolve(paper_size, "page.paper_size"),
+        orientation=_resolve(orientation, "page.orientation"),
         width_in=width_in,
         height_in=height_in,
-        margin_top_in=margin_top_in,
-        margin_bottom_in=margin_bottom_in,
-        margin_left_in=margin_left_in,
-        margin_right_in=margin_right_in,
+        margin_top_in=_resolve(margin_top_in, "page.margin_top_in"),
+        margin_bottom_in=_resolve(margin_bottom_in, "page.margin_bottom_in"),
+        margin_left_in=_resolve(margin_left_in, "page.margin_left_in"),
+        margin_right_in=_resolve(margin_right_in, "page.margin_right_in"),
         header_dist_in=header_dist_in,
         footer_dist_in=footer_dist_in,
     )
@@ -166,3 +171,44 @@ class DefaultFormat:
         ):
             if val not in ("text", "table"):
                 raise ValueError(f'`{name}` must be "text" or "table"; got {val!r}.')
+
+
+def rtf_default_format(
+    font_size_half_points=_UNSET,
+    row_height_twips: int | None = None,
+    cell_padding_left_twips: int | None = None,
+    cell_padding_right_twips: int | None = None,
+    markup=_UNSET,
+    title_format=_UNSET,
+    footnote_format=_UNSET,
+) -> DefaultFormat:
+    """Build a :class:`DefaultFormat` (mirrors R's ``rtf_default_format()``).
+
+    ``font_size_half_points``, ``markup``, ``title_format`` and
+    ``footnote_format`` fall back to the matching ``rtfreporter.*`` option (then
+    the factory default) when left unset; see
+    :func:`~rtfreporter.rtfreporter_options`.
+
+    Args:
+        font_size_half_points: Body font size in half-points (18 = 9pt).
+        row_height_twips: Default row height, or ``None`` for the baseline.
+        cell_padding_left_twips, cell_padding_right_twips: Default cell padding.
+        markup: ``"script"`` / ``"relational"`` / ``"all"`` / ``"none"``.
+        title_format, footnote_format: ``"text"`` or ``"table"``.
+    """
+    for name, val in (
+        ("row_height_twips", row_height_twips),
+        ("cell_padding_left_twips", cell_padding_left_twips),
+        ("cell_padding_right_twips", cell_padding_right_twips),
+    ):
+        if val is not None and (not isinstance(val, int) or val < 0):
+            raise ValueError(f"`{name}` must be a non-negative integer (twips) or None.")
+    return DefaultFormat(
+        font_size_half_points=_resolve(font_size_half_points, "font_size_half_points"),
+        row_height_twips=row_height_twips,
+        cell_padding_left_twips=cell_padding_left_twips,
+        cell_padding_right_twips=cell_padding_right_twips,
+        markup=_resolve(markup, "markup"),
+        title_format=_resolve(title_format, "title_format"),
+        footnote_format=_resolve(footnote_format, "footnote_format"),
+    )
