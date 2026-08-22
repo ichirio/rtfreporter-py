@@ -61,6 +61,7 @@ ignore = ["E501", "B008"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "--cov=rtfreporter --cov-report=term-missing --cov-fail-under=90"
 
 [tool.coverage.run]
 source = ["rtfreporter"]
