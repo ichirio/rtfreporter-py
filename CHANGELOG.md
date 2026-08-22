@@ -6,6 +6,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-08-22
+
+This release brings the public API into line with the R package, adds the
+count/percent formatters, pagination factories and custom-split hook, the
+post-hoc styling/header verbs, the options system, the `assemble_*` family with
+a clickable Table of Contents, and PyPI-grade packaging (PEP 561 typing marker,
+full metadata, a build + `twine check` CI job). The test suite grew to 795
+tests at 94% line coverage, enforced in CI via `--cov-fail-under=90`.
+
 ### Breaking changes
 
 - **The public API was renamed to match the R package (a clean break; no
@@ -51,9 +60,25 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `fmt_count_paren_bare`, and `fmt_right_align`, ported from R.  Wired into
   `as_rtftables()` via `align_count_pct=True` (the `"n (xx.x)"` realigner) and
   the general `cell_format=` per-column re-formatter.
-
-### Added
-
+- **Pagination factories and a custom-split hook** — `page_split_none`,
+  `page_split_rows`, `page_split_group_safe`, `page_split_group_force`,
+  `page_split_by_value`, `paginate`, and `add_cont_label` for bespoke
+  `split=<callable>` strategies.
+- **Post-hoc styling / header verbs** — `style_header`, `style_cols`,
+  `style_body`, `style_zone`, `add_header_row`, `set_col_header`,
+  `set_header_cell`, `rtf_columns`, `rtf_header_source`, `col_header_from_names`,
+  `add_col_header_row`, `collapse_repeats`, and `combine_sections`.
+- **Options system** — `rtfreporter_options()` / `rtfreporter_reset_defaults()`
+  with the R resolution order (explicit argument → option → factory default).
+- **`assemble_*` family** — `assemble_rtf`, `assemble_files`, `assemble_spec`,
+  `assemble_from_spec`, `assemble_folder`, `assemble_toc`, `toc_heading`, and
+  `toc_entry`: concatenate rendered RTF files into one deliverable with a cover
+  page and a clickable, bookmarked Table of Contents.
+- **Column-width utilities** (`text_width_in`, `auto_col_widths`), the clinical
+  indented stub (`stub_cols`), and `rtf_replace_text` for post-render text
+  substitution.
+- **PEP 561 typing** — a `py.typed` marker shipped in the wheel, plus complete
+  PyPI metadata (keywords, classifiers, and `project.urls`).
 - **Full-featured `great_tables` (GT) adapter** (`rtfreporter.gt_adapter`).
   The GT path now reads the rendered/display body (`fmt_*` formatted values,
   hidden columns dropped), **multi-level / nested spanners**, **row groups**
