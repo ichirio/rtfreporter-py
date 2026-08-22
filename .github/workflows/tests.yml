@@ -33,3 +33,31 @@ jobs:
 
       - name: Test (pytest)
         run: pytest -q
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Build sdist and wheel
+        run: python -m build
+
+      - name: Check distributions (twine)
+        run: twine check dist/*
+
+      - name: Verify clean install and import
+        run: |
+          python -m venv /tmp/cleanvenv
+          /tmp/cleanvenv/bin/pip install dist/*.whl
+          /tmp/cleanvenv/bin/python -c "import rtfreporter; print(rtfreporter.__version__)"

@@ -12,16 +12,36 @@ license = "Apache-2.0"
 authors = [
     { name = "Yoichi Masui", email = "ichi.r.pro@gmail.com" },
 ]
-keywords = ["rtf", "clinical", "tables", "tfl", "reporting", "cdisc"]
+keywords = [
+    "rtf",
+    "clinical",
+    "clinical-trials",
+    "tables",
+    "listings",
+    "figures",
+    "tfl",
+    "reporting",
+    "cdisc",
+    "biostatistics",
+    "pharma",
+]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
+    "Intended Audience :: Healthcare Industry",
+    "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3 :: Only",
     "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Topic :: Text Processing :: Markup",
+    "Topic :: Office/Business",
+    "Typing :: Typed",
 ]
 dependencies = []
 
@@ -46,9 +66,26 @@ docs = ["mkdocs-material", "mkdocstrings[python]"]
 Homepage = "https://github.com/ichirio/rtfreporter-py"
 Documentation = "https://ichirio.github.io/rtfreporter-py/"
 Repository = "https://github.com/ichirio/rtfreporter-py"
+Issues = "https://github.com/ichirio/rtfreporter-py/issues"
+Changelog = "https://github.com/ichirio/rtfreporter-py/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/rtfreporter"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/rtfreporter/py.typed" = "rtfreporter/py.typed"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/rtfreporter",
+    "tests",
+    "docs",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "pyproject.toml",
+    "mkdocs.yml",
+]
 
 [tool.ruff]
 line-length = 100
