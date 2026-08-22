@@ -65,4 +65,5 @@ nav:
       - Headers and footers: headers-footers.md
       - Figures: figures.md
       - Styling: styling.md
+      - Assembling deliverables: assembling.md
   - API reference: reference.md

@@ -194,6 +194,24 @@ the named constants `BEFORE_FIRST` / `AFTER_LAST`.
 
 ::: rtfreporter.text_width.text_width_in
 
+## Assemble (multi-file deliverables)
+
+::: rtfreporter.assemble.assemble_rtf
+
+::: rtfreporter.assemble.assemble_files
+
+::: rtfreporter.assemble.assemble_spec
+
+::: rtfreporter.assemble.assemble_toc
+
+::: rtfreporter.assemble.assemble_from_spec
+
+::: rtfreporter.assemble.assemble_folder
+
+::: rtfreporter.assemble.toc_heading
+
+::: rtfreporter.assemble.toc_entry
+
 ## Post-processing
 
 ::: rtfreporter.rtf_replace_text.rtf_replace_text

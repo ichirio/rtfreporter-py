@@ -26,6 +26,16 @@ from __future__ import annotations
 
 from ._escape import resolve_markup
 from .adapters import as_rtftable, as_rtftables
+from .assemble import (
+    assemble_files,
+    assemble_folder,
+    assemble_from_spec,
+    assemble_rtf,
+    assemble_spec,
+    assemble_toc,
+    toc_entry,
+    toc_heading,
+)
 from .blank_rows import (
     AFTER_LAST,
     BEFORE_FIRST,
@@ -194,6 +204,15 @@ __all__ = [
     "auto_col_widths",
     "text_width_in",
     "rtf_replace_text",
+    # assemble family
+    "assemble_rtf",
+    "assemble_files",
+    "assemble_spec",
+    "assemble_toc",
+    "assemble_from_spec",
+    "assemble_folder",
+    "toc_heading",
+    "toc_entry",
     # figures
     "Figure",
     "rtfplot",
