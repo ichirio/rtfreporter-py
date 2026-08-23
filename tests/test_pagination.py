@@ -69,10 +69,17 @@ def test_group_safe_requires_max_rows():
 
 
 def test_group_force_splits_oversized_group():
+    """A mid-group cut repeats the header, so the second page is 1 + 2 rows.
+
+    Verified against the R package, which returns the same two pages:
+    ``A|0, A|1, A|2`` then ``A (Cont.)|NA, A|3, A|4``.
+    """
     df = pd.DataFrame({"g": ["A"] * 5, "v": list(range(5))})
     pages = rr.as_rtftables(df, split="group_force", group_col="g", max_rows=3)
     assert len(pages) == 2
-    assert [p.nrows for p in pages] == [3, 2]
+    assert [p.nrows for p in pages] == [3, 3]
+    assert pages[1].rows[0] == ["A (Cont.)", None]
+    assert [r[1] for r in pages[1].rows[1:]] == [3, 4]
 
 
 def test_group_force_cont_marker_in_second_page():

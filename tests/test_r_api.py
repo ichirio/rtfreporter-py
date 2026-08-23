@@ -265,7 +265,6 @@ def test_stub_vars_argument():
 @pytest.mark.parametrize(
     "kwargs",
     [
-        {"group_by": "indent"},
         {"count_blank_rows": True},
         {"auto_width": True},
         {"stub_group_summary": "parent"},

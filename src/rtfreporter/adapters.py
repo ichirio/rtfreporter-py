@@ -317,7 +317,8 @@ def _paginate(rows, group_keys, split, split_rows, max_rows, min_group_rows, con
         if not max_rows:
             raise ValueError(f'`max_rows` is required for split="{split}".')
         return _paginate_groups(
-            rows, group_keys, max_rows, split == "group_force", cont_label, cont_col
+            rows, group_keys, max_rows, split == "group_force", cont_label, cont_col,
+            min_group_rows,
         )
 
     raise ValueError(f"Unknown split strategy {split!r}.")
@@ -344,7 +345,99 @@ def _group_runs(group_keys):
     return runs
 
 
-def _paginate_groups(rows, group_keys, max_rows, force, cont_label, cont_col):
+def _group_info(group_keys):
+    """Per-row group id, header flag and label (mirrors R's compute_group_info)."""
+    gid: list[int] = []
+    headers: list[bool] = []
+    current = -1
+    for i, key in enumerate(group_keys):
+        is_header = i == 0 or key != group_keys[i - 1]
+        if is_header:
+            current += 1
+        gid.append(current)
+        headers.append(is_header)
+    return gid, headers, list(group_keys)
+
+
+def _continuation_row(row, cont_col, text):
+    """A repeated group header: every cell blanked except ``cont_col``."""
+    out = ["" if isinstance(cell, str) else None for cell in row]
+    if 0 <= cont_col < len(out):
+        out[cont_col] = text
+    return out
+
+
+def _split_group_force(rows, group_keys, max_rows, cont_label, cont_col, min_group_rows):
+    """Cut every ``max_rows`` rows, continuing a group across the break.
+
+    A port of R's ``.split_group_force()``.  Unlike ``group_safe`` this does
+    **not** wait for a group to exceed ``max_rows``: it cuts on the row limit
+    and, when the cut falls inside a group, repeats that group's header on the
+    next page with ``cont_label`` appended.  ``min_group_rows`` provides
+    widow/orphan control so a split never leaves a stub behind:
+
+    * *orphan* -- the group starts on this page but would show fewer than
+      ``min_group_rows`` children, so the whole group moves to the next page;
+    * *widow* -- the cut would spill fewer than ``min_group_rows`` rows onto the
+      next page, so the cut is pulled back.
+    """
+    n = len(rows)
+    if n == 0:
+        return [(rows, None)]
+    gid, headers, labels = _group_info(group_keys)
+
+    pages: list = []
+    pending: list | None = None  # continuation row to prepend to the next page
+    pos = 0
+    while pos < n:
+        end = min(pos + max_rows, n)
+
+        if min_group_rows > 0 and end < n and gid[end - 1] == gid[end]:
+            end_gid = gid[end - 1]
+            h = end - 1
+            while h > pos and not headers[h]:
+                h -= 1
+            starts_here = h > pos and headers[h] and gid[h] == end_gid
+            child_rows = (end - 1) - h
+            if starts_here and child_rows < min_group_rows:
+                end = h  # orphan: push the whole group to the next page
+            else:
+                tail = 0
+                k = end
+                while k < n and gid[k] == end_gid:
+                    tail += 1
+                    k += 1
+                if 0 < tail < min_group_rows:
+                    new_end = end - (min_group_rows - tail)
+                    g = end - 1
+                    while g > pos and gid[g - 1] == end_gid:
+                        g -= 1
+                    if new_end > pos + 1 and (new_end - g) >= min_group_rows:
+                        end = new_end
+
+        page = [list(r) for r in rows[pos:end]]
+        if pending is not None:
+            page.insert(0, pending)
+            pending = None
+
+        # Mid-group cut -> repeat the header on the next page with "(Cont.)".
+        if end < n and gid[end - 1] == gid[end]:
+            label = labels[end - 1]
+            text = ("" if label is None else str(label)) + cont_label
+            pending = _continuation_row(rows[end], cont_col, text)
+
+        pages.append((page, None))
+        pos = end
+
+    return pages
+
+
+def _paginate_groups(rows, group_keys, max_rows, force, cont_label, cont_col,
+                     min_group_rows=2):
+    if force:
+        return _split_group_force(
+            rows, group_keys, max_rows, cont_label, cont_col, min_group_rows
+        )
     runs = _group_runs(group_keys)
     pages = []
     current: list = []
@@ -386,6 +479,64 @@ def _split_group_rows(grp, max_rows, name, cont_label, group_col):
 # ============================================================================
 #  Public entry points
 # ============================================================================
+
+#: Characters that mark a cell as indented, i.e. a group *member* (as in R).
+_GROUP_INDENT_CHARS = (" ", "	", " ")
+
+
+def _as_text(value) -> str:
+    """Render a cell as text, treating None/NaN as the empty string."""
+    if value is None:
+        return ""
+    if isinstance(value, float) and value != value:  # NaN
+        return ""
+    return str(value)
+
+
+def _detect_group_mode(values: list[str]) -> str:
+    """Infer how group boundaries are marked, mirroring R's detection order.
+
+    Indentation wins over sparseness, which wins over plain value changes.
+    """
+    nonempty = [v != "" for v in values]
+    if any(ne and v[:1] in _GROUP_INDENT_CHARS for ne, v in zip(nonempty, values, strict=True)):
+        return "indent"
+    if any(not ne for ne in nonempty) and any(nonempty):
+        return "filled"
+    return "value"
+
+
+def _compute_group_keys(rows, group_idx, group_by: str):
+    """Per-row group keys for run-length grouping.
+
+    Mirrors R's ``.compute_group_info()``.  ``"value"`` groups consecutive equal
+    cells; ``"indent"`` treats a flush-left cell as a group header and indented
+    cells as its members; ``"filled"`` treats any non-empty cell as a header.
+    For the header-based modes the key is the header's own text, so it doubles
+    as the page name for ``split="by_value"``.
+    """
+    if group_idx is None:
+        return [None] * len(rows)
+    values = [_as_text(row[group_idx]) for row in rows]
+    mode = _detect_group_mode(values) if group_by == "auto" else group_by
+    if mode == "value":
+        return [row[group_idx] for row in rows]
+    if mode not in ("indent", "filled"):
+        raise ValueError(
+            f"`group_by` must be one of 'auto', 'indent', 'value', 'filled'; got {group_by!r}."
+        )
+    keys: list[str] = []
+    current = ""
+    for value in values:
+        nonempty = value != ""
+        is_header = nonempty if mode == "filled" else (
+            nonempty and value[:1] not in _GROUP_INDENT_CHARS
+        )
+        if is_header:
+            current = value
+        keys.append(current)
+    return keys
+
 
 #: Accepted string shorthand for ``blank_rows`` (mirrors the R package).
 BETWEEN_GROUPS = "between_groups"
@@ -514,11 +665,6 @@ def as_rtftables(
     """
     # Guard the not-yet-implemented R argument paths with a clear error rather
     # than silently ignoring them.
-    if group_by != "auto":
-        raise NotImplementedError(
-            f"as_rtftables(group_by={group_by!r}) is not implemented; only "
-            "'auto' (value-change detection) is supported."
-        )
     if count_blank_rows:
         raise NotImplementedError(
             "as_rtftables(count_blank_rows=True) is not implemented."
@@ -610,7 +756,7 @@ def as_rtftables(
         elif align_count_pct:
             realign_count_pct_df(rows, column_names)
 
-    group_keys = [row[group_idx] for row in rows] if group_idx is not None else [None] * len(rows)
+    group_keys = _compute_group_keys(rows, group_idx, group_by)
 
     if callable(split):
         # Custom split hook (or a page_split_* factory passed directly): build a
@@ -637,7 +783,14 @@ def as_rtftables(
     # Per-page blank spec: explicit blank_rows wins; else derive from group_col.
     page_blank = _expand_between_groups(blank_rows, group_idx)
     if page_blank is None and group_idx is not None and not callable(split) and split not in ("by_value",):
-        page_blank = blank_rows_by_change(group_idx)
+        if group_keys and group_keys != [row[group_idx] for row in rows]:
+            # Header-based grouping (indent / filled): the raw cell values all
+            # differ, so derive the separators from the computed group keys.
+            page_blank = [
+                i - 1 for i in range(1, len(group_keys)) if group_keys[i] != group_keys[i - 1]
+            ]
+        else:
+            page_blank = blank_rows_by_change(group_idx)
 
     from .table import _resolve_blank_rows
 
