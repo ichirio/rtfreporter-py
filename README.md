@@ -24,6 +24,22 @@ pip install rtfreporter          # core (no hard dependencies)
 pip install "rtfreporter[all]"   # + pandas, polars, great_tables
 ```
 
+## Sample data and showcase
+
+Two production-style clinical tables are included, built from real ADaM data
+and validated against the R implementation:
+
+```bash
+python examples/showcase_dm.py   # Table 14.1.1 demographics
+python examples/showcase_ae.py   # Adverse events by SOC / preferred term
+```
+
+`examples/data/{adsl,adae}.csv` is a subset of
+[pharmaverseadam](https://pharmaverse.github.io/pharmaverseadam/) (Apache-2.0,
+derived from the CDISC pilot study), vendored so the examples run with no R and
+no network -- see `examples/data/README.md` for provenance. Prefer generated
+data? `examples/adam_synthetic.py` is a seeded drop-in with the same columns.
+
 ## Quickstart
 
 ```python

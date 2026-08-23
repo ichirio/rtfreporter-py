@@ -6,6 +6,49 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-08-23
+
+Adds a clinical **showcase** built from real ADaM data, and fixes two
+pagination/grouping gaps that building it exposed.
+
+### Added
+
+- **Bundled ADaM sample data** (`examples/data/adsl.csv`, `adae.csv`) — a
+  subset of [pharmaverseadam](https://pharmaverse.github.io/pharmaverseadam/)
+  (Apache-2.0, CDISC pilot study), so every example runs with no R and no
+  network. Provenance and regeneration: `data-raw/export_pharmaverseadam.R`.
+- `examples/adam_data.py` — loader applying the showcase derivations, and
+  `examples/adam_synthetic.py` — a seeded synthetic generator with the same
+  column contract, for users who would rather not vendor the data.
+- `examples/showcase_dm.py` — Table 14.1.1 demographics, built both from a
+  pandas DataFrame and from a `great_tables` GT object.
+- `examples/showcase_ae.py` — adverse events by SOC and preferred term:
+  independent SOC-level counts, a 3% preferred-term filter, indentation-driven
+  grouping and multi-page output with `(Cont.)`.
+- `docs/showcase-dm.md` and `docs/showcase-ae.md`.
+- `tests/test_showcase.py` — asserts the output against
+  `data-raw/R_reference_numbers.txt`, i.e. figures produced by the R package.
+
+### Fixed
+
+- **`split="group_force"` never produced a continuation.** It split a group
+  only when that group alone exceeded `max_rows`, which is `group_safe`
+  behaviour. It now ports R's `.split_group_force()`: cut on every `max_rows`,
+  apply widow/orphan control via `min_group_rows`, and repeat the group header
+  on the next page with `cont_label`. Verified against R, which returns
+  identical pages for the same input.
+- **`blank_rows="between_groups"` raised `ValueError`.** The R shorthand is now
+  supported, including inside a combining list, and defaults to the first
+  column when no `group_col` is given.
+
+### Changed
+
+- **`group_by` is implemented.** It previously raised `NotImplementedError` for
+  anything but `"auto"`. All four R modes now work (`auto`, `indent`, `value`,
+  `filled`), with R's detection order (indent → filled → value). Default blank
+  separator rows are derived from the detected groups rather than raw cell
+  values under the header-based modes.
+
 ## [0.2.0] — 2026-08-22
 
 This release brings the public API into line with the R package, adds the

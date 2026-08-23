@@ -167,12 +167,71 @@ def build_document(adsl: pd.DataFrame, body: pd.DataFrame):
     return doc
 
 
+def build_gt(adsl: pd.DataFrame, body: pd.DataFrame):
+    """The same body as a ``great_tables`` GT object.
+
+    Demonstrates the second input route: rtfreporter reads the GT object's own
+    labels and spanners, so the column header does not have to be restated.
+    """
+    from great_tables import GT
+
+    flat = body.copy()
+    # Merge the two hierarchy columns here: a GT stub is read as a single
+    # column, so the indent is baked into the label instead of via stub_vars.
+    indent = chr(0xA0) * 4
+    seen: set[str] = set()
+    labels = []
+    for characteristic, statistic in zip(
+        flat["Characteristic"], flat["Statistic"], strict=True
+    ):
+        if characteristic not in seen:
+            seen.add(characteristic)
+            labels.append(characteristic)
+        labels.append(indent + statistic)
+    rows = []
+    seen.clear()
+    for i, (characteristic, statistic) in enumerate(
+        zip(flat["Characteristic"], flat["Statistic"], strict=True)
+    ):
+        if characteristic not in seen:
+            seen.add(characteristic)
+            rows.append([characteristic] + [""] * len(ARM_LEVELS))
+        rows.append([indent + statistic] + [flat.iloc[i][a] for a in ARM_LEVELS])
+    gt_frame = pd.DataFrame(rows, columns=["Characteristic", *ARM_LEVELS])
+
+    table = GT(gt_frame).tab_spanner(label="Treatment Group", columns=list(ARM_LEVELS))
+    for arm, label in zip(ARM_LEVELS, arm_labels(adsl), strict=True):
+        table = table.cols_label(**{arm: label})
+    return table.cols_label(Characteristic="")
+
+
+def build_document_via_gt(adsl: pd.DataFrame, body: pd.DataFrame):
+    """Build the document from the GT object rather than the raw frame."""
+    from rtfreporter import as_rtftables
+
+    pages = as_rtftables(
+        build_gt(adsl, body),
+        read_meta=True,
+        col_spec=_col_spec(),
+        col_rel_width=DM_WIDTHS,
+    )
+    doc = rtf_document(page=DM_PAGE)
+    doc = rtf_tables(doc, pages)
+    doc = rtf_section(doc, header=DM_HEADER, footer=DM_FOOTER)
+    return doc
+
+
 def main() -> str:
     adsl = load_adsl()
     body = build_body(adsl)
     doc = build_document(adsl, body)
     out = os.path.join(HERE, "showcase_dm.rtf")
     generate_rtfreport(doc, out, overwrite=True)
+
+    # Second route: the identical body handed over as a great_tables object.
+    gt_out = os.path.join(HERE, "showcase_dm_gt.rtf")
+    generate_rtfreport(build_document_via_gt(adsl, body), gt_out, overwrite=True)
+    print(f"wrote {gt_out}")
     print(f"wrote {out}")
     # Replace the non-breaking padding with a dot so the body is readable on
     # consoles whose encoding cannot represent U+00A0 (e.g. Windows cp932).

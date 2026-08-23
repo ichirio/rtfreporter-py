@@ -66,4 +66,7 @@ nav:
       - Figures: figures.md
       - Styling: styling.md
       - Assembling deliverables: assembling.md
+  - Showcase:
+      - Demographics (Table 14.1.1): showcase-dm.md
+      - Adverse events by SOC/PT: showcase-ae.md
   - API reference: reference.md

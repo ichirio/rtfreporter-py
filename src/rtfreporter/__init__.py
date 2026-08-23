@@ -131,7 +131,7 @@ from .table import (
 )
 from .text_width import auto_col_widths, text_width_in
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     "__version__",
