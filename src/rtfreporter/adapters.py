@@ -387,6 +387,30 @@ def _split_group_rows(grp, max_rows, name, cont_label, group_col):
 #  Public entry points
 # ============================================================================
 
+#: Accepted string shorthand for ``blank_rows`` (mirrors the R package).
+BETWEEN_GROUPS = "between_groups"
+
+
+def _expand_between_groups(blank_rows, group_idx):
+    """Expand the ``"between_groups"`` shorthand into a change-based spec.
+
+    ``blank_rows="between_groups"`` means "a blank row at every group
+    transition on ``group_col``", matching the R package.  It may also appear
+    inside a combining list, e.g. ``["between_groups", AFTER_LAST]``.  When no
+    ``group_col`` was given the first column is used, as in R.
+    """
+    if blank_rows is None:
+        return None
+    if isinstance(blank_rows, str):
+        if blank_rows != BETWEEN_GROUPS:
+            raise ValueError(
+                f"`blank_rows` string must be {BETWEEN_GROUPS!r}; got {blank_rows!r}."
+            )
+        return blank_rows_by_change(group_idx if group_idx is not None else 0)
+    if isinstance(blank_rows, (list, tuple)):
+        return [_expand_between_groups(item, group_idx) for item in blank_rows]
+    return blank_rows
+
 
 def as_rtftables(
     x,
@@ -611,7 +635,7 @@ def as_rtftables(
         )
 
     # Per-page blank spec: explicit blank_rows wins; else derive from group_col.
-    page_blank = blank_rows
+    page_blank = _expand_between_groups(blank_rows, group_idx)
     if page_blank is None and group_idx is not None and not callable(split) and split not in ("by_value",):
         page_blank = blank_rows_by_change(group_idx)
 

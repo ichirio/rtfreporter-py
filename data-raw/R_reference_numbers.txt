@@ -1,0 +1,114 @@
+adae has AESOC: TRUE 
+adsl rows: 254  adae rows: 1122 
+
+=== ARM N (denominators) ===
+
+             Placebo  Xanomeline Low Dose Xanomeline High Dose 
+                  86                   96                   72 
+
+=== AGE summary by arm ===
+                TRT01A  n mean   sd median min max
+1              Placebo 86 75.2 8.59   76.0  52  89
+2  Xanomeline Low Dose 96 76.0 8.11   78.0  51  88
+3 Xanomeline High Dose 72 73.8 7.94   75.5  56  88
+
+=== AGEGR counts by arm ===
+    AGEGR Placebo Xanomeline Low Dose Xanomeline High Dose
+1     <65      14                   8                   11
+2 65 - 80      42                  53                   49
+3     >80      30                  35                   12
+
+=== SEX counts by arm ===
+  SEX Placebo Xanomeline Low Dose Xanomeline High Dose
+1   F      53                  55                   35
+2   M      33                  41                   37
+
+=== RACE counts by arm ===
+                              RACE Placebo Xanomeline Low Dose
+1        BLACK OR AFRICAN AMERICAN       8                   6
+2                            WHITE      78                  90
+3 AMERICAN INDIAN OR ALASKA NATIVE       0                   0
+  Xanomeline High Dose
+1                    9
+2                   62
+3                    1
+
+=== ANY AE: distinct subjects with any TEAE, by arm ===
+                TRT01A  n
+1              Placebo 65
+2  Xanomeline Low Dose 84
+3 Xanomeline High Dose 68
+
+=== SOC-level distinct subject counts by arm (top 8 SOCs alphabetical) ===
+                                                 AESOC Placebo
+1                                    CARDIAC DISORDERS      12
+2           CONGENITAL, FAMILIAL AND GENETIC DISORDERS       0
+3                          EAR AND LABYRINTH DISORDERS       1
+4                                        EYE DISORDERS       2
+5                           GASTROINTESTINAL DISORDERS      17
+6 GENERAL DISORDERS AND ADMINISTRATION SITE CONDITIONS      21
+7                              HEPATOBILIARY DISORDERS       1
+8                              IMMUNE SYSTEM DISORDERS       0
+  Xanomeline Low Dose Xanomeline High Dose
+1                  14                   14
+2                   1                    2
+3                   2                    1
+4                   2                    1
+5                  15                   19
+6                  51                   36
+7                   0                    0
+8                   1                    0
+
+=== PT order (subject count desc, ties A-Z) - first 15 ===
+                       AEDECOD tot
+1                     PRURITUS  54
+2    APPLICATION SITE PRURITUS  50
+3                     ERYTHEMA  36
+4    APPLICATION SITE ERYTHEMA  30
+5                         RASH  26
+6  APPLICATION SITE DERMATITIS  21
+7  APPLICATION SITE IRRITATION  21
+8                    DIZZINESS  21
+9                    DIARRHOEA  17
+10           SINUS BRADYCARDIA  17
+11               HYPERHIDROSIS  14
+12             SKIN IRRITATION  14
+13                    VOMITING  13
+14             NASOPHARYNGITIS  12
+15                      NAUSEA  12
+
+=== PTs kept (>= 3% in any arm) ===
+count kept: 32 
+                                   AEDECOD        mx
+1                           ABDOMINAL PAIN  3.125000
+2                                AGITATION  3.125000
+3                                  ANXIETY  3.125000
+4              APPLICATION SITE DERMATITIS  9.722222
+5                APPLICATION SITE ERYTHEMA 19.444444
+6              APPLICATION SITE IRRITATION 12.500000
+7                APPLICATION SITE PRURITUS 29.166667
+8                APPLICATION SITE VESICLES  6.944444
+9                                BACK PAIN  4.166667
+10                                 BLISTER  5.208333
+11                       CONFUSIONAL STATE  3.125000
+12                                   COUGH  6.944444
+13                               DIARRHOEA 10.465116
+14                               DIZZINESS 13.888889
+15 ELECTROCARDIOGRAM ST SEGMENT DEPRESSION  4.651163
+16                                ERYTHEMA 19.444444
+17                                 FATIGUE  6.944444
+18                                HEADACHE  6.944444
+19                           HYPERHIDROSIS 11.111111
+20                   MYOCARDIAL INFARCTION  5.555556
+21                        NASAL CONGESTION  4.166667
+22                         NASOPHARYNGITIS  8.333333
+23                                  NAUSEA  8.333333
+24                                PRURITUS 34.722222
+25                                    RASH 13.541667
+26                 SALIVARY HYPERSECRETION  5.555556
+27                       SINUS BRADYCARDIA 11.111111
+28                         SKIN IRRITATION  6.944444
+29                              SOMNOLENCE  3.125000
+30                                 SYNCOPE  5.208333
+31       UPPER RESPIRATORY TRACT INFECTION  6.976744
+32                                VOMITING  8.333333

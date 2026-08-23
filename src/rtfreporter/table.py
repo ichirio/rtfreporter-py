@@ -501,6 +501,11 @@ def _resolve_blank_rows(blank_rows, column_names, rows) -> list[int]:
                 add(x)
         elif isinstance(item, bool):
             raise TypeError("`blank_rows` positions must be integers, not bool.")
+        elif isinstance(item, str):
+            raise ValueError(
+                "`blank_rows` string shorthand is only resolved by as_rtftables(); "
+                f"got {item!r}. Use blank_rows_by_change() here instead."
+            )
         else:
             iv = int(item)
             if iv < 0:
