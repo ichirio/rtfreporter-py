@@ -4,18 +4,20 @@
 
 `rtfreporter` composes a Rich Text Format (RTF) document — the format regulators
 and medical writers still expect — directly from tabular data, with **no
-third-party RTF engine**. It is a faithful, Pythonic port of the R package
-[`rtfreporter`](https://github.com/ichirio/rtfreporter).
+third-party RTF engine**. It is a faithful port of the R package
+[`rtfreporter`](https://ichirio.github.io/rtfreporter/): same function names,
+same arguments, same output.
 
-- Build tables with multi-row **spanning column headers**, per-column
-  formatting, and the clinical **TFL border** convention.
-- Turn a **pandas** / **polars** DataFrame or a **great_tables** `GT` object
-  into paginated pages with one call (`as_rtftables`).
-- Running **headers / footers** with automatic page-number fields
+- Multi-row **spanning column headers**, per-column formatting, and the clinical
+  **TFL border** convention.
+- Turn a **pandas** / **polars** DataFrame or a **great_tables** `GT` object into
+  paginated pages with one call (`as_rtftables`).
+- Running **headers and footers** with live page-number fields
   (`{AUTO_PAGE}`, `{AUTO_TOTAL_PAGES}`).
-- **Titles / footnotes**, blank separator rows, `(Cont.)` continuation markers.
+- **Titles and footnotes**, blank separator rows, `(Cont.)` continuation markers.
 - Embed **PNG / JPEG figures** at their native DPI.
-- A fluent, chainable document builder plus a plain functional layer.
+- **Assemble** several rendered reports into one deliverable with a table of
+  contents.
 
 ## Install
 
@@ -27,12 +29,14 @@ pip install "rtfreporter[all]"   # + pandas, polars, great_tables
 ## Quickstart
 
 ```python
-from rtfreporter import RtfDocument, header, footer
+from rtfreporter import RtfDocument, rtf_header, rtf_footer
 
 doc = (
     RtfDocument()
     .add_section(
-        header=rtf_header([{"l": "Protocol XYZ", "r": "Page {AUTO_PAGE} of {AUTO_TOTAL_PAGES}"}]),
+        header=rtf_header([
+            {"l": "Protocol XYZ", "r": "Page {AUTO_PAGE} of {AUTO_TOTAL_PAGES}"},
+        ]),
         footer=rtf_footer([{"c": "CONFIDENTIAL"}]),
     )
     .add_table(
@@ -45,17 +49,50 @@ doc = (
 doc.save("demographics.rtf")
 ```
 
+The same report written in the R package's functional style works too — see the
+[Document API guide](document-api.md).
+
+## Built on the R package
+
+!!! info "Features land in R first"
+
+    New functionality is designed and implemented in the
+    [R package](https://ichirio.github.io/rtfreporter/), then ported here. The
+    Python package does not add features of its own, so the two cannot drift
+    apart.
+
+    **Questions and usage discussion happen in one shared place:**
+    [Discussions on the R repository](https://github.com/ichirio/rtfreporter/discussions).
+    The Python repository keeps its own
+    [issue tracker](https://github.com/ichirio/rtfreporter-py/issues) for
+    defects specific to the port.
+
+All 74 exported R functions exist here under the same names, and the worked
+examples assert their figures against numbers produced by R. See
+[Relationship to R](relationship-to-r.md).
+
 ## Where to next
 
 <div class="grid cards" markdown>
 
-- **[Getting started](getting-started.md)** — install and a five-minute tour.
-- **[Importing tables](importing-tables.md)** — `as_rtftable` / `as_rtftables`.
-- **[Pagination](pagination.md)** — split strategies and `(Cont.)` markers.
-- **[Borders and rules](borders.md)** — presets, zones, and per-cell control.
-- **[Headers and footers](headers-footers.md)** — sections and page tokens.
-- **[Figures](figures.md)** — embed PNG / JPEG.
-- **[Styling](styling.md)** — the post-hoc style verbs.
-- **[API reference](reference.md)** — every public symbol.
+- :material-rocket-launch: **[Get started](getting-started.md)**
+
+    Install and a five-minute tour.
+
+- :material-book-open-variant: **[Articles](articles.md)**
+
+    The full guide index — page setup, borders, pagination, styling, assembly.
+
+- :material-chart-box: **[Worked examples](showcase-dm.md)**
+
+    Production-style demographics and adverse-event tables from real ADaM data.
+
+- :fontawesome-brands-r-project: **[Relationship to R](relationship-to-r.md)**
+
+    How the port is developed, and where to ask questions.
+
+- :material-api: **[API reference](reference.md)**
+
+    Every public symbol, grouped as in the R package.
 
 </div>

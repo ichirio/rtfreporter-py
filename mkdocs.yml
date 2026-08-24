@@ -3,27 +3,61 @@ site_description: Clinical RTF Reporting Toolkit for Tables, Listings and Figure
 site_url: https://ichirio.github.io/rtfreporter-py/
 repo_url: https://github.com/ichirio/rtfreporter-py
 repo_name: ichirio/rtfreporter-py
+copyright: >
+  Apache-2.0 licensed &middot;
+  a Python port of <a href="https://github.com/ichirio/rtfreporter">rtfreporter</a> for R
 
 theme:
   name: material
+  # Typography matched to the R package's pkgdown site (Source Sans 3 /
+  # JetBrains Mono); the navy itself lives in stylesheets/extra.css, selected
+  # by the `custom` palette entries below.
+  font:
+    text: Source Sans 3
+    code: JetBrains Mono
+  icon:
+    repo: fontawesome/brands/github
   palette:
+    # "custom" hands the colours to stylesheets/extra.css, which sets the
+    # navy used by the R package's site.
     - scheme: default
-      primary: indigo
-      accent: indigo
+      primary: custom
+      accent: custom
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
     - scheme: slate
-      primary: indigo
-      accent: indigo
+      primary: custom
+      accent: custom
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
   features:
     - navigation.sections
+    - navigation.tabs
     - navigation.top
+    - navigation.indexes
+    - navigation.tracking
     - content.code.copy
+    - content.tooltips
     - toc.follow
+    - search.suggest
+    - search.highlight
+
+extra_css:
+  - stylesheets/extra.css
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/ichirio/rtfreporter-py
+      name: rtfreporter-py on GitHub
+    - icon: fontawesome/brands/r-project
+      link: https://ichirio.github.io/rtfreporter/
+      name: The R package this port follows
+    - icon: fontawesome/solid/comments
+      link: https://github.com/ichirio/rtfreporter/discussions
+      name: Discussions (shared with the R package)
 
 plugins:
   - search
@@ -41,32 +75,50 @@ plugins:
             show_signature_annotations: true
             separate_signature: true
             members_order: source
-            heading_level: 2
+            heading_level: 3
 
 markdown_extensions:
   - admonition
+  - attr_list
+  - md_in_html
+  - def_list
+  - footnotes
   - pymdownx.details
   - pymdownx.superfences
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - tables
   - toc:
       permalink: true
 
 nav:
   - Home: index.md
-  - Getting started: getting-started.md
-  - Differences from R: r-differences.md
+  - Get started: getting-started.md
   - Articles:
-      - Importing tables: importing-tables.md
-      - Pagination: pagination.md
-      - Borders and rules: borders.md
-      - Headers and footers: headers-footers.md
-      - Figures: figures.md
-      - Styling: styling.md
-      - Assembling deliverables: assembling.md
-  - Showcase:
-      - Demographics (Table 14.1.1): showcase-dm.md
-      - Adverse events by SOC/PT: showcase-ae.md
+      - articles.md
+      - For package users:
+          - Document API guide: document-api.md
+          - Page and document setup: page-setup.md
+          - Adding tables and figures: adding-content.md
+          - Borders and rules: borders.md
+          - Importing tables: importing-tables.md
+          - Paginating: pagination.md
+          - Headers and footers: headers-footers.md
+          - Splitting a report into sections: section-splitting.md
+          - Post-hoc styling: styling.md
+          - Figures: figures.md
+          - Rendering and post-processing: output.md
+          - Assembling deliverables: assembling.md
+      - Worked clinical examples:
+          - Demographics (Table 14.1.1): showcase-dm.md
+          - Adverse events by SOC/PT: showcase-ae.md
+  - Relationship to R:
+      - relationship-to-r.md
+      - Differences from the R package: r-differences.md
   - API reference: reference.md

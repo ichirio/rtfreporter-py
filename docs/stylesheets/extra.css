@@ -1,0 +1,136 @@
+/* Palette matched to the R package's pkgdown site (bootswatch "cosmo" with a
+   navy primary), so the two sites read as one project. */
+
+:root {
+  --rtf-navy: #1f4e79;
+  --rtf-navy-dark: #163a5a;
+  --rtf-navy-light: #2f6fa8;
+}
+
+/* Material applies the palette through data-md-color-* attributes, which win
+   over a plain :root rule -- so the colours must be declared on those hooks.
+   `primary: custom` / `accent: custom` in mkdocs.yml select them. */
+[data-md-color-primary="custom"] {
+  --md-primary-fg-color: var(--rtf-navy);
+  --md-primary-fg-color--light: var(--rtf-navy-light);
+  --md-primary-fg-color--dark: var(--rtf-navy-dark);
+  --md-primary-bg-color: #ffffff;
+  --md-primary-bg-color--light: rgba(255, 255, 255, 0.7);
+}
+
+[data-md-color-accent="custom"] {
+  --md-accent-fg-color: var(--rtf-navy-light);
+  --md-accent-fg-color--transparent: rgba(47, 111, 168, 0.1);
+  --md-accent-bg-color: #ffffff;
+  --md-accent-bg-color--light: rgba(255, 255, 255, 0.7);
+}
+
+/* Dark scheme: lift the navy so it keeps contrast against the slate surface. */
+[data-md-color-scheme="slate"][data-md-color-primary="custom"] {
+  --md-primary-fg-color: var(--rtf-navy-dark);
+}
+
+[data-md-color-scheme="slate"][data-md-color-accent="custom"] {
+  --md-accent-fg-color: #7fb2e0;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-typeset-a-color: #8ec1ec;
+}
+
+/* ---------------------------------------------------------------- headings */
+
+.md-typeset h1,
+.md-typeset h2 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.md-typeset h2 {
+  margin-top: 2rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+}
+
+/* ------------------------------------------------------------------ tables */
+
+/* Clinical tables are the subject matter here, so give data tables a
+   TFL-like look: a rule under the header, no vertical grid. */
+.md-typeset table:not([class]) {
+  border: none;
+  font-size: 0.76rem;
+}
+
+.md-typeset table:not([class]) th {
+  background: transparent;
+  border-bottom: 2px solid var(--md-default-fg-color--light);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.md-typeset table:not([class]) td {
+  border-top: none;
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+}
+
+/* -------------------------------------------------------------- home cards */
+
+.md-typeset .grid.cards > ul > li {
+  border-radius: 0.3rem;
+  border-color: var(--md-default-fg-color--lightest);
+}
+
+.md-typeset .grid.cards > ul > li:hover {
+  border-color: var(--md-primary-fg-color--light);
+  box-shadow: 0 0 0.3rem rgba(31, 78, 121, 0.18);
+}
+
+/* --------------------------------------------------------- R-parity badges */
+
+/* Inline markers used in the reference index and the parity tables. */
+.rtf-badge {
+  display: inline-block;
+  padding: 0.05rem 0.4rem;
+  border-radius: 0.6rem;
+  font-size: 0.62rem;
+  font-weight: 600;
+  line-height: 1.5;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.rtf-badge.ok {
+  background: rgba(31, 121, 78, 0.14);
+  color: #1f794e;
+}
+
+.rtf-badge.partial {
+  background: rgba(184, 134, 11, 0.16);
+  color: #8a6508;
+}
+
+.rtf-badge.none {
+  background: rgba(150, 150, 150, 0.18);
+  color: var(--md-default-fg-color--light);
+}
+
+[data-md-color-scheme="slate"] .rtf-badge.ok {
+  background: rgba(90, 200, 150, 0.18);
+  color: #7fd6ad;
+}
+
+[data-md-color-scheme="slate"] .rtf-badge.partial {
+  background: rgba(230, 180, 60, 0.18);
+  color: #e8c56a;
+}
+
+/* ------------------------------------------------------- reference sections */
+
+/* mkdocstrings emits one block per symbol; separate the groups clearly. */
+.md-typeset .doc-heading {
+  scroll-margin-top: 4rem;
+}
+
+.md-typeset .doc-object {
+  margin-bottom: 1.2rem;
+}

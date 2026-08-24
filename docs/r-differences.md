@@ -4,6 +4,10 @@
 argument order, and defaults as closely as possible.  There are **two
 deliberate divergences**, both chosen for Pythonic ergonomics.
 
+For how the two projects relate — the R-first development policy, the shared
+Discussions forum, and the adapter differences forced by the ecosystem — see
+[Relationship to R](relationship-to-r.md).
+
 ## 1. Indices are 0-based
 
 Every index-taking argument is **0-based** (R is 1-based).  A column *name* may

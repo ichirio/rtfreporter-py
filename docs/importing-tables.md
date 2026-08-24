@@ -11,6 +11,23 @@ document consumes. It does two jobs:
 This article covers the *reading / conversion* side. Pagination has its own
 guide: [Pagination](pagination.md).
 
+!!! note "How this differs from the R package"
+
+    In R, reading table objects is the package's headline feature: it accepts
+    `gt`, `gtsummary`, `rtables`/`tern`, `tfrmt`, `flextable` and `huxtable`
+    objects, because that is the ecosystem R users already work in.
+
+    **Python has no equivalents to most of those packages**, so the supported
+    sources here are the ones that actually exist: **pandas**, **polars**, and
+    **`great_tables`** (the Python port of `gt`, supported in full — spanners,
+    `tab_style()` cell styling, row groups, summary rows and footnotes).
+
+    The consequence is that the DataFrame route carries more weight in Python
+    than in R: rather than handing over a finished framework object, you shape
+    a tidy frame and let `as_rtftables()` finish it with `stub_vars`,
+    `col_header`, `cell_format` and the pagination arguments. See
+    [Relationship to R](relationship-to-r.md).
+
 ```python
 import pandas as pd
 from rtfreporter import as_rtftables, as_rtftable

@@ -65,6 +65,24 @@ class RtfDocument:
         self._sections: list[dict] = []
         self._pages: list[dict] = []
 
+    # -- copy-on-modify ------------------------------------------------------
+
+    def _copy(self) -> RtfDocument:
+        """Return an independent copy, as R's copy-on-modify semantics require.
+
+        Every builder below works on a copy, so the document handed in is never
+        changed.  This matters when a base document (shared page setup, colour
+        table, fonts) is reused to start several reports: in R that is safe, and
+        it must be safe here too.
+        """
+        new = RtfDocument.__new__(RtfDocument)
+        new.page = self.page
+        new.default_format = self.default_format
+        new.color_table = list(self.color_table) if self.color_table else None
+        new._sections = [dict(section) for section in self._sections]
+        new._pages = [dict(page) for page in self._pages]
+        return new
+
     # -- section / content builders -----------------------------------------
 
     def add_section(
@@ -75,6 +93,8 @@ class RtfDocument:
     ) -> RtfDocument:
         """Start a new section with a running ``header`` / ``footer``.
 
+        Returns a **new** document; the receiver is left unchanged.
+
         Args:
             header, footer: Bands built with :func:`~rtfreporter.rtf_header` /
                 :func:`~rtfreporter.rtf_footer`.  ``None`` inherits the previous
@@ -82,12 +102,13 @@ class RtfDocument:
             from_page: 1-based first page of the section.  ``None`` uses the
                 next page to be added.
         """
+        new = self._copy()
         if from_page is None:
-            from_page = len(self._pages) + 1
-        self._sections.append(
+            from_page = len(new._pages) + 1
+        new._sections.append(
             {"header": header, "footer": footer, "from_page": int(from_page)}
         )
-        return self
+        return new
 
     def add_table(
         self,
@@ -112,8 +133,9 @@ class RtfDocument:
             title = content.titles
         if footnote is None and content.footnotes is not None:
             footnote = content.footnotes
-        self._pages.append({"title": title, "content": content, "footnote": footnote})
-        return self
+        new = self._copy()
+        new._pages.append({"title": title, "content": content, "footnote": footnote})
+        return new
 
     def add_figure(self, figure, title=None, footnote=None, **kwargs) -> RtfDocument:
         """Add one content page holding a figure.
@@ -124,37 +146,41 @@ class RtfDocument:
                 is a path.
         """
         content = figure if isinstance(figure, Figure) else rtfplot(figure, **kwargs)
-        self._pages.append({"title": title, "content": content, "footnote": footnote})
-        return self
+        new = self._copy()
+        new._pages.append({"title": title, "content": content, "footnote": footnote})
+        return new
 
     def add_tables(self, tables, titles=None, footnotes=None, **table_kwargs) -> RtfDocument:
         """Add several table pages at once (one page per element).
 
         ``titles`` / ``footnotes`` are parallel lists, one entry per table.
+        Returns a **new** document; the receiver is left unchanged.
         """
-        tables = list(tables)
-        for i, tbl in enumerate(tables):
-            self.add_table(
+        new = self
+        for i, tbl in enumerate(list(tables)):
+            new = new.add_table(
                 tbl,
                 title=titles[i] if titles is not None and i < len(titles) else None,
                 footnote=footnotes[i] if footnotes is not None and i < len(footnotes) else None,
                 **table_kwargs,
             )
-        return self
+        return new if new is not self else self._copy()
 
     def titles(self, titles) -> RtfDocument:
         """Set the title of each existing page from a parallel list."""
+        new = self._copy()
         for i, t in enumerate(titles):
-            if i < len(self._pages):
-                self._pages[i]["title"] = t
-        return self
+            if i < len(new._pages):
+                new._pages[i]["title"] = t
+        return new
 
     def footnotes(self, footnotes) -> RtfDocument:
         """Set the footnote of each existing page from a parallel list."""
+        new = self._copy()
         for i, f in enumerate(footnotes):
-            if i < len(self._pages):
-                self._pages[i]["footnote"] = f
-        return self
+            if i < len(new._pages):
+                new._pages[i]["footnote"] = f
+        return new
 
     # -- output --------------------------------------------------------------
 
@@ -280,7 +306,7 @@ def rtf_tables(
         **table_kwargs: Forwarded to :func:`~rtfreporter.rtftable`.
 
     Returns:
-        ``doc`` (for chaining).
+        A **new** document; ``doc`` is left unchanged (as in R).
     """
     if not isinstance(doc, RtfDocument):
         raise TypeError("`doc` must be an RtfDocument.")
@@ -288,14 +314,15 @@ def rtf_tables(
     n = len(items)
     tlist = _broadcast_blocks(titles, n)
     flist = _broadcast_blocks(footnotes, n)
+    out = doc
     for i, tbl in enumerate(items):
-        doc.add_table(
+        out = out.add_table(
             tbl,
             title=tlist[i] if tlist is not None else None,
             footnote=flist[i] if flist is not None else None,
             **table_kwargs,
         )
-    return doc
+    return out if out is not doc else doc._copy()
 
 
 def rtf_figures(
@@ -313,14 +340,15 @@ def rtf_figures(
     n = len(figures)
     tlist = _broadcast_blocks(titles, n)
     flist = _broadcast_blocks(footnotes, n)
+    out = doc
     for i, fig in enumerate(figures):
-        doc.add_figure(
+        out = out.add_figure(
             fig,
             title=tlist[i] if tlist is not None else None,
             footnote=flist[i] if flist is not None else None,
             **fig_kwargs,
         )
-    return doc
+    return out if out is not doc else doc._copy()
 
 
 def rtf_titles(doc: RtfDocument, titles) -> RtfDocument:
@@ -334,8 +362,7 @@ def rtf_titles(doc: RtfDocument, titles) -> RtfDocument:
     if n == 0:
         raise ValueError("Cannot set titles before any content has been added.")
     blocks = _broadcast_blocks(titles, n, require_list=True)
-    doc.titles(blocks)
-    return doc
+    return doc.titles(blocks)
 
 
 def rtf_footnotes(doc: RtfDocument, footnotes) -> RtfDocument:
@@ -346,8 +373,7 @@ def rtf_footnotes(doc: RtfDocument, footnotes) -> RtfDocument:
     if n == 0:
         raise ValueError("Cannot set footnotes before any content has been added.")
     blocks = _broadcast_blocks(footnotes, n, require_list=True)
-    doc.footnotes(blocks)
-    return doc
+    return doc.footnotes(blocks)
 
 
 def rtf_section(
@@ -369,8 +395,7 @@ def rtf_section(
     """
     if not isinstance(doc, RtfDocument):
         raise TypeError("`doc` must be an RtfDocument.")
-    doc.add_section(header=header, footer=footer, from_page=page)
-    return doc
+    return doc.add_section(header=header, footer=footer, from_page=page)
 
 
 def generate_rtfreport(doc: RtfDocument, file_path: str, overwrite: bool = False) -> str:
