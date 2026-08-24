@@ -1,4 +1,4 @@
-# rtfreporter
+# rtfreporter <img src="docs/assets/logo.svg" align="right" height="120" alt="rtfreporter logo — a clinical TFL page" />
 
 **A Python toolkit for clinical RTF Tables, Listings and Figures (TLFs).**
 

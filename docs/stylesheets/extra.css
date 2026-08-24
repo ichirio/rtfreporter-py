@@ -134,3 +134,23 @@
 .md-typeset .doc-object {
   margin-bottom: 1.2rem;
 }
+
+/* ------------------------------------------------------------- home logo */
+
+/* Material's `.md-typeset img` rules override the HTML height attribute, so
+   the home-page hex is sized here instead. */
+.md-typeset img.rtf-home-logo {
+  float: right;
+  height: 150px;
+  width: auto;
+  margin: -0.4rem 0 1rem 1.5rem;
+}
+
+@media screen and (max-width: 44.98em) {
+  .md-typeset img.rtf-home-logo {
+    float: none;
+    display: block;
+    height: 120px;
+    margin: 0 auto 1rem;
+  }
+}

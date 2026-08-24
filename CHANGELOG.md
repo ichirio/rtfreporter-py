@@ -8,6 +8,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **The R package's hex logo**, reused as the site logo, favicon and README
+  mark. The design is identical (hexagon, navy frame, miniature clinical-TFL
+  page, `rtfreporter` wordmark, `ichirio` family attribution); only the
+  per-package tagline changes, from `CLINICAL · TFL · RTF` to
+  `PYTHON · CLINICAL · TFL`, so the two sites read as one project while
+  staying distinguishable in a browser tab.
 - **Documentation site brought in line with the R package**: navy/Source Sans 3
   styling matching the pkgdown site, an Articles index, and five new user
   guides — Document API, Page and document setup, Adding tables and figures,

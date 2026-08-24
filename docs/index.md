@@ -1,5 +1,7 @@
 # rtfreporter
 
+<img class="rtf-home-logo" src="assets/logo.svg" alt="rtfreporter logo: a clinical TFL page" />
+
 **A Python toolkit for clinical RTF Tables, Listings and Figures (TLFs).**
 
 `rtfreporter` composes a Rich Text Format (RTF) document — the format regulators
