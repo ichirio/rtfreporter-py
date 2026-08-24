@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://ichirio.github.io/rtfreporter-py/figures/">
+        <link rel="canonical" href="https://ichirio.github.io/rtfreporter-py/output/">
       
       
-        <link rel="prev" href="../styling/">
+        <link rel="prev" href="../figures/">
       
       
-        <link rel="next" href="../output/">
+        <link rel="next" href="../assembling/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Figures - rtfreporter</title>
+        <title>Rendering and post-processing - rtfreporter</title>
       
     
     
@@ -82,7 +82,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#figures" class="md-skip">
+        <a href="#rendering-and-post-processing" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Figures
+              Rendering and post-processing
             
           </span>
         </div>
@@ -857,6 +857,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../figures/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Figures
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -876,7 +904,7 @@
   <span class="md-ellipsis">
     
   
-    Figures
+    Rendering and post-processing
   
 
     
@@ -894,7 +922,7 @@
   <span class="md-ellipsis">
     
   
-    Figures
+    Rendering and post-processing
   
 
     
@@ -920,10 +948,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#embedding-an-image" class="md-nav__link">
+  <a href="#rendering" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Embedding an image
+        Rendering
       
     </span>
   </a>
@@ -931,10 +959,38 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#sizing" class="md-nav__link">
+  <a href="#what-the-output-looks-like" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Sizing
+        What the output looks like
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What the output looks like">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#checking-a-file-is-well-formed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checking a file is well formed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#post-processing-a-rendered-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Post-processing a rendered file
       
     </span>
   </a>
@@ -942,10 +998,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#alignment" class="md-nav__link">
+  <a href="#combining-several-files" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Alignment
+        Combining several files
       
     </span>
   </a>
@@ -953,10 +1009,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#reading-dimensions-without-rendering" class="md-nav__link">
+  <a href="#where-to-next" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Reading dimensions without rendering
+        Where to next
       
     </span>
   </a>
@@ -967,34 +1023,6 @@
   
 </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../output/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Rendering and post-processing
-  
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -1343,10 +1371,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#embedding-an-image" class="md-nav__link">
+  <a href="#rendering" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Embedding an image
+        Rendering
       
     </span>
   </a>
@@ -1354,10 +1382,38 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#sizing" class="md-nav__link">
+  <a href="#what-the-output-looks-like" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Sizing
+        What the output looks like
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What the output looks like">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#checking-a-file-is-well-formed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checking a file is well formed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#post-processing-a-rendered-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Post-processing a rendered file
       
     </span>
   </a>
@@ -1365,10 +1421,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#alignment" class="md-nav__link">
+  <a href="#combining-several-files" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Alignment
+        Combining several files
       
     </span>
   </a>
@@ -1376,10 +1432,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#reading-dimensions-without-rendering" class="md-nav__link">
+  <a href="#where-to-next" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Reading dimensions without rendering
+        Where to next
       
     </span>
   </a>
@@ -1406,53 +1462,119 @@
   
 
 
-<h1 id="figures">Figures<a class="headerlink" href="#figures" title="Permanent link">&para;</a></h1>
-<p><code>rtfreporter</code> can embed <strong>PNG</strong> and <strong>JPEG</strong> images directly into an RTF
-document — no external tools. A figure occupies its own content page, with the
-same title/footnote support as a table.</p>
-<h2 id="embedding-an-image">Embedding an image<a class="headerlink" href="#embedding-an-image" title="Permanent link">&para;</a></h2>
-<p>Pass a path to
-<a href="../reference/#rtfreporter.document.RtfDocument.add_figure"><code>add_figure</code></a>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="n">RtfDocument</span>
+<h1 id="rendering-and-post-processing">Rendering and post-processing<a class="headerlink" href="#rendering-and-post-processing" title="Permanent link">&para;</a></h1>
+<p>Turning a finished document into bytes, what those bytes contain, and the
+last-mile edits you sometimes need on a rendered file.</p>
+<h2 id="rendering">Rendering<a class="headerlink" href="#rendering" title="Permanent link">&para;</a></h2>
+<p><code>generate_rtfreport()</code> writes the document to a path and returns it:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="n">generate_rtfreport</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">doc</span> <span class="o">=</span> <span class="n">RtfDocument</span><span class="p">()</span><span class="o">.</span><span class="n">add_figure</span><span class="p">(</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="s2">"kaplan_meier.png"</span><span class="p">,</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">title</span><span class="o">=</span><span class="p">[</span><span class="s2">"Figure 14.1"</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"Kaplan-Meier Estimate of Overall Survival"</span><span class="p">],</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">footnote</span><span class="o">=</span><span class="p">[</span><span class="s2">"Shaded band: 95</span><span class="si">% c</span><span class="s2">onfidence interval."</span><span class="p">],</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="p">)</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">doc</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">"figure.rtf"</span><span class="p">)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">generate_rtfreport</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="s2">"t_14_1_1_dm.rtf"</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </code></pre></div>
-<p>You can also build the <a href="../reference/#rtfreporter.figure.Figure"><code>Figure</code></a> object
-yourself with <a href="../reference/#rtfreporter.figure.rtfplot"><code>rtfplot</code></a> and add it:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="n">rtfplot</span><span class="p">,</span> <span class="n">RtfDocument</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">fig</span> <span class="o">=</span> <span class="n">rtfplot</span><span class="p">(</span><span class="s2">"forest.png"</span><span class="p">,</span> <span class="n">width_twips</span><span class="o">=</span><span class="mi">7200</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="s2">"center"</span><span class="p">)</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">RtfDocument</span><span class="p">()</span><span class="o">.</span><span class="n">add_figure</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">"forest.rtf"</span><span class="p">)</span>
+<p>Like the R package it <strong>refuses to clobber an existing file</strong> unless you ask:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">generate_rtfreport</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="s2">"report.rtf"</span><span class="p">)</span>                  <span class="c1"># FileExistsError if present</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">generate_rtfreport</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="s2">"report.rtf"</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># replaces it</span>
 </code></pre></div>
-<h2 id="sizing">Sizing<a class="headerlink" href="#sizing" title="Permanent link">&para;</a></h2>
-<p>By default a figure renders at its <strong>native size</strong> computed from the pixel
-dimensions and the embedded DPI (the PNG <code>pHYs</code> chunk or the JPEG JFIF density).
-When no density is stored, 96 DPI is assumed.</p>
+<p>To keep the bytes in memory instead — to write them yourself, hash them, or diff
+two runs — use <code>to_rtf()</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_rtf</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">rtf</span> <span class="o">=</span> <span class="n">to_rtf</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="k">assert</span> <span class="n">rtf</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"{"</span> <span class="o">+</span> <span class="nb">chr</span><span class="p">(</span><span class="mi">92</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"rtf1"</span><span class="p">)</span>
+</code></pre></div>
+<p>The fluent equivalents are <code>doc.save(path)</code> (which defaults to
+<code>overwrite=True</code>) and <code>doc.to_rtf()</code>.</p>
+<h2 id="what-the-output-looks-like">What the output looks like<a class="headerlink" href="#what-the-output-looks-like" title="Permanent link">&para;</a></h2>
+<p>The rendered file is <strong>plain ASCII</strong>. Any character outside ASCII is emitted as
+an RTF Unicode escape rather than raw bytes, so the file survives being moved
+between systems, opened by old versions of Word, or committed to a repository
+with strict encoding rules:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">rtf</span> <span class="o">=</span> <span class="n">to_rtf</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="nb">ord</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">128</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">rtf</span><span class="p">)</span>
+</code></pre></div>
+<p>A few consequences worth knowing:</p>
 <ul>
-<li>Give <strong><code>width_twips</code></strong> or <strong><code>height_twips</code></strong> to set an explicit size; the other
-  dimension is derived from the aspect ratio.</li>
-<li>Give <strong>both</strong> to set the box exactly (aspect ratio not preserved).</li>
-<li>There are <strong>1440 twips per inch</strong>, so a 2-inch-wide figure is <code>width_twips=2880</code>.</li>
+<li><strong>Non-breaking spaces</strong>, which the count/percent aligners use for padding, are
+  escaped rather than written literally.</li>
+<li>Superscripts, subscripts and the relational operators produced by the markup
+  layer become RTF control words. See the markup notes in
+  <a href="../styling/">Post-hoc styling</a>.</li>
+<li>Page-number fields (<code>{AUTO_PAGE}</code>, <code>{AUTO_TOTAL_PAGES}</code>) become <strong>live RTF
+  fields</strong>, so Word recomputes them. They are not baked at render time. See
+  <a href="../headers-footers/">Headers and footers</a>.</li>
 </ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">rtfplot</span><span class="p">(</span><span class="s2">"plot.png"</span><span class="p">,</span> <span class="n">width_twips</span><span class="o">=</span><span class="mi">2880</span><span class="p">)</span>                 <span class="c1"># 2 inches wide</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">rtfplot</span><span class="p">(</span><span class="s2">"plot.png"</span><span class="p">,</span> <span class="n">height_twips</span><span class="o">=</span><span class="mi">1440</span><span class="p">)</span>                <span class="c1"># 1 inch tall, width from AR</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">rtfplot</span><span class="p">(</span><span class="s2">"plot.png"</span><span class="p">,</span> <span class="n">width_twips</span><span class="o">=</span><span class="mi">4320</span><span class="p">,</span> <span class="n">height_twips</span><span class="o">=</span><span class="mi">2880</span><span class="p">)</span>  <span class="c1"># exact 3 x 2 inch box</span>
+<h3 id="checking-a-file-is-well-formed">Checking a file is well formed<a class="headerlink" href="#checking-a-file-is-well-formed" title="Permanent link">&para;</a></h3>
+<p>RTF is a brace-nested format; a truncated or malformed file usually shows up as
+unbalanced braces. This is the check the test suite uses:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">BS</span><span class="p">,</span> <span class="n">OB</span><span class="p">,</span> <span class="n">CB</span> <span class="o">=</span> <span class="nb">chr</span><span class="p">(</span><span class="mi">92</span><span class="p">),</span> <span class="nb">chr</span><span class="p">(</span><span class="mi">123</span><span class="p">),</span> <span class="nb">chr</span><span class="p">(</span><span class="mi">125</span><span class="p">)</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">rtf_is_wellformed</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="n">depth</span> <span class="o">=</span> <span class="n">lowest</span> <span class="o">=</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>        <span class="n">ch</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>        <span class="k">if</span> <span class="n">ch</span> <span class="o">==</span> <span class="n">BS</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="ow">and</span> <span class="n">text</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="n">OB</span> <span class="o">+</span> <span class="n">CB</span> <span class="o">+</span> <span class="n">BS</span><span class="p">):</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>            <span class="n">i</span> <span class="o">+=</span> <span class="mi">2</span>          <span class="c1"># an escaped literal brace, not structure</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>            <span class="k">continue</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>        <span class="k">if</span> <span class="n">ch</span> <span class="o">==</span> <span class="n">OB</span><span class="p">:</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>            <span class="n">depth</span> <span class="o">+=</span> <span class="mi">1</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>        <span class="k">elif</span> <span class="n">ch</span> <span class="o">==</span> <span class="n">CB</span><span class="p">:</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>            <span class="n">depth</span> <span class="o">-=</span> <span class="mi">1</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>            <span class="n">lowest</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">lowest</span><span class="p">,</span> <span class="n">depth</span><span class="p">)</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>    <span class="k">return</span> <span class="n">depth</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">lowest</span> <span class="o">&gt;=</span> <span class="mi">0</span>
 </code></pre></div>
-<h2 id="alignment">Alignment<a class="headerlink" href="#alignment" title="Permanent link">&para;</a></h2>
-<p><code>align</code> is <code>"center"</code> (default), <code>"left"</code>, or <code>"right"</code>.</p>
-<h2 id="reading-dimensions-without-rendering">Reading dimensions without rendering<a class="headerlink" href="#reading-dimensions-without-rendering" title="Permanent link">&para;</a></h2>
-<p>A <code>Figure</code> exposes what it parsed, which is handy for layout logic:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">fig</span> <span class="o">=</span> <span class="n">rtfplot</span><span class="p">(</span><span class="s2">"plot.png"</span><span class="p">)</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">fig</span><span class="o">.</span><span class="n">img_type</span>        <span class="c1"># "png" or "jpeg"</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">fig</span><span class="o">.</span><span class="n">img_width</span>       <span class="c1"># pixels</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">fig</span><span class="o">.</span><span class="n">dpi_x</span>           <span class="c1"># embedded DPI, or None</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">fig</span><span class="o">.</span><span class="n">display_twips</span><span class="p">()</span> <span class="c1"># {"w": ..., "h": ..., "native_w": ..., "native_h": ...}</span>
+<p>Note the escape handling: <code>\{</code> and <code>\}</code> are literal characters in the document
+text and must not be counted as structure.</p>
+<h2 id="post-processing-a-rendered-file">Post-processing a rendered file<a class="headerlink" href="#post-processing-a-rendered-file" title="Permanent link">&para;</a></h2>
+<p>Sometimes a deliverable needs a change after rendering — a protocol number
+corrected across a batch, a placeholder swapped for a run date, a sponsor name
+updated. <code>rtf_replace_text()</code> edits the rendered bytes in place:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="n">rtf_replace_text</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">rtf_replace_text</span><span class="p">(</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="s2">"report.rtf"</span><span class="p">,</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="n">target</span><span class="o">=</span><span class="s2">"@RUN_DATE@"</span><span class="p">,</span>       <span class="c1"># brace-free placeholder — see the warning below</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="n">replacement</span><span class="o">=</span><span class="s2">"2026-08-23"</span><span class="p">,</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="p">)</span>
 </code></pre></div>
+<p>By default it <strong>writes a backup</strong> beside the original and edits in place. Give
+<code>output_file</code> to write elsewhere and leave the input untouched:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">rtf_replace_text</span><span class="p">(</span><span class="s2">"draft.rtf"</span><span class="p">,</span> <span class="s2">"DRAFT"</span><span class="p">,</span> <span class="s2">"FINAL"</span><span class="p">,</span> <span class="n">output_file</span><span class="o">=</span><span class="s2">"final.rtf"</span><span class="p">,</span> <span class="n">backup</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</code></pre></div>
+<p>Regular expressions and case-insensitive matching are available:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">rtf_replace_text</span><span class="p">(</span><span class="s2">"report.rtf"</span><span class="p">,</span> <span class="sa">r</span><span class="s2">"Page \d+ of \d+"</span><span class="p">,</span> <span class="s2">"Page X of Y"</span><span class="p">,</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>                 <span class="n">use_regex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">case_insensitive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">You are editing RTF, not plain text</p>
+<p>The file is RTF markup, so a search string can be split across control
+words, and replacing a brace or a backslash can corrupt the document.</p>
+<p><strong>Braces and backslashes are escaped in the output</strong>, so a curly-brace
+placeholder never matches — it is written to the file with its braces
+escaped, and searching for the unescaped form silently replaces nothing:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">rtf_replace_text</span><span class="p">(</span><span class="s2">"report.rtf"</span><span class="p">,</span> <span class="s2">"</span><span class="si">{RUN_DATE}</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"2026-08-23"</span><span class="p">)</span>   <span class="c1"># matches nothing</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">rtf_replace_text</span><span class="p">(</span><span class="s2">"report.rtf"</span><span class="p">,</span> <span class="s2">"@RUN_DATE@"</span><span class="p">,</span> <span class="s2">"2026-08-23"</span><span class="p">)</span>   <span class="c1"># works</span>
+</code></pre></div>
+<p>Choose a <strong>brace-free</strong> placeholder such as <code>@RUN_DATE@</code> or a bare word, and
+re-check the result is well formed afterwards. (RTF's own page-number
+tokens like <code>{AUTO_PAGE}</code> are a different thing entirely — they are
+interpreted at render time and become live fields, not literal text.)</p>
+</div>
+<p>Prefer solving it upstream when you can: a token in a title, or a value threaded
+through the header, is safer than a post-hoc edit.</p>
+<h2 id="combining-several-files">Combining several files<a class="headerlink" href="#combining-several-files" title="Permanent link">&para;</a></h2>
+<p>Rendering produces one file per report. To ship them as a single deliverable
+with a table of contents, see <a href="../assembling/">Assembling deliverables</a>, which
+covers <code>assemble_rtf()</code>, <code>assemble_files()</code>, <code>assemble_folder()</code> and the
+<code>toc_*</code> helpers.</p>
+<p>To structure <strong>one</strong> document into sections instead, see
+<a href="../section-splitting/">Splitting a report into sections</a>.</p>
+<h2 id="where-to-next">Where to next<a class="headerlink" href="#where-to-next" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../assembling/">Assembling deliverables</a> — many files into one, with a TOC.</li>
+<li><a href="../section-splitting/">Splitting a report into sections</a> — sections within a file.</li>
+<li><a href="../document-api/">Document API guide</a> — the calls that build <code>doc</code>.</li>
+</ul>
 
 
 
