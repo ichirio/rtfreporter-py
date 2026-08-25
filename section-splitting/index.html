@@ -892,6 +892,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Route B — one section per table, with combine_sections()">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#letting-auto_section-do-the-cutting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Letting auto_section do the cutting
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1393,6 +1410,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Route B — one section per table, with combine_sections()">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#letting-auto_section-do-the-cutting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Letting auto_section do the cutting
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1516,17 +1550,22 @@ first page of each group is named, so a multi-page table is marked as <strong>on
 group rather than one per page.</p>
 <p><code>combine_sections()</code> is format-agnostic — it only touches the names of the
 tables in the list, so it works whatever produced them.</p>
-<div class="admonition warning">
-<p class="admonition-title">Not yet wired to automatic sectioning</p>
-<p>In the R package those page names are consumed by
-<code>rtf_tables(auto_section = TRUE)</code>, which cuts a section at each <strong>named</strong>
-element. <strong><code>auto_section</code> is not ported yet</strong>, so today
-<code>combine_sections()</code> records the grouping but nothing acts on it
-automatically.</p>
-<p>Until it lands, create the sections explicitly with <code>rtf_section()</code> as
-shown above — add one before each group's pages. The output is the same;
-it is the convenience that is missing.</p>
-</div>
+<h3 id="letting-auto_section-do-the-cutting">Letting <code>auto_section</code> do the cutting<a class="headerlink" href="#letting-auto_section-do-the-cutting" title="Permanent link">&para;</a></h3>
+<p>Those page names are consumed by <code>rtf_tables(auto_section=True)</code>, which opens a
+section at each <strong>named</strong> page and appends the name as a heading row on the
+running header:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">doc</span> <span class="o">=</span> <span class="n">rtf_document</span><span class="p">()</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">doc</span> <span class="o">=</span> <span class="n">rtf_section</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">rtf_header</span><span class="p">([</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="p">{</span><span class="s2">"l"</span><span class="p">:</span> <span class="s2">"Protocol ABC-2026-001"</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">:</span> <span class="s2">"Page </span><span class="si">{AUTO_PAGE}</span><span class="s2"> of </span><span class="si">{AUTO_TOTAL_PAGES}</span><span class="s2">"</span><span class="p">},</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="p">]))</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">doc</span> <span class="o">=</span> <span class="n">rtf_tables</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">pages</span><span class="p">,</span> <span class="n">auto_section</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+<p>Each section's header is the running header <strong>plus its own label</strong> — never the
+previous section's as well. Unnamed pages fall through, so a multi-page table
+stays one section. <code>section_label_align</code> places the label (<code>"left"</code> by default,
+or <code>"center"</code> / <code>"right"</code>).</p>
+<p><code>split="by_value"</code> names its pages too, so the same call gives one section per
+group without <code>combine_sections()</code>.</p>
 <h2 id="which-route-to-use">Which route to use<a class="headerlink" href="#which-route-to-use" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1561,31 +1600,25 @@ header and footer repeat on every page. Sectioning is about the tidier
 one-section-per-table structure, not about fixing broken output.</p>
 </div>
 <h2 id="a-worked-example">A worked example<a class="headerlink" href="#a-worked-example" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="n">as_rtftables</span><span class="p">,</span> <span class="n">combine_sections</span><span class="p">,</span> <span class="n">generate_rtfreport</span><span class="p">,</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="n">rtf_document</span><span class="p">,</span> <span class="n">rtf_header</span><span class="p">,</span> <span class="n">rtf_section</span><span class="p">,</span> <span class="n">rtf_tables</span><span class="p">,</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="p">)</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="n">dm</span> <span class="o">=</span> <span class="n">as_rtftables</span><span class="p">(</span><span class="n">dm_df</span><span class="p">,</span> <span class="n">col_rel_width</span><span class="o">=</span><span class="p">[</span><span class="mi">40</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">])</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="n">ae</span> <span class="o">=</span> <span class="n">as_rtftables</span><span class="p">(</span><span class="n">ae_df</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="s2">"group_force"</span><span class="p">,</span> <span class="n">max_rows</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>                  <span class="n">group_col</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">group_by</span><span class="o">=</span><span class="s2">"indent"</span><span class="p">)</span>
-<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>
-<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="c1"># Records the grouping (first page of each group carries the name).</span>
-<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="n">pages</span> <span class="o">=</span> <span class="n">combine_sections</span><span class="p">(</span><span class="n">Demographics</span><span class="o">=</span><span class="n">dm</span><span class="p">,</span> <span class="n">Adverse_Events</span><span class="o">=</span><span class="n">ae</span><span class="p">)</span>
-<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>
-<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="n">running</span> <span class="o">=</span> <span class="n">rtf_header</span><span class="p">([</span>
-<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>    <span class="p">{</span><span class="s2">"l"</span><span class="p">:</span> <span class="s2">"Protocol ABC-2026-001"</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">:</span> <span class="s2">"Page </span><span class="si">{AUTO_PAGE}</span><span class="s2"> of </span><span class="si">{AUTO_TOTAL_PAGES}</span><span class="s2">"</span><span class="p">},</span>
-<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="p">])</span>
-<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>
-<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="c1"># One section per table, created explicitly: open the section, then add its</span>
-<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="c1"># pages, so each table's band starts on its own first page.</span>
-<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="n">doc</span> <span class="o">=</span> <span class="n">rtf_document</span><span class="p">()</span>
-<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="n">doc</span> <span class="o">=</span> <span class="n">rtf_section</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">rtf_header</span><span class="p">(</span><span class="n">running</span><span class="o">.</span><span class="n">rows</span> <span class="o">+</span> <span class="p">[{</span><span class="s2">"c"</span><span class="p">:</span> <span class="s2">"Demographics"</span><span class="p">}]))</span>
-<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a><span class="n">doc</span> <span class="o">=</span> <span class="n">rtf_tables</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">dm</span><span class="p">)</span>
-<a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a><span class="n">doc</span> <span class="o">=</span> <span class="n">rtf_section</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">rtf_header</span><span class="p">(</span><span class="n">running</span><span class="o">.</span><span class="n">rows</span> <span class="o">+</span> <span class="p">[{</span><span class="s2">"c"</span><span class="p">:</span> <span class="s2">"Adverse Events"</span><span class="p">}]))</span>
-<a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a><span class="n">doc</span> <span class="o">=</span> <span class="n">rtf_tables</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">ae</span><span class="p">)</span>
-<a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a><span class="n">generate_rtfreport</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="s2">"deliverable.rtf"</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="n">as_rtftables</span><span class="p">,</span> <span class="n">combine_sections</span><span class="p">,</span> <span class="n">generate_rtfreport</span><span class="p">,</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="n">rtf_document</span><span class="p">,</span> <span class="n">rtf_header</span><span class="p">,</span> <span class="n">rtf_section</span><span class="p">,</span> <span class="n">rtf_tables</span><span class="p">,</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="p">)</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="n">dm</span> <span class="o">=</span> <span class="n">as_rtftables</span><span class="p">(</span><span class="n">dm_df</span><span class="p">,</span> <span class="n">col_rel_width</span><span class="o">=</span><span class="p">[</span><span class="mi">40</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">])</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="n">ae</span> <span class="o">=</span> <span class="n">as_rtftables</span><span class="p">(</span><span class="n">ae_df</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="s2">"group_force"</span><span class="p">,</span> <span class="n">max_rows</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>                  <span class="n">group_col</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">group_by</span><span class="o">=</span><span class="s2">"indent"</span><span class="p">)</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="c1"># Name each group's first page, then let auto_section cut the sections.</span>
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="n">pages</span> <span class="o">=</span> <span class="n">combine_sections</span><span class="p">(</span><span class="n">Demographics</span><span class="o">=</span><span class="n">dm</span><span class="p">,</span> <span class="n">Adverse_Events</span><span class="o">=</span><span class="n">ae</span><span class="p">)</span>
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="n">doc</span> <span class="o">=</span> <span class="n">rtf_document</span><span class="p">()</span>
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="n">doc</span> <span class="o">=</span> <span class="n">rtf_section</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">rtf_header</span><span class="p">([</span>
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>    <span class="p">{</span><span class="s2">"l"</span><span class="p">:</span> <span class="s2">"Protocol ABC-2026-001"</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">:</span> <span class="s2">"Page </span><span class="si">{AUTO_PAGE}</span><span class="s2"> of </span><span class="si">{AUTO_TOTAL_PAGES}</span><span class="s2">"</span><span class="p">},</span>
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a><span class="p">]))</span>
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="n">doc</span> <span class="o">=</span> <span class="n">rtf_tables</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">pages</span><span class="p">,</span> <span class="n">auto_section</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a><span class="n">generate_rtfreport</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="s2">"deliverable.rtf"</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </code></pre></div>
 <p>To combine reports that were rendered as <strong>separate files</strong>, with a table of
 contents, see <a href="../assembling/">Assembling deliverables</a> instead — that works on
