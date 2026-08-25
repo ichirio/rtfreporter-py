@@ -327,7 +327,15 @@ def set_blank_rows(
             gidx = _resolve_group(group_col, names)
             from .blank_rows import blank_rows_by_change
 
-            internal.update(blank_rows_by_change(gidx).positions(names, rows))
+            # "between_groups" blanks the transitions only -- not before the
+            # first row or after the last, which blank_rows_by_change() adds by
+            # default.  Verified against R: A,A,B,B -> [2].
+            internal.update(
+                blank_rows_by_change(
+                    gidx, group_by=("value" if group_by == "auto" else group_by),
+                    include_before_first=False, include_after_last=False,
+                ).positions(names, rows)
+            )
         elif is_spec_obj(it) or isinstance(it, (int,)) or it is BEFORE_FIRST or it is AFTER_LAST:
             internal.update(_resolve_blank_rows(it, names, rows))
         else:

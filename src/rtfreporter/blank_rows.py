@@ -63,26 +63,50 @@ AFTER_LAST = _BlankRowSentinel("AFTER_LAST")
 
 @dataclass
 class BlankRowsByChange:
-    """Insert a blank row wherever the value of ``cols`` changes."""
+    """Insert a blank row wherever the group of ``cols`` changes.
+
+    ``group_by`` chooses how a boundary is detected, exactly as in
+    :func:`~rtfreporter.as_rtftables`: ``"value"`` (the default) compares the
+    cell values, while ``"indent"`` / ``"filled"`` treat a flush-left or a
+    non-empty cell as a group header.  ``"auto"`` infers the mode from the
+    column's content.
+
+    ``include_before_first`` and ``include_after_last`` default to ``True``, so
+    the block of grouped rows is fenced top and bottom, matching R.
+    """
 
     cols: list
-    include_before_first: bool = False
-    include_after_last: bool = False
+    group_by: str = "value"
+    include_before_first: bool = True
+    include_after_last: bool = True
 
     def positions(self, column_names: list[str], rows: list[list]) -> set[int]:
         idxs = [_col_index(c, column_names) for c in _as_list(self.cols)]
+        keys = self._keys(idxs, rows)
         out: set[int] = set()
-        prev = None
-        for i, row in enumerate(rows, start=1):
-            key = tuple(row[c] for c in idxs)
-            if i > 1 and key != prev:
-                out.add(i - 1)
-            prev = key
+        for i in range(1, len(keys)):
+            if keys[i] != keys[i - 1]:
+                out.add(i)
         if self.include_before_first:
             out.add(0)
         if self.include_after_last:
             out.add(len(rows))
         return out
+
+    def _keys(self, idxs: list[int], rows: list[list]) -> list:
+        """Per-row group keys, honouring ``group_by``."""
+        if self.group_by == "value":
+            return [tuple(row[c] for c in idxs) for row in rows]
+        # Header-based detection reuses the adapter's shared implementation so
+        # the two cannot drift apart.
+        from .adapters import _compute_group_keys
+
+        if len(idxs) != 1:
+            raise ValueError(
+                'blank_rows_by_change(group_by=) other than "value" needs exactly '
+                "one column."
+            )
+        return _compute_group_keys(rows, idxs[0], self.group_by)
 
 
 @dataclass
@@ -107,10 +131,21 @@ class BlankRowsByRule:
 
 
 def blank_rows_by_change(
-    cols, include_before_first: bool = False, include_after_last: bool = False
+    cols,
+    group_by: str = "value",
+    include_before_first: bool = True,
+    include_after_last: bool = True,
 ) -> BlankRowsByChange:
-    """Build a spec that inserts a blank row when ``cols`` change value."""
-    return BlankRowsByChange(cols, include_before_first, include_after_last)
+    """Build a spec that inserts a blank row when the group of ``cols`` changes.
+
+    Args:
+        cols: Column name(s) or 0-based index/indices to watch.
+        group_by: How a boundary is detected -- ``"value"`` (default),
+            ``"indent"``, ``"filled"`` or ``"auto"``.
+        include_before_first: Also blank before the first row (default ``True``).
+        include_after_last: Also blank after the last row (default ``True``).
+    """
+    return BlankRowsByChange(cols, group_by, include_before_first, include_after_last)
 
 
 def blank_rows_by_rule(col, pattern: str, where: str = "before") -> BlankRowsByRule:

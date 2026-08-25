@@ -557,7 +557,14 @@ def _expand_between_groups(blank_rows, group_idx):
             raise ValueError(
                 f"`blank_rows` string must be {BETWEEN_GROUPS!r}; got {blank_rows!r}."
             )
-        return blank_rows_by_change(group_idx if group_idx is not None else 0)
+        # R's "between_groups" blanks only the transitions -- not before the
+        # first row or after the last, which blank_rows_by_change() does by
+        # default.  Verified against R: A,A,B,B -> [2].
+        return blank_rows_by_change(
+            group_idx if group_idx is not None else 0,
+            include_before_first=False,
+            include_after_last=False,
+        )
     if isinstance(blank_rows, (list, tuple)):
         return [_expand_between_groups(item, group_idx) for item in blank_rows]
     return blank_rows
@@ -790,7 +797,9 @@ def as_rtftables(
                 i - 1 for i in range(1, len(group_keys)) if group_keys[i] != group_keys[i - 1]
             ]
         else:
-            page_blank = blank_rows_by_change(group_idx)
+            page_blank = blank_rows_by_change(
+                group_idx, include_before_first=False, include_after_last=False
+            )
 
     from .table import _resolve_blank_rows
 

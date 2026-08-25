@@ -27,6 +27,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **Three argument defaults did not match R**, found by diffing every R export's
+  formals against the Python signatures:
+    - `rtf_footer(border=)` defaulted to `None`; R defaults to
+      `rtf_border_top()`, so a footer band now carries its top rule again
+      (`\clbrdrtrdrsrdrw15`). `rtf_header` correctly stays borderless.
+    - `blank_rows_by_change()` defaulted `include_before_first` /
+      `include_after_last` to `False`; R defaults both to `True`. Checked in R:
+      `A,A,B,B` yields `[0, 2, 4]`, and an unchanging column still yields
+      `[0, 3]`.
+    - `blank_rows_by_change()` was missing R's `group_by` argument; all four
+      modes are now accepted and share the adapter's detection code.
+  `blank_rows="between_groups"` is unaffected — it blanks transitions only
+  (R: `[2]`), which is now pinned explicitly rather than relying on the
+  defaults.
 - **Document builders mutated their input.** `rtf_tables()`, `rtf_figures()`,
   `rtf_section()`, `rtf_titles()`, `rtf_footnotes()` and the fluent
   `RtfDocument` methods changed the document passed in and returned that same
@@ -36,6 +50,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (`docA`/`docB` from one base: 1 page each, base unchanged).
 - The homepage quickstart imported `header` / `footer`, names that no longer
   exist after the 0.2.0 rename.
+- The section-splitting guide implied `combine_sections()` produced sections
+  on its own. It records the grouping, but R's `rtf_tables(auto_section=)`
+  that consumes it is not ported yet; the page now says so and shows the
+  explicit `rtf_section()` equivalent.
 
 ## [0.3.0] — 2026-08-23
 

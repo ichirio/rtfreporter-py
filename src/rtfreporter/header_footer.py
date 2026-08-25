@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 
-from .borders import Border
+from .borders import Border, BorderSide
 
 Row = dict
 
@@ -68,6 +68,12 @@ class HeaderFooter:
         self.rows = [_normalize_row(r) for r in self.rows]
 
 
+
+#: A footer band carries a top rule by default, as in R (`rtf_border_top()`);
+#: pass ``border=None`` for no rule.
+_FOOTER_RULE = Border(top=BorderSide(style="single", width=15))
+
+
 def rtf_header(
     rows,
     border: Border | None = None,
@@ -96,7 +102,7 @@ def rtf_header(
 
 def rtf_footer(
     rows,
-    border: Border | None = None,
+    border: Border | None = _FOOTER_RULE,
     row_height_twips: int | None = None,
     cell_padding_left_twips: int | None = None,
     cell_padding_right_twips: int | None = None,

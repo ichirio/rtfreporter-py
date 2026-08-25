@@ -82,12 +82,24 @@ pages = combine_sections(
 )
 ```
 
-The result is a single list you can hand straight to `rtf_tables()`. Because
-only the first page of each group is named, a multi-page table stays **one**
-section rather than becoming one section per page.
+The result is a single list you can hand straight to `rtf_tables()`. Only the
+first page of each group is named, so a multi-page table is marked as **one**
+group rather than one per page.
 
 `combine_sections()` is format-agnostic — it only touches the names of the
 tables in the list, so it works whatever produced them.
+
+!!! warning "Not yet wired to automatic sectioning"
+
+    In the R package those page names are consumed by
+    `rtf_tables(auto_section = TRUE)`, which cuts a section at each **named**
+    element. **`auto_section` is not ported yet**, so today
+    `combine_sections()` records the grouping but nothing acts on it
+    automatically.
+
+    Until it lands, create the sections explicitly with `rtf_section()` as
+    shown above — add one before each group's pages. The output is the same;
+    it is the convenience that is missing.
 
 ## Which route to use
 
@@ -117,13 +129,20 @@ dm = as_rtftables(dm_df, col_rel_width=[40, 30, 30])
 ae = as_rtftables(ae_df, split="group_force", max_rows=16,
                   group_col=0, group_by="indent")
 
+# Records the grouping (first page of each group carries the name).
 pages = combine_sections(Demographics=dm, Adverse_Events=ae)
 
-doc = rtf_document()
-doc = rtf_section(doc, header=rtf_header([
+running = rtf_header([
     {"l": "Protocol ABC-2026-001", "r": "Page {AUTO_PAGE} of {AUTO_TOTAL_PAGES}"},
-]))
-doc = rtf_tables(doc, pages)
+])
+
+# One section per table, created explicitly: open the section, then add its
+# pages, so each table's band starts on its own first page.
+doc = rtf_document()
+doc = rtf_section(doc, header=rtf_header(running.rows + [{"c": "Demographics"}]))
+doc = rtf_tables(doc, dm)
+doc = rtf_section(doc, header=rtf_header(running.rows + [{"c": "Adverse Events"}]))
+doc = rtf_tables(doc, ae)
 generate_rtfreport(doc, "deliverable.rtf", overwrite=True)
 ```
 

@@ -50,8 +50,23 @@ def test_by_change_positions():
     assert 2 in t.blank_rows
 
 
-def test_by_change_no_change_no_blank():
+def test_by_change_with_no_transition_still_fences_the_block():
+    """No transitions, but the block is still fenced top and bottom.
+
+    ``include_before_first`` / ``include_after_last`` default to ``True``, as in
+    R, which returns ``[0, 3]`` for this input.
+    """
     t = rtftable({"g": ["A", "A", "A"]}, blank_rows=blank_rows_by_change("g"))
+    assert t.blank_rows == [0, 3]
+
+
+def test_by_change_transitions_only_when_fencing_is_off():
+    t = rtftable(
+        {"g": ["A", "A", "A"]},
+        blank_rows=blank_rows_by_change(
+            "g", include_before_first=False, include_after_last=False
+        ),
+    )
     assert t.blank_rows == []
 
 
