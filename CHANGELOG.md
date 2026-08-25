@@ -47,6 +47,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **`blank_rows="between_groups"` blanked between every row of an indented
+  stub.** It compared cell values instead of using the call's `group_by`, and
+  a stub built by `stub_vars` has a different value on every line, so every row
+  looked like a group transition. R's documented behaviour is to use "this
+  call's `group_by` detection", whose `"auto"` default sees the indentation.
+  Verified against R: the demographics body now blanks only at the group heads
+  (`[5, 9]` for the reference frame), not after all 16 rows.
+- **Three examples and docs snippets called document builders for effect**
+  (`doc.add_table(...)` in a loop) and silently produced an empty document,
+  since builders became copy-on-modify. They rebind now.
 - **Three argument defaults did not match R**, found by diffing every R export's
   formals against the Python signatures:
     - `rtf_footer(border=)` defaulted to `None`; R defaults to

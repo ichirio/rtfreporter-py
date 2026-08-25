@@ -46,8 +46,9 @@ def build() -> RtfDocument:
         header=rtf_header([{"l": "Protocol XYZ-123", "r": "Page {AUTO_PAGE} of {AUTO_TOTAL_PAGES}"}]),
         footer=rtf_footer([{"c": "Confidential -- Draft"}]),
     )
+    # Builders are copy-on-modify (as in R): rebind, never call for effect.
     for page in pages:
-        doc.add_table(
+        doc = doc.add_table(
             page,
             title=["Table 14.3.1", "", "Listing of Adverse Events"],
             footnote=["Adverse events coded using MedDRA."],

@@ -106,7 +106,7 @@ pages = as_rtftables(df, split="group_force", group_col="Arm", max_rows=25)
 
 doc = RtfDocument()
 for page in pages:
-    doc.add_table(page, title=["Listing 16.1"])
+    doc = doc.add_table(page, title=["Listing 16.1"])
 doc.save("listing.rtf")
 ```
 

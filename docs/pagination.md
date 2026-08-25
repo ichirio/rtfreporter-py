@@ -147,7 +147,7 @@ doc = RtfDocument().add_section(
     header=rtf_header([{"r": "Page {AUTO_PAGE} of {AUTO_TOTAL_PAGES}"}])
 )
 for page in pages:
-    doc.add_table(page, title=["Listing 16.2.1"])
+    doc = doc.add_table(page, title=["Listing 16.2.1"])
 doc.save("listing.rtf")
 ```
 

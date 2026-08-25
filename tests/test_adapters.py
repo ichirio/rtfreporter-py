@@ -129,5 +129,5 @@ def test_adapter_end_to_end_valid(demog_df):
     pages = rr.as_rtftables(demog_df, border="tfl")
     doc = RtfDocument()
     for p in pages:
-        doc.add_table(p)
+        doc = doc.add_table(p)
     assert_valid_rtf(doc.to_rtf())

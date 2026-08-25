@@ -208,3 +208,45 @@ def test_auto_width_shares_one_set_of_widths_across_pages():
     assert len(pages) > 1
     widths = {tuple(p.column_widths_twips) for p in pages}
     assert len(widths) == 1, "paginated pages must stay aligned"
+
+
+# ------------------------------------------------ between_groups + stub_vars --
+def _stub_frame():
+    return {
+        "Characteristic": ["Age (years)"] * 4 + ["Age group, n (%)"] * 3 + ["Sex, n (%)"] * 2,
+        "Statistic": [
+            "n", "Mean (SD)", "Median", "Min, Max", "<65", "65 - 80", ">80",
+            "Male", "Female",
+        ],
+        "Placebo": [str(i) for i in range(1, 10)],
+    }
+
+
+def test_between_groups_on_an_indented_stub_matches_r():
+    """The regression this guards: a blank row appeared after EVERY row.
+
+    An indented stub has a different value on every line, so value-comparison
+    makes every row a transition.  ``"between_groups"`` must use the call's
+    ``group_by`` (``"auto"`` by default), which detects the indentation.
+    Checked in R: 12 rows, ``blank_rows`` ``[5, 9]`` -- the two group heads.
+    """
+    page = rr.as_rtftables(
+        _stub_frame(),
+        stub_vars=["Characteristic", "Statistic"],
+        stub_label="",
+        blank_rows="between_groups",
+    )[0]
+    assert page.nrows == 12
+    assert page.blank_rows == [5, 9]
+
+
+def test_between_groups_honours_an_explicit_group_by():
+    page = rr.as_rtftables(
+        _stub_frame(),
+        stub_vars=["Characteristic", "Statistic"],
+        stub_label="",
+        blank_rows="between_groups",
+        group_by="value",
+    )[0]
+    # Every stub cell differs, so value mode really does blank between all rows.
+    assert page.blank_rows == list(range(1, page.nrows))

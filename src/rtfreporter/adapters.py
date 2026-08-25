@@ -545,13 +545,18 @@ def _compute_group_keys(rows, group_idx, group_by: str):
 BETWEEN_GROUPS = "between_groups"
 
 
-def _expand_between_groups(blank_rows, group_idx):
+def _expand_between_groups(blank_rows, group_idx, group_by="auto"):
     """Expand the ``"between_groups"`` shorthand into a change-based spec.
 
     ``blank_rows="between_groups"`` means "a blank row at every group
-    transition on ``group_col``", matching the R package.  It may also appear
-    inside a combining list, e.g. ``["between_groups", AFTER_LAST]``.  When no
-    ``group_col`` was given the first column is used, as in R.
+    transition on ``group_col``, **using this call's ``group_by`` detection**",
+    matching the R package.  It may also appear inside a combining list, e.g.
+    ``["between_groups", AFTER_LAST]``.  When no ``group_col`` was given the
+    first column is used, as in R.
+
+    Passing ``group_by`` through matters for an indented stub: every stub cell
+    differs, so value-comparison would blank between *every* row, while the
+    ``"auto"`` default detects indentation and blanks only at the group heads.
     """
     if blank_rows is None:
         return None
@@ -565,11 +570,12 @@ def _expand_between_groups(blank_rows, group_idx):
         # default.  Verified against R: A,A,B,B -> [2].
         return blank_rows_by_change(
             group_idx if group_idx is not None else 0,
+            group_by=group_by,
             include_before_first=False,
             include_after_last=False,
         )
     if isinstance(blank_rows, (list, tuple)):
-        return [_expand_between_groups(item, group_idx) for item in blank_rows]
+        return [_expand_between_groups(item, group_idx, group_by) for item in blank_rows]
     return blank_rows
 
 
@@ -794,7 +800,7 @@ def as_rtftables(
         )
 
     # Per-page blank spec: explicit blank_rows wins; else derive from group_col.
-    page_blank = _expand_between_groups(blank_rows, group_idx)
+    page_blank = _expand_between_groups(blank_rows, group_idx, group_by)
     if page_blank is None and group_idx is not None and not callable(split) and split not in ("by_value",):
         if group_keys and group_keys != [row[group_idx] for row in rows]:
             # Header-based grouping (indent / filled): the raw cell values all
