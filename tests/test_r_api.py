@@ -266,7 +266,6 @@ def test_stub_vars_argument():
     "kwargs",
     [
         {"count_blank_rows": True},
-        {"auto_width": True},
         {"stub_group_summary": "parent"},
     ],
 )

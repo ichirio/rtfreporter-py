@@ -150,14 +150,32 @@ class RtfDocument:
         new._pages.append({"title": title, "content": content, "footnote": footnote})
         return new
 
-    def add_tables(self, tables, titles=None, footnotes=None, **table_kwargs) -> RtfDocument:
+    def add_tables(
+        self,
+        tables,
+        titles=None,
+        footnotes=None,
+        auto_section: bool = False,
+        section_label_align: str = "left",
+        **table_kwargs,
+    ) -> RtfDocument:
         """Add several table pages at once (one page per element).
 
         ``titles`` / ``footnotes`` are parallel lists, one entry per table.
-        Returns a **new** document; the receiver is left unchanged.
+        ``auto_section`` opens a section per **named** page -- see
+        :func:`rtf_tables`.  Returns a **new** document; the receiver is left
+        unchanged.
         """
         new = self
+        base_header = _auto_section_base(self) if auto_section else None
         for i, tbl in enumerate(list(tables)):
+            if auto_section:
+                label = getattr(tbl, "name", None)
+                if label:
+                    new = _open_auto_section(
+                        new,
+                        _auto_section_header(base_header, str(label), section_label_align),
+                    )
             new = new.add_table(
                 tbl,
                 title=titles[i] if titles is not None and i < len(titles) else None,
@@ -288,11 +306,69 @@ def rtf_config(
     return out
 
 
+#: Where the auto-appended section label sits in its header row.
+_LABEL_SLOT = {"left": "l", "center": "c", "right": "r"}
+
+
+def _auto_section_base(doc: RtfDocument) -> HeaderFooter | None:
+    """The running header that every auto-section builds on.
+
+    Captured **once**, before any auto-sections are added, so each section is
+    the base plus its own label -- never the previous section's label as well.
+    Corresponds to R's ``"_default"`` section entry.
+    """
+    for section in reversed(doc._sections):
+        if section.get("header") is not None:
+            return section["header"]
+    return None
+
+
+def _auto_section_header(
+    base: HeaderFooter | None, label: str, label_align: str
+) -> HeaderFooter:
+    """``base`` plus one row carrying the section ``label``.
+
+    Mirrors R's ``.build_auto_section_header()``: every section keeps the
+    report's running header and gains its own heading row.  With no base the
+    label becomes the whole header.
+    """
+    slot = _LABEL_SLOT.get(label_align)
+    if slot is None:
+        raise ValueError(
+            '`section_label_align` must be "left", "center" or "right"; '
+            f"got {label_align!r}."
+        )
+    label_row = {slot: label}
+    if base is None:
+        return HeaderFooter(rows=[label_row])
+    return replace(base, rows=list(base.rows) + [label_row])
+
+
+def _open_auto_section(doc: RtfDocument, header: HeaderFooter) -> RtfDocument:
+    r"""Open an auto-section, superseding an empty one that starts on the page.
+
+    R keeps the running header as a template rather than a section, so it emits
+    exactly one section per named element.  Here the base header is a real
+    section, and if no pages were added under it yet, it starts on the same page
+    as the first auto-section and would never render -- only an extra
+    ``\sectd``.  Replacing it keeps the emitted sections identical to R's.
+    """
+    new = doc.add_section(header=header)
+    if len(new._sections) >= 2 and new._sections[-2]["from_page"] == new._sections[-1]["from_page"]:
+        superseded = new._sections.pop(-2)
+        # Keep an inherited footer that the dropped section carried.
+        if new._sections[-1].get("footer") is None:
+            new._sections[-1]["footer"] = superseded.get("footer")
+    return new
+
+
 def rtf_tables(
     doc: RtfDocument,
     tables,
     titles=None,
     footnotes=None,
+    auto_section: bool = False,
+    section_label_align: str = "left",
     **table_kwargs,
 ) -> RtfDocument:
     """Add one or more table content pages to ``doc`` (mirrors R ``rtf_tables()``).
@@ -303,6 +379,14 @@ def rtf_tables(
             columns, or DataFrame) or a list/tuple of them (one page each).
         titles, footnotes: A parallel list (one per table) or a single block
             applied to every table.
+        auto_section: When ``True``, every **named** page opens its own RTF
+            section, whose header is the running header plus a row carrying the
+            page's name.  Unnamed pages fall through into the section already in
+            effect, so a multi-page table stays one section.  Page names come
+            from :func:`~rtfreporter.combine_sections` or from
+            ``split="by_value"``.
+        section_label_align: Where the auto-appended label sits --
+            ``"left"`` (default), ``"center"`` or ``"right"``.
         **table_kwargs: Forwarded to :func:`~rtfreporter.rtftable`.
 
     Returns:
@@ -315,7 +399,17 @@ def rtf_tables(
     tlist = _broadcast_blocks(titles, n)
     flist = _broadcast_blocks(footnotes, n)
     out = doc
+    base_header = _auto_section_base(doc) if auto_section else None
     for i, tbl in enumerate(items):
+        # auto_section: a NAMED page opens its own section, carrying the running
+        # header plus a heading row.  Unnamed pages fall through into the
+        # section already in effect, so a multi-page table stays one section.
+        if auto_section:
+            label = getattr(tbl, "name", None)
+            if label:
+                out = _open_auto_section(
+                    out, _auto_section_header(base_header, str(label), section_label_align)
+                )
         out = out.add_table(
             tbl,
             title=tlist[i] if tlist is not None else None,

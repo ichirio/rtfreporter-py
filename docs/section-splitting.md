@@ -89,17 +89,27 @@ group rather than one per page.
 `combine_sections()` is format-agnostic — it only touches the names of the
 tables in the list, so it works whatever produced them.
 
-!!! warning "Not yet wired to automatic sectioning"
+### Letting `auto_section` do the cutting
 
-    In the R package those page names are consumed by
-    `rtf_tables(auto_section = TRUE)`, which cuts a section at each **named**
-    element. **`auto_section` is not ported yet**, so today
-    `combine_sections()` records the grouping but nothing acts on it
-    automatically.
+Those page names are consumed by `rtf_tables(auto_section=True)`, which opens a
+section at each **named** page and appends the name as a heading row on the
+running header:
 
-    Until it lands, create the sections explicitly with `rtf_section()` as
-    shown above — add one before each group's pages. The output is the same;
-    it is the convenience that is missing.
+```python
+doc = rtf_document()
+doc = rtf_section(doc, header=rtf_header([
+    {"l": "Protocol ABC-2026-001", "r": "Page {AUTO_PAGE} of {AUTO_TOTAL_PAGES}"},
+]))
+doc = rtf_tables(doc, pages, auto_section=True)
+```
+
+Each section's header is the running header **plus its own label** — never the
+previous section's as well. Unnamed pages fall through, so a multi-page table
+stays one section. `section_label_align` places the label (`"left"` by default,
+or `"center"` / `"right"`).
+
+`split="by_value"` names its pages too, so the same call gives one section per
+group without `combine_sections()`.
 
 ## Which route to use
 
@@ -129,20 +139,14 @@ dm = as_rtftables(dm_df, col_rel_width=[40, 30, 30])
 ae = as_rtftables(ae_df, split="group_force", max_rows=16,
                   group_col=0, group_by="indent")
 
-# Records the grouping (first page of each group carries the name).
+# Name each group's first page, then let auto_section cut the sections.
 pages = combine_sections(Demographics=dm, Adverse_Events=ae)
 
-running = rtf_header([
-    {"l": "Protocol ABC-2026-001", "r": "Page {AUTO_PAGE} of {AUTO_TOTAL_PAGES}"},
-])
-
-# One section per table, created explicitly: open the section, then add its
-# pages, so each table's band starts on its own first page.
 doc = rtf_document()
-doc = rtf_section(doc, header=rtf_header(running.rows + [{"c": "Demographics"}]))
-doc = rtf_tables(doc, dm)
-doc = rtf_section(doc, header=rtf_header(running.rows + [{"c": "Adverse Events"}]))
-doc = rtf_tables(doc, ae)
+doc = rtf_section(doc, header=rtf_header([
+    {"l": "Protocol ABC-2026-001", "r": "Page {AUTO_PAGE} of {AUTO_TOTAL_PAGES}"},
+]))
+doc = rtf_tables(doc, pages, auto_section=True)
 generate_rtfreport(doc, "deliverable.rtf", overwrite=True)
 ```
 

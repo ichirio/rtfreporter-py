@@ -173,3 +173,38 @@ def test_page_defaults_resolve_to_the_r_values():
     assert opts["markup"] == "script"
     assert opts["title_format"] == "text"
     assert opts["footnote_format"] == "table"
+
+
+# ---------------------------------------------------------------- auto_width --
+def test_auto_width_matches_r():
+    """R: `[3429, 720]` natural, `[3429, 6571]` scaled to 10000.
+
+    The first column is protected at its natural width (R passes
+    ``protect_cols = 1L``), so only the data columns absorb the scaling.
+    """
+    data = {
+        "A very long row label column": ["short", "a much longer cell value here"],
+        "N": [1, 22],
+    }
+    assert rr.as_rtftables(data, auto_width=True)[0].column_widths_twips == [3429, 720]
+
+    scaled = rr.as_rtftables(
+        data, auto_width=True, table_width_twips=10000
+    )[0].column_widths_twips
+    assert scaled == [3429, 6571]
+    assert sum(scaled) == 10000
+
+
+def test_auto_width_is_ignored_when_widths_are_explicit():
+    data = {"label": ["a"], "N": [1]}
+    page = rr.as_rtftables(data, auto_width=True, col_rel_width=[50, 50])[0]
+    assert page.column_widths_twips is None
+    assert page.col_rel_width == [50.0, 50.0]
+
+
+def test_auto_width_shares_one_set_of_widths_across_pages():
+    data = {"label": [f"row {i}" for i in range(6)], "N": list(range(6))}
+    pages = rr.as_rtftables(data, auto_width=True, split="rows", split_rows=2)
+    assert len(pages) > 1
+    widths = {tuple(p.column_widths_twips) for p in pages}
+    assert len(widths) == 1, "paginated pages must stay aligned"

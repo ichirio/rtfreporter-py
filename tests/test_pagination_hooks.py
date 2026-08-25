@@ -120,9 +120,23 @@ def test_page_split_group_force_missing_max_rows():
         f(as_frame(_df()))
 
 
-def test_factory_group_by_not_implemented():
-    f = rr.page_split_by_value(group_col="label", group_by="indent")
-    with pytest.raises(NotImplementedError):
+def test_factory_group_by_indent_groups_by_indentation():
+    """The factories accept all four R group_by modes, not just "auto"."""
+    nbsp = chr(0xA0)
+    frame = as_frame(
+        {
+            "label": ["SOC1", nbsp + "PT a", nbsp + "PT b", "SOC2", nbsp + "PT c"],
+            "n": [1, 2, 3, 4, 5],
+        }
+    )
+    pages = rr.page_split_by_value(group_col="label", group_by="indent")(frame)
+    assert [p.name for p in pages] == ["SOC1", "SOC2"]
+    assert [len(p.rows) for p in pages] == [3, 2]
+
+
+def test_factory_rejects_an_unknown_group_by():
+    f = rr.page_split_by_value(group_col="label", group_by="sideways")
+    with pytest.raises(ValueError, match="group_by"):
         f(as_frame(_df()))
 
 

@@ -322,9 +322,20 @@ def test_set_blank_rows_explicit_positions():
     assert 2 in tbl.blank_rows  # after data row 1 -> internal 2
 
 
-def test_set_blank_rows_bad_group_by():
-    with pytest.raises(NotImplementedError):
-        rr.set_blank_rows({"g": ["A", "B"]}, blank_rows="between_groups", group_by="indent")
+def test_set_blank_rows_group_by_indent():
+    """All four R group_by modes work here too."""
+    nbsp = chr(0xA0)
+    frame = rr.set_blank_rows(
+        {"g": ["SOC1", nbsp + "PT a", "SOC2", nbsp + "PT b"]},
+        blank_rows="between_groups",
+        group_by="indent",
+    )
+    assert rr.rtftable(frame).blank_rows == [2]
+
+
+def test_set_blank_rows_rejects_an_unknown_group_by():
+    with pytest.raises(ValueError, match="group_by"):
+        rr.set_blank_rows({"g": ["A", "B"]}, blank_rows="between_groups", group_by="sideways")
 
 
 # -- update_header_row / update_footer_row ------------------------------------

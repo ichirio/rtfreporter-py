@@ -23,6 +23,9 @@ from .table import HeaderRow, RtfTable, SpanCell, rtftable
 
 _DEFAULT_HEADER_SEPS = ("____", "___tlang_delim___")
 
+#: Writable width of the factory page (landscape Letter, 0.75in margins).
+_DEFAULT_WRITABLE_TWIPS = (11 - 2 * 0.75) * 1440
+
 
 # ============================================================================
 #  Input coercion
@@ -643,7 +646,12 @@ def as_rtftables(
             the same length; see :func:`~rtfreporter.fmt_count_paren`.
         stub_group_summary: Forwarded to the stub builder -- ``"empty"`` (default)
             or ``"parent"``.  Only ``"empty"`` is implemented.
-        auto_width: When ``True``, size columns to their widest content.  Not yet
+        auto_width: When ``True``, size each column to its widest content --
+            column-header label or data cell -- via
+            :func:`~rtfreporter.auto_col_widths`, so long labels do not wrap.
+            Computed once on the whole table and applied to every page.
+            Ignored when explicit ``column_widths_twips`` / ``col_rel_width``
+            are given.  Legacy note: not yet
             implemented (raises).
         table_width_twips: Total table width in twips, forwarded to
             :func:`~rtfreporter.rtftable`.
@@ -676,8 +684,6 @@ def as_rtftables(
         raise NotImplementedError(
             "as_rtftables(count_blank_rows=True) is not implemented."
         )
-    if auto_width:
-        raise NotImplementedError("as_rtftables(auto_width=True) is not implemented.")
     if stub_group_summary != "empty":
         raise NotImplementedError(
             f"as_rtftables(stub_group_summary={stub_group_summary!r}) is not "
@@ -803,6 +809,41 @@ def as_rtftables(
 
     from .table import _resolve_blank_rows
 
+    # auto_width: measure the WHOLE table once (all pages share the widths, so
+    # paginated pages line up).  Carrier columns are dropped from the printed
+    # body, so measure the printed shape.
+    auto_width_twips = None
+    if auto_width and not (
+        "column_widths_twips" in table_kwargs or "col_rel_width" in table_kwargs
+    ):
+        from .text_width import auto_col_widths
+
+        measured_names, measured_rows = column_names, rows
+        if drop_idx:
+            keep = [i for i in range(len(column_names)) if i not in set(drop_idx)]
+            measured_names = [column_names[i] for i in keep]
+            measured_rows = [[r[i] for i in keep] for r in rows]
+        header_labels = table_kwargs.get("col_header", coerced.auto_header)
+
+        width_budget = table_width_twips
+        if width_budget is None:
+            # No explicit budget: keep natural widths, but cap the total at the
+            # default writable page width so a wide table still fits (as in R).
+            natural = auto_col_widths(
+                (measured_names, measured_rows), col_header=header_labels
+            )
+            if sum(natural) > _DEFAULT_WRITABLE_TWIPS:
+                width_budget = _DEFAULT_WRITABLE_TWIPS
+        # protect_cols=[0] keeps the stub / row-label column at its natural
+        # width so only the data columns absorb the scaling, matching R's
+        # `protect_cols = 1L`.
+        auto_width_twips = auto_col_widths(
+            (measured_names, measured_rows),
+            col_header=header_labels,
+            table_width_twips=width_budget,
+            protect_cols=[0],
+        )
+
     out: list[RtfTable] = []
     for page_rows, page_name in pages:
         prows = _collapse_repeats(page_rows, collapse_idx) if collapse_idx else [list(r) for r in page_rows]
@@ -841,6 +882,17 @@ def as_rtftables(
             kwargs["column_widths_twips"] = coerced.column_widths_twips
         if page_cell_styles is not None:
             kwargs["cell_styles"] = page_cell_styles
+
+        # auto_width sizes columns to their widest content.  The widths are
+        # computed once on the FULL table (below) and reused for every page, so
+        # paginated pages stay aligned.  Explicit widths always win.
+        if (
+            auto_width_twips is not None
+            and "column_widths_twips" not in kwargs
+            and "col_rel_width" not in kwargs
+        ):
+            if len(auto_width_twips) == len(printed_names):
+                kwargs["column_widths_twips"] = list(auto_width_twips)
 
         tbl = rtftable(
             (printed_names, prows),

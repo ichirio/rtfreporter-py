@@ -120,10 +120,10 @@ def page_split_by_value(
     """Return a split function that puts each distinct ``group_col`` value on its own page."""
 
     def f(frame: Frame) -> list[Frame]:
-        _check_group_by(group_by)
         gidx = _resolve_group(group_col, frame.column_names)
-        gkeys = [r[gidx] for r in frame.rows]
-        from .adapters import _paginate
+        from .adapters import _compute_group_keys, _paginate
+
+        gkeys = _compute_group_keys(frame.rows, gidx, group_by)
 
         pages = _paginate(
             frame.rows, gkeys, "by_value", None, max_rows, min_group_rows,
@@ -160,12 +160,12 @@ def page_split_group_force(
 
 def _group_factory(max_rows, group_col, min_group_rows, cont_label, group_by, split):
     def f(frame: Frame) -> list[Frame]:
-        _check_group_by(group_by)
         if max_rows is None:
             raise PaginationError(f"`max_rows` is required for {split} pagination.")
         gidx = _resolve_group(group_col, frame.column_names)
-        gkeys = [r[gidx] for r in frame.rows]
-        from .adapters import _paginate
+        from .adapters import _compute_group_keys, _paginate
+
+        gkeys = _compute_group_keys(frame.rows, gidx, group_by)
 
         pages = _paginate(
             frame.rows, gkeys, split, None, max_rows, min_group_rows, cont_label, gidx,
@@ -173,13 +173,6 @@ def _group_factory(max_rows, group_col, min_group_rows, cont_label, group_by, sp
         return _frames_from_pages(frame, pages)
 
     return f
-
-
-def _check_group_by(group_by: str) -> None:
-    if group_by != "auto":
-        raise NotImplementedError(
-            f"group_by={group_by!r} is not implemented; only 'auto' is supported."
-        )
 
 
 _STRING_FACTORIES = {
@@ -294,8 +287,8 @@ def set_blank_rows(
         blank_row_first, blank_row_end: Also add a blank at the top / bottom.
         group_col: Group column (name / 0-based index) for ``"between_groups"``;
             ``None`` uses column 0.
-        group_by: Group detection: ``"auto"`` / ``"value"`` (implemented);
-            ``"indent"`` / ``"filled"`` raise :class:`NotImplementedError`.
+        group_by: Group detection -- ``"auto"``, ``"value"``, ``"indent"`` or
+            ``"filled"``, as in :func:`~rtfreporter.as_rtftables`.
 
     Returns:
         A :class:`Frame` with :attr:`~Frame.blank_rows` set (``None`` when the
@@ -319,11 +312,6 @@ def set_blank_rows(
         if isinstance(it, str):
             if it != "between_groups":
                 raise ValueError(f"Unrecognised blank_rows string {it!r}.")
-            if group_by not in ("auto", "value"):
-                raise NotImplementedError(
-                    f"set_blank_rows(group_by={group_by!r}) is not implemented; "
-                    "only 'auto' / 'value' (value-change detection) is supported."
-                )
             gidx = _resolve_group(group_col, names)
             from .blank_rows import blank_rows_by_change
 
@@ -332,7 +320,7 @@ def set_blank_rows(
             # default.  Verified against R: A,A,B,B -> [2].
             internal.update(
                 blank_rows_by_change(
-                    gidx, group_by=("value" if group_by == "auto" else group_by),
+                    gidx, group_by=group_by,
                     include_before_first=False, include_after_last=False,
                 ).positions(names, rows)
             )

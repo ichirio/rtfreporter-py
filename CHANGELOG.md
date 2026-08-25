@@ -8,6 +8,26 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **`rtf_tables(auto_section=)` / `section_label_align=`** — ports R's automatic
+  sectioning. A **named** page opens its own RTF section whose header is the
+  running header plus a heading row carrying the name; unnamed pages fall
+  through, so a multi-page table stays one section. This gives
+  `combine_sections()` its consumer: it records the grouping, and
+  `auto_section=True` acts on it. `split="by_value"` names pages too, so the
+  same call yields one section per group. Verified against R: identical header
+  bands and exactly two `\sectd` for the two-table case.
+- **`group_by` across the pagination surface.** `page_split_by_value`,
+  `page_split_group_safe`, `page_split_group_force` and `set_blank_rows()`
+  accepted only `"auto"` and raised `NotImplementedError` otherwise; all four R
+  modes (`auto` / `value` / `indent` / `filled`) now work everywhere, sharing
+  one detection implementation.
+- **`as_rtftables(auto_width=True)`** — sizes each column to its widest content
+  via `auto_col_widths()`, computed once on the whole table so paginated pages
+  stay aligned. Matches R exactly, including the two details that are easy to
+  miss: the first column is protected at its natural width (R's
+  `protect_cols = 1L`), and with no `table_width_twips` the total is capped at
+  the default writable page width.
+
 - **The R package's hex logo**, reused as the site logo, favicon and README
   mark. The design is identical (hexagon, navy frame, miniature clinical-TFL
   page, `rtfreporter` wordmark, `ichirio` family attribution); only the
