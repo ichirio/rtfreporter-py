@@ -44,8 +44,11 @@ def test_paginate_none_one_page():
 
 
 def test_paginate_rows():
+    """`split_rows` cuts once at position 2; `max_rows` would size pages."""
     pages = rr.paginate(_df(), split="rows", split_rows=2)
-    assert [len(p.rows) for p in pages] == [2, 2, 2]
+    assert [len(p.rows) for p in pages] == [2, 4]
+    sized = rr.paginate(_df(), split="rows", max_rows=2)
+    assert [len(p.rows) for p in sized] == [2, 2, 2]
 
 
 def test_paginate_rows_requires_split_rows():

@@ -1,0 +1,189 @@
+{
+  "_comment": [
+    "Cross-check cases: each is rendered by BOTH the R package and this port,",
+    "and the two RTF files must be byte-identical once line endings are",
+    "normalised.  Column references use NAMES wherever possible, because both",
+    "implementations accept names identically; where an index is unavoidable,",
+    "give an object {\"r\": <1-based>, \"py\": <0-based>} and the renderers pick",
+    "their own.  Keep every case deterministic: no dates, no random data."
+  ],
+
+  "cases": [
+    {
+      "id": "basic_table",
+      "why": "The smallest end-to-end render: preamble, colour table, geometry, one table.",
+      "data": {"Subject": ["001", "002", "003"], "Age": [34, 45, 28], "Sex": ["M", "F", "M"]},
+      "as_rtftables": {}
+    },
+    {
+      "id": "col_rel_width",
+      "why": "Relative widths drive the cellx boundaries.",
+      "data": {"Item": ["a", "b"], "N": [1, 2], "Pct": ["10%", "20%"]},
+      "as_rtftables": {"col_rel_width": [50, 25, 25]}
+    },
+    {
+      "id": "border_none",
+      "why": "border='none' must omit every border control word.",
+      "data": {"A": ["x", "y"], "B": [1, 2]},
+      "as_rtftables": {"border": "none"}
+    },
+    {
+      "id": "titles_and_footnotes",
+      "why": "Title centred+bold, footnote left with the first-row top rule.",
+      "data": {"A": ["x", "y"], "B": [1, 2]},
+      "as_rtftables": {},
+      "titles": ["Table 14.1.1", "", "Demographics"],
+      "footnotes": ["Source: ADSL", "Second footnote line"]
+    },
+    {
+      "id": "header_and_footer_bands",
+      "why": "The footer band's default top rule (the bug the maintainer spotted).",
+      "data": {"A": ["x"], "B": [1]},
+      "as_rtftables": {},
+      "header": [{"l": "Acme Biopharma", "r": "Page {AUTO_PAGE} of {AUTO_TOTAL_PAGES}"},
+                 {"c": "Protocol ABC-2026-001"}],
+      "footer": [{"l": "Note: percentages use non-missing denominators."},
+                 {"l": "Program: /prod/t14.R", "r": "CONFIDENTIAL"}]
+    },
+    {
+      "id": "footer_no_rule",
+      "why": "border=None must switch the footer rule off in both.",
+      "data": {"A": ["x"], "B": [1]},
+      "as_rtftables": {},
+      "footer": [{"c": "No rule here"}],
+      "footer_border": "none"
+    },
+    {
+      "id": "split_rows",
+      "why": "Fixed-size pagination.",
+      "data": {"V": [1, 2, 3, 4, 5, 6, 7]},
+      "as_rtftables": {"split": "rows", "split_rows": {"r": 3, "py": 2}}
+    },
+    {
+      "id": "group_safe",
+      "why": "Whole groups per page, never split.",
+      "data": {"G": ["A", "A", "A", "B", "B", "C"], "V": [1, 2, 3, 4, 5, 6]},
+      "as_rtftables": {"split": "group_safe", "group_col": "G", "max_rows": 4}
+    },
+    {
+      "id": "group_force_cont",
+      "why": "Mid-group cut repeats the header with (Cont.) -- the pagination bug.",
+      "data": {"G": ["A", "A", "A", "A", "A"], "V": [1, 2, 3, 4, 5]},
+      "as_rtftables": {"split": "group_force", "group_col": "G", "max_rows": 3}
+    },
+    {
+      "id": "group_force_widow_orphan",
+      "why": "min_group_rows nudges the cut.",
+      "data": {"G": ["A", "A", "A", "B", "B", "B", "B"], "V": [1, 2, 3, 4, 5, 6, 7]},
+      "as_rtftables": {"split": "group_force", "group_col": "G", "max_rows": 4,
+                       "min_group_rows": 3}
+    },
+    {
+      "id": "by_value",
+      "why": "One page per group value, pages named by it.",
+      "data": {"G": ["A", "A", "B"], "V": [1, 2, 3]},
+      "as_rtftables": {"split": "by_value", "group_col": "G"}
+    },
+    {
+      "id": "blank_between_groups",
+      "why": "between_groups on a plain value column.",
+      "data": {"G": ["A", "A", "B", "B"], "V": [1, 2, 3, 4]},
+      "as_rtftables": {"group_col": "G", "blank_rows": "between_groups"}
+    },
+    {
+      "id": "blank_between_groups_stub",
+      "why": "between_groups on an INDENTED stub -- must use group_by detection.",
+      "data": {
+        "Characteristic": ["Age", "Age", "Age", "Sex", "Sex"],
+        "Statistic": ["n", "Mean", "Median", "Male", "Female"],
+        "Placebo": ["10", "50.1", "49.0", "4", "6"]
+      },
+      "as_rtftables": {"stub_vars": ["Characteristic", "Statistic"], "stub_label": "",
+                       "blank_rows": "between_groups"}
+    },
+    {
+      "id": "blank_by_change",
+      "why": "The spec object, whose include_* default to TRUE.",
+      "data": {"G": ["A", "A", "B", "B"], "V": [1, 2, 3, 4]},
+      "as_rtftables": {"blank_rows_by_change": "G"}
+    },
+    {
+      "id": "stub_vars",
+      "why": "Hierarchy columns folded into one indented stub.",
+      "data": {
+        "Characteristic": ["Age", "Age", "Sex", "Sex"],
+        "Statistic": ["n", "Mean (SD)", "Male", "Female"],
+        "Placebo": ["10", "50.1 (5.2)", "4", "6"],
+        "Active": ["12", "51.3 (4.8)", "5", "7"]
+      },
+      "as_rtftables": {"stub_vars": ["Characteristic", "Statistic"], "stub_label": ""}
+    },
+    {
+      "id": "sort_and_collapse",
+      "why": "sort_by ordering plus collapse_repeats blanking.",
+      "data": {"G": ["B", "A", "B", "A"], "V": [2, 1, 4, 3]},
+      "as_rtftables": {"sort_by": "G", "collapse_repeats": "G"}
+    },
+    {
+      "id": "drop_cols",
+      "why": "A carrier column used for grouping but not printed.",
+      "data": {"G": ["A", "A", "B"], "Label": ["x", "y", "z"], "V": [1, 2, 3]},
+      "as_rtftables": {"group_col": "G", "drop_cols": ["G"]}
+    },
+    {
+      "id": "align_count_pct",
+      "why": "The count/percent realigner.",
+      "data": {"Term": ["Headache", "Nausea", "None"],
+               "Placebo": ["14 (16.3%)", "8 (9.3%)", "0"],
+               "Active": ["21 (21.9%)", "5 (5.2%)", "3 (3.1%)"]},
+      "as_rtftables": {"align_count_pct": true}
+    },
+    {
+      "id": "auto_width",
+      "why": "protect_cols + the writable-width cap.",
+      "data": {"A very long row label column": ["short", "a much longer cell value here"],
+               "N": [1, 22]},
+      "as_rtftables": {"auto_width": true}
+    },
+    {
+      "id": "auto_width_scaled",
+      "why": "auto_width scaled to an explicit total.",
+      "data": {"A very long row label column": ["short", "a much longer cell value here"],
+               "N": [1, 22]},
+      "as_rtftables": {"auto_width": true, "table_width_twips": 10000}
+    },
+    {
+      "id": "group_by_indent",
+      "why": "Indent-based group detection under group_safe.",
+      "data": {
+        "Event": ["SOC1", "    PT a", "    PT b",
+                  "SOC2", "    PT c"],
+        "N": [10, 6, 4, 8, 8]
+      },
+      "as_rtftables": {"split": "group_safe", "group_col": "Event",
+                       "group_by": "indent", "max_rows": 4}
+    },
+    {
+      "id": "spanning_header_from_names",
+      "why": "header_sep rebuilds a spanning header from delimited names.",
+      "data": {"Item": ["a", "b"],
+               "Treatment____Placebo": [1, 2],
+               "Treatment____Active": [3, 4]},
+      "as_rtftables": {}
+    },
+    {
+      "id": "markup_super_sub",
+      "why": "Inline markup resolves to RTF control words.",
+      "data": {"Term": ["Cmax^{ss}", "AUC_{0-t}"], "V": [1, 2]},
+      "as_rtftables": {}
+    },
+    {
+      "id": "portrait_a4_margins",
+      "why": "Page geometry: paper size, orientation and margins.",
+      "data": {"A": ["x"], "B": [1]},
+      "as_rtftables": {},
+      "page": {"paper_size": "a4", "orientation": "portrait",
+               "margin_left_in": 0.5, "margin_right_in": 0.5}
+    }
+  ]
+}

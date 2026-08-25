@@ -87,22 +87,26 @@ def page_split_none() -> Callable[[Frame], list[Frame]]:
     return f
 
 
-def page_split_rows(split_rows=None) -> Callable[[Frame], list[Frame]]:
-    """Return a split function cutting at fixed row positions or a page size.
+def page_split_rows(split_rows=None, max_rows: int | None = None) -> Callable[[Frame], list[Frame]]:
+    """Return a split function cutting at explicit positions or a page size.
 
     Args:
-        split_rows: An int page size, or explicit 0-based cut positions.
+        split_rows: 0-based **cut positions** -- a single position or a list.
+            This is not a page size: on 10 rows ``split_rows=4`` gives pages of
+            4 and 6, as in R.
+        max_rows: A fixed page size, used when ``split_rows`` is not given.
     """
 
     def f(frame: Frame) -> list[Frame]:
-        if split_rows is None:
+        if split_rows is None and not max_rows:
             raise PaginationError(
-                "`split_rows` is required for row-position pagination."
+                "`split_rows` (cut positions) or `max_rows` (page size) is "
+                "required for row pagination."
             )
         from .adapters import _paginate
 
         pages = _paginate(
-            frame.rows, [None] * len(frame.rows), "rows", split_rows, None, 2,
+            frame.rows, [None] * len(frame.rows), "rows", split_rows, max_rows, 2,
             " (Cont.)", None,
         )
         return _frames_from_pages(frame, pages)
@@ -177,7 +181,8 @@ def _group_factory(max_rows, group_col, min_group_rows, cont_label, group_by, sp
 
 _STRING_FACTORIES = {
     "none": lambda **kw: page_split_none(),
-    "rows": lambda split_rows=None, **kw: page_split_rows(split_rows=split_rows),
+    "rows": lambda split_rows=None, max_rows=None, **kw: page_split_rows(
+        split_rows=split_rows, max_rows=max_rows),
     "by_value": lambda group_col=None, max_rows=None, min_group_rows=2,
     cont_label=" (Cont.)", group_by="auto", **kw: page_split_by_value(
         group_col=group_col, max_rows=max_rows, min_group_rows=min_group_rows,

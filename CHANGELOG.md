@@ -8,6 +8,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Differential cross-check against the R package.** `data-raw/xcheck/cases.json`
+  defines cases rendered by **both** implementations; `tests/test_xcheck_vs_r.py`
+  requires the two RTF files to be **byte-identical** (line endings aside).
+  R's output is committed under `tests/xcheck_golden/`, so CI enforces R parity
+  without R installed. 24 cases cover geometry, borders, titles/footnotes,
+  header/footer bands, every split strategy, blank rows, stubs, sorting,
+  dropped columns, count/percent alignment, auto width, spanning headers and
+  markup. See `data-raw/xcheck/README.md`.
+
 - **`rtf_tables(auto_section=)` / `section_label_align=`** — ports R's automatic
   sectioning. A **named** page opens its own RTF section whose header is the
   running header plus a heading row carrying the name; unnamed pages fall
@@ -47,6 +56,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **Three divergences the cross-check caught immediately**, all confirmed
+  against R before changing anything:
+    - **The clinical stub was indented with plain spaces**, where R uses
+      non-breaking spaces (U+00A0). A plain space is a wrap opportunity and can
+      be collapsed by the viewer, so the indent did not reliably survive into
+      Word.
+    - **`split_rows` was treated as a page size**; in R it is a list of explicit
+      **cut positions**. On 10 rows `split_rows=4` now yields pages of 4 and 6,
+      as R does, not 4/4/2. Use `max_rows` for a fixed page size. Positions are
+      0-based here, so R's `3` is Python's `2`.
+    - **Setting `group_col` inserted separator rows by itself.** R adds none
+      unless `blank_rows` asks; `blank_rows="between_groups"` is now required to
+      get them.
+- `page_split_rows()` accepts `max_rows`, matching what `as_rtftables(split="rows")`
+  already allowed.
 - **`blank_rows="between_groups"` blanked between every row of an indented
   stub.** It compared cell values instead of using the call's `group_by`, and
   a stub built by `stub_vars` has a different value on every line, so every row

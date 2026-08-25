@@ -81,7 +81,7 @@ def test_off_by_default_emits_no_extra_sections(named_pages, running):
 def test_unnamed_pages_fall_through(running):
     """A multi-page table stays ONE section: only its first page is named."""
     multi = rr.as_rtftables(
-        {"v": list(range(6))}, split="rows", split_rows=2, col_rel_width=[100]
+        {"v": list(range(6))}, split="rows", max_rows=2, col_rel_width=[100]
     )
     assert len(multi) == 3
     pages = rr.combine_sections(Listing=multi)

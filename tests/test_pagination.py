@@ -23,8 +23,9 @@ def test_split_rows_even():
 
 
 def test_split_rows_remainder():
+    """One cut position -> two pages; R gives 4 and 6 for the same call."""
     pages = rr.as_rtftables(_ids(10), split="rows", split_rows=4)
-    assert [p.nrows for p in pages] == [4, 4, 2]
+    assert [p.nrows for p in pages] == [4, 6]
 
 
 def test_split_rows_explicit_cuts():
@@ -116,7 +117,9 @@ def test_list_of_frames_flattened():
 
 def test_paginate_blanks_between_groups_per_page():
     df = pd.DataFrame({"g": ["A", "A", "B", "B"], "v": [1, 2, 3, 4]})
-    pages = rr.as_rtftables(df, split="none", group_col="g")
+    pages = rr.as_rtftables(
+        df, split="none", group_col="g", blank_rows="between_groups"
+    )
     assert 2 in pages[0].blank_rows
 
 

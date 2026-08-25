@@ -89,10 +89,16 @@ def test_collapse_resets_on_change():
 
 # -- group-by / blank rows ----------------------------------------------------
 
-def test_group_col_inserts_blank_at_change():
+def test_group_col_alone_inserts_no_blanks():
+    """R adds no separators unless `blank_rows` asks; group_col alone must not."""
     df = pd.DataFrame({"g": ["A", "A", "B"], "v": [1, 2, 3]})
-    t = rr.as_rtftable(df, group_col="g")
-    assert 2 in t.blank_rows
+    assert rr.as_rtftable(df, group_col="g").blank_rows == []
+
+
+def test_between_groups_inserts_the_blank():
+    df = pd.DataFrame({"g": ["A", "A", "B"], "v": [1, 2, 3]})
+    t = rr.as_rtftable(df, group_col="g", blank_rows="between_groups")
+    assert t.blank_rows == [2]
 
 
 def test_group_col_no_blank_single_group():
@@ -122,10 +128,13 @@ def test_stub_label_becomes_first_col_name():
 
 
 def test_stub_indent_width():
+    """The indent is NON-BREAKING spaces, as in R, so viewers keep it."""
+    nbsp = chr(0xA0)
     df = pd.DataFrame({"Group": ["A"], "Stat": ["n"], "Val": [1]})
     t = rr.as_rtftable(df, stub_vars=["Group", "Stat"], stub_label="", stub_indent=2)
     leaf = [r[0] for r in t.rows if r[0].strip() == "n"][0]
-    assert leaf.startswith("  n")
+    assert leaf == nbsp * 2 + "n"
+    assert not leaf.startswith("  "), "a plain space would collapse in Word"
 
 
 def test_stub_single_level_no_indent():

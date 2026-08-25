@@ -43,8 +43,22 @@ def test_delimited_name_spanning_header():
 
 
 def test_split_rows():
+    """`split_rows` is a CUT POSITION, not a page size (as in R)."""
     df = pd.DataFrame({"ID": list(range(10))})
     pages = rr.as_rtftables(df, split="rows", split_rows=4)
+    assert [p.nrows for p in pages] == [4, 6]
+
+
+def test_split_rows_multiple_cuts():
+    df = pd.DataFrame({"ID": list(range(10))})
+    pages = rr.as_rtftables(df, split="rows", split_rows=[4, 8])
+    assert [p.nrows for p in pages] == [4, 4, 2]
+
+
+def test_max_rows_is_the_fixed_page_size():
+    """Use `max_rows` when you want equal-sized pages."""
+    df = pd.DataFrame({"ID": list(range(10))})
+    pages = rr.as_rtftables(df, split="rows", max_rows=4)
     assert [p.nrows for p in pages] == [4, 4, 2]
 
 
@@ -94,8 +108,9 @@ def test_collapse_repeats():
 
 def test_blank_rows_between_groups():
     df = pd.DataFrame({"grp": ["A", "A", "B", "B"], "v": [1, 2, 3, 4]})
-    t = rr.as_rtftable(df, group_col="grp")
-    # A change from A->B after row 2 -> a blank position at 2.
+    # group_col alone adds nothing (as in R); ask for the separators explicitly.
+    assert rr.as_rtftable(df, group_col="grp").blank_rows == []
+    t = rr.as_rtftable(df, group_col="grp", blank_rows="between_groups")
     assert 2 in t.blank_rows
 
 
@@ -105,8 +120,9 @@ def test_stub_cols_indented():
     )
     t = rr.as_rtftable(df, stub_vars=["Group", "Stat"], stub_label="")
     stub_col = [r[0] for r in t.rows]
+    nbsp = chr(0xA0)
     assert "Age" in stub_col
-    assert any(s.strip() == "n" and s.startswith(" ") for s in stub_col)
+    assert any(s.strip() == "n" and s.startswith(nbsp) for s in stub_col)
 
 
 def test_polars_input():

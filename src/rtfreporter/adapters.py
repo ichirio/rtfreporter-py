@@ -230,11 +230,17 @@ def _apply_stub(column_names, rows, stub_cols, stub_label, stub_indent):
     return new_names, new_rows
 
 
+#: Stub indents use a NON-BREAKING space, as R does.  A plain space is a wrap
+#: opportunity and may be collapsed by the viewer, so the indent would not
+#: survive; U+00A0 does.  It is also what group_by="indent" detection expects.
+_STUB_INDENT_CHAR = chr(0xA0)
+
+
 def _indent(value, level: int, stub_indent: int) -> str:
     text = "" if value is None else str(value)
     if level <= 0:
         return text
-    return " " * (level * stub_indent) + text
+    return _STUB_INDENT_CHAR * (level * stub_indent) + text
 
 
 # ============================================================================
@@ -328,11 +334,17 @@ def _paginate(rows, group_keys, split, split_rows, max_rows, min_group_rows, con
 
 
 def _row_cut_points(split_rows, max_rows, n):
+    """Row indices at which a new page begins.
+
+    ``split_rows`` is a list of explicit **cut positions**, or a single
+    position -- NOT a page size.  This matches R: on 7 rows,
+    ``split_rows = 3`` (R, 1-based) cuts once, giving pages of 2 and 5 rows.
+    Positions are 0-based here, so the equivalent call is ``split_rows = 2``.
+    Use ``max_rows`` when you want a fixed page size.
+    """
     if split_rows is not None:
-        if isinstance(split_rows, int):
-            step = split_rows
-            return list(range(step, n, step))
-        return sorted(int(c) for c in split_rows if 0 < int(c) < n)
+        positions = [split_rows] if isinstance(split_rows, int) else list(split_rows)
+        return sorted({int(c) for c in positions if 0 < int(c) < n})
     if max_rows:
         return list(range(max_rows, n, max_rows))
     return []
@@ -800,18 +812,9 @@ def as_rtftables(
         )
 
     # Per-page blank spec: explicit blank_rows wins; else derive from group_col.
+    # R inserts NO blank rows unless `blank_rows` asks for them -- setting
+    # `group_col` alone must not add separators.
     page_blank = _expand_between_groups(blank_rows, group_idx, group_by)
-    if page_blank is None and group_idx is not None and not callable(split) and split not in ("by_value",):
-        if group_keys and group_keys != [row[group_idx] for row in rows]:
-            # Header-based grouping (indent / filled): the raw cell values all
-            # differ, so derive the separators from the computed group keys.
-            page_blank = [
-                i - 1 for i in range(1, len(group_keys)) if group_keys[i] != group_keys[i - 1]
-            ]
-        else:
-            page_blank = blank_rows_by_change(
-                group_idx, include_before_first=False, include_after_last=False
-            )
 
     from .table import _resolve_blank_rows
 
