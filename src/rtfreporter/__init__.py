@@ -92,11 +92,6 @@ from .pagination import (
     Frame,
     PaginationError,
     add_cont_label,
-    page_split_by_value,
-    page_split_group_force,
-    page_split_group_safe,
-    page_split_none,
-    page_split_rows,
     paginate,
     set_blank_rows,
 )
@@ -234,11 +229,6 @@ __all__ = [
     "PaginationError",
     "paginate",
     "add_cont_label",
-    "page_split_none",
-    "page_split_rows",
-    "page_split_by_value",
-    "page_split_group_safe",
-    "page_split_group_force",
     # style verbs
     "style_body",
     "style_cols",

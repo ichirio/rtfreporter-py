@@ -9,13 +9,14 @@ of rows; each row has 1-3 columns keyed by position:
 * a plain string -> a single centered column.
 
 Cells may contain page tokens (``{AUTO_PAGE}``, ``{AUTO_TOTAL_PAGES}``,
-``{PAGE}``, ``{TOTAL_PAGES}``, ``{SECTION_PAGES}``).
+``{PAGE}``, ``{TOTAL_PAGES}``).
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 
+from ._escape import resolve_markup
 from .borders import Border, BorderSide
 
 Row = dict
@@ -63,9 +64,27 @@ class HeaderFooter:
     cell_padding_right_twips: int | None = None
     width_twips: int | None = None
     is_footer: bool = False
+    #: Per-band style (R #291 / #292): ``width`` in the block-width vocabulary
+    #: (``"page"``, ``"content"``, a fraction of the writable width, or twips),
+    #: ``font_size_half_points``, ``font`` and ``markup``.  ``None`` inherits
+    #: the document setting.
+    width: object = None
+    font_size_half_points: int | None = None
+    font: str | None = None
+    markup: object = None
 
     def __post_init__(self) -> None:
+        from .element_style import check_block_width, check_font, check_font_size
+
         self.rows = [_normalize_row(r) for r in self.rows]
+        verb = "rtf_footer" if self.is_footer else "rtf_header"
+        self.width = check_block_width(self.width, f"{verb}(width)")
+        self.font_size_half_points = check_font_size(
+            self.font_size_half_points, f"{verb}(font_size_half_points)"
+        )
+        self.font = check_font(self.font, f"{verb}(font)")
+        if self.markup is not None and not isinstance(self.markup, frozenset):
+            self.markup = resolve_markup(self.markup)
 
 
 
@@ -81,6 +100,10 @@ def rtf_header(
     cell_padding_left_twips: int | None = None,
     cell_padding_right_twips: int | None = None,
     width_twips: int | None = None,
+    width=None,
+    font_size_half_points: int | None = None,
+    font: str | None = None,
+    markup=None,
 ) -> HeaderFooter:
     """Build a page-header band.
 
@@ -88,6 +111,13 @@ def rtf_header(
         rows: A list of rows.  Each row is a str (centered), a dict with ``l``
             / ``c`` / ``r`` keys, or a short sequence.
         border: Optional :class:`~rtfreporter.borders.Border` on the first row.
+        width: The band's width -- ``"page"`` (the default: the writable
+            width), a fraction of it, or twips.  ``width_twips`` is the older
+            absolute spelling and wins when both are given.
+        font_size_half_points, markup: Style for this band, overriding the
+            document default.  A size given without ``row_height_twips``
+            recomputes the height from that size.
+        font: Per-band font family -- not supported yet (issue #3).
     """
     return HeaderFooter(
         rows=list(rows),
@@ -97,6 +127,10 @@ def rtf_header(
         cell_padding_right_twips=cell_padding_right_twips,
         width_twips=width_twips,
         is_footer=False,
+        width=width,
+        font_size_half_points=font_size_half_points,
+        font=font,
+        markup=markup,
     )
 
 
@@ -107,6 +141,10 @@ def rtf_footer(
     cell_padding_left_twips: int | None = None,
     cell_padding_right_twips: int | None = None,
     width_twips: int | None = None,
+    width=None,
+    font_size_half_points: int | None = None,
+    font: str | None = None,
+    markup=None,
 ) -> HeaderFooter:
     """Build a page-footer band (same shape as :func:`rtf_header`)."""
     return HeaderFooter(
@@ -117,6 +155,10 @@ def rtf_footer(
         cell_padding_right_twips=cell_padding_right_twips,
         width_twips=width_twips,
         is_footer=True,
+        width=width,
+        font_size_half_points=font_size_half_points,
+        font=font,
+        markup=markup,
     )
 
 

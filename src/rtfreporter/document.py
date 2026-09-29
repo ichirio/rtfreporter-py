@@ -15,7 +15,9 @@ from dataclasses import dataclass, replace
 from . import _commands as C
 from . import render as R
 from ._escape import resolve_markup
+from .element_style import check_font, element_style, resolve_block_width
 from .figure import Figure, rtfplot
+from .footnote_band import footnote_hf, footnote_rows
 from .header_footer import HeaderFooter, normalize_hf
 from .page import DefaultFormat, Page
 from .table import RtfTable, rtftable
@@ -30,6 +32,8 @@ class _Report:
     color_table: list[str] | None
     sections: list[dict]
     pages: list[dict]
+    title_style: dict
+    footnote_style: dict
 
 
 class RtfDocument:
@@ -64,6 +68,11 @@ class RtfDocument:
         self.color_table = list(color_table) if color_table else None
         self._sections: list[dict] = []
         self._pages: list[dict] = []
+        #: Block-level style for the title / footnote blocks (R #292 / #296):
+        #: ``font_size_half_points``, ``row_height_twips``, ``markup``,
+        #: ``align`` and (footnote only) ``border``.
+        self.title_style: dict = {}
+        self.footnote_style: dict = {}
 
     # -- copy-on-modify ------------------------------------------------------
 
@@ -81,6 +90,8 @@ class RtfDocument:
         new.color_table = list(self.color_table) if self.color_table else None
         new._sections = [dict(section) for section in self._sections]
         new._pages = [dict(page) for page in self._pages]
+        new.title_style = dict(self.title_style)
+        new.footnote_style = dict(self.footnote_style)
         return new
 
     # -- section / content builders -----------------------------------------
@@ -168,13 +179,15 @@ class RtfDocument:
         """
         new = self
         base_header = _auto_section_base(self) if auto_section else None
+        open_label = None
         for i, tbl in enumerate(list(tables)):
             if auto_section:
                 label = getattr(tbl, "name", None)
-                if label:
+                if label and str(label) != open_label:
+                    open_label = str(label)
                     new = _open_auto_section(
                         new,
-                        _auto_section_header(base_header, str(label), section_label_align),
+                        _auto_section_header(base_header, open_label, section_label_align),
                     )
             new = new.add_table(
                 tbl,
@@ -232,6 +245,8 @@ class RtfDocument:
             color_table=self.color_table,
             sections=list(self._sections),
             pages=list(self._pages),
+            title_style=dict(self.title_style),
+            footnote_style=dict(self.footnote_style),
         )
 
 
@@ -303,6 +318,8 @@ def rtf_config(
     out = RtfDocument(page=new_page, default_format=new_fmt, color_table=new_colors)
     out._sections = list(doc._sections)
     out._pages = list(doc._pages)
+    out.title_style = dict(doc.title_style)
+    out.footnote_style = dict(doc.footnote_style)
     return out
 
 
@@ -379,11 +396,12 @@ def rtf_tables(
             columns, or DataFrame) or a list/tuple of them (one page each).
         titles, footnotes: A parallel list (one per table) or a single block
             applied to every table.
-        auto_section: When ``True``, every **named** page opens its own RTF
-            section, whose header is the running header plus a row carrying the
-            page's name.  Unnamed pages fall through into the section already in
-            effect, so a multi-page table stays one section.  Page names come
-            from :func:`~rtfreporter.combine_sections` or from
+        auto_section: When ``True``, a section opens where the page **name
+            changes**; its header is the running header plus a row carrying the
+            name.  A page name is a heading, so a run of pages sharing one (the
+            pages of a group that outgrew ``max_rows``) is one section, and an
+            unnamed page falls through into the section already in effect.
+            Page names come from :func:`~rtfreporter.combine_sections` or from
             ``split="by_value"``.
         section_label_align: Where the auto-appended label sits --
             ``"left"`` (default), ``"center"`` or ``"right"``.
@@ -400,15 +418,19 @@ def rtf_tables(
     flist = _broadcast_blocks(footnotes, n)
     out = doc
     base_header = _auto_section_base(doc) if auto_section else None
+    open_label = None
     for i, tbl in enumerate(items):
-        # auto_section: a NAMED page opens its own section, carrying the running
-        # header plus a heading row.  Unnamed pages fall through into the
-        # section already in effect, so a multi-page table stays one section.
+        # auto_section: a section opens where the page NAME CHANGES, carrying
+        # the running header plus a heading row.  A page name is a heading, so
+        # consecutive pages that carry the same one are one section of several
+        # pages (R #433); an unnamed page falls through into the section
+        # already in effect.
         if auto_section:
             label = getattr(tbl, "name", None)
-            if label:
+            if label and str(label) != open_label:
+                open_label = str(label)
                 out = _open_auto_section(
-                    out, _auto_section_header(base_header, str(label), section_label_align)
+                    out, _auto_section_header(base_header, open_label, section_label_align)
                 )
         out = out.add_table(
             tbl,
@@ -445,10 +467,27 @@ def rtf_figures(
     return out if out is not doc else doc._copy()
 
 
-def rtf_titles(doc: RtfDocument, titles) -> RtfDocument:
+def rtf_titles(
+    doc: RtfDocument,
+    titles,
+    font_size_half_points: int | None = None,
+    row_height_twips: int | None = None,
+    markup=None,
+    font: str | None = None,
+    align: str | None = None,
+) -> RtfDocument:
     """Assign per-page titles (mirrors R ``rtf_titles()``).
 
     ``titles`` is a list of one block per page, or a single block common to all.
+
+    Args:
+        font_size_half_points, row_height_twips, markup, align: Style for the
+            title block, overriding the document default.  Anything left
+            ``None`` is inherited.  A size given without a height recomputes
+            the height from that size; an explicit height always wins.
+            ``align`` sets the block's default row alignment; a per-row
+            ``align`` still beats it.
+        font: Per-block font family -- not supported yet (issue #3).
     """
     if not isinstance(doc, RtfDocument):
         raise TypeError("`doc` must be an RtfDocument.")
@@ -456,18 +495,63 @@ def rtf_titles(doc: RtfDocument, titles) -> RtfDocument:
     if n == 0:
         raise ValueError("Cannot set titles before any content has been added.")
     blocks = _broadcast_blocks(titles, n, require_list=True)
-    return doc.titles(blocks)
+    st = element_style(font_size_half_points, row_height_twips, markup, align, verb="rtf_titles")
+    check_font(font, "rtf_titles(font)")
+    new = doc.titles(blocks)
+    if st:
+        new.title_style = st
+    return new
 
 
-def rtf_footnotes(doc: RtfDocument, footnotes) -> RtfDocument:
-    """Assign per-page footnotes (mirrors R ``rtf_footnotes()``)."""
+def rtf_footnotes(
+    doc: RtfDocument,
+    footnotes,
+    font_size_half_points: int | None = None,
+    row_height_twips: int | None = None,
+    markup=None,
+    font: str | None = None,
+    align: str | None = None,
+    border=None,
+) -> RtfDocument:
+    """Assign per-page footnotes (mirrors R ``rtf_footnotes()``).
+
+    Same shape as :func:`rtf_titles`: a list with one block per page (or length
+    1, common to all).  A block is a list of rows; a row is a single string, or
+    a dict ``{"l": ..., "c": ..., "r": ...}`` giving up to three cells
+    positioned left / centre / right -- the same row model
+    :func:`~rtfreporter.rtf_footer` uses.  A bare string lands in whichever
+    slot ``align`` selects.  ``None`` per element suppresses the footnote for
+    that page.
+
+    Args:
+        border: ``None`` (default) for **no rule** -- unlike the page footer,
+            the footnote draws none unless asked.  A
+            :class:`~rtfreporter.Border` puts one on the first row, e.g.
+            ``border=rtf_border(top=True)``.
+        font_size_half_points, row_height_twips, markup, align: Style for the
+            block, overriding the document default (see :func:`rtf_titles`).
+        font: Per-block font family -- not supported yet (issue #3).
+    """
+    from .borders import Border
+
     if not isinstance(doc, RtfDocument):
         raise TypeError("`doc` must be an RtfDocument.")
     n = len(doc._pages)
     if n == 0:
         raise ValueError("Cannot set footnotes before any content has been added.")
     blocks = _broadcast_blocks(footnotes, n, require_list=True)
-    return doc.footnotes(blocks)
+    st = element_style(
+        font_size_half_points, row_height_twips, markup, align, verb="rtf_footnotes"
+    )
+    check_font(font, "rtf_footnotes(font)")
+    if border is not None:
+        if not isinstance(border, Border):
+            raise TypeError("`rtf_footnotes(border=)` must be None or an rtf_border() object.")
+        st["border"] = border
+    new = doc.footnotes(blocks)
+    if st:
+        new.footnote_style = st
+    return new
 
 
 def rtf_section(
@@ -652,12 +736,12 @@ def _generate(report: _Report) -> str:
                 cur_header, writable, is_footer=False, current_page=pg_for_hf,
                 total_pages=total_pages, color_index_map=color_index_map,
                 font_half_points=fhp, doc_row_height=doc_row_height,
-                doc_pad_l=doc_pad_l, doc_pad_r=doc_pad_r)
+                doc_pad_l=doc_pad_l, doc_pad_r=doc_pad_r, doc_markup=doc_markup)
             footer_rtf = R.render_header_footer(
                 cur_footer, writable, is_footer=True, current_page=pg_for_hf,
                 total_pages=total_pages, color_index_map=color_index_map,
                 font_half_points=fhp, doc_row_height=doc_row_height,
-                doc_pad_l=doc_pad_l, doc_pad_r=doc_pad_r)
+                doc_pad_l=doc_pad_l, doc_pad_r=doc_pad_r, doc_markup=doc_markup)
             if header_rtf:
                 lines.append(C.HEADER_WRAPPER.format(content=fs_cmd + "".join(header_rtf)))
             if footer_rtf:
@@ -679,16 +763,25 @@ def _generate(report: _Report) -> str:
             content_w = R.content_width_twips(ct, writable)
             calign = R.content_align(ct)
             tf_valign = r"\clvertalt"
+            # Per-element width (#291): "content" (the default -- follow the
+            # body), "page", a fraction of the writable width, or twips.
+            title_st = report.title_style
+            footnote_st = report.footnote_style
+            title_w = resolve_block_width(fmt.title_width, content_w, writable)
+            footnote_w = resolve_block_width(fmt.footnote_width, content_w, writable)
 
             # Title.
             if title_format == "text":
                 lines.extend(R.render_text_block_text(
                     page.get("title"), is_footer=False, color_index_map=color_index_map,
-                    markup=doc_markup, pad_l=doc_pad_l, pad_r=doc_pad_r))
+                    markup=doc_markup, pad_l=doc_pad_l, pad_r=doc_pad_r,
+                    style=title_st, font_half_points=fhp,
+                    current_page=p_idx, total_pages=total_pages))
             else:
                 lines.extend(R.render_text_block_table(
-                    page.get("title"), content_w, False, fhp, doc_pad_l, doc_pad_r,
-                    tf_valign, calign, color_index_map, doc_row_height, doc_markup))
+                    page.get("title"), title_w, False, fhp, doc_pad_l, doc_pad_r,
+                    tf_valign, calign, color_index_map, doc_row_height, doc_markup,
+                    style=title_st, current_page=p_idx, total_pages=total_pages))
 
             # Content.
             if isinstance(ct, RtfTable):
@@ -699,15 +792,30 @@ def _generate(report: _Report) -> str:
             elif isinstance(ct, Figure):
                 lines.append(R.render_rtfplot(ct, writable))
 
-            # Footnote.
+            # Footnote: the page footer's mechanism, as a table of its own
+            # (#296).  footnote_format = "text" switches to plain paragraphs.
             if footnote_format == "text":
                 lines.extend(R.render_text_block_text(
-                    page.get("footnote"), is_footer=True, color_index_map=color_index_map,
-                    markup=doc_markup, pad_l=doc_pad_l, pad_r=doc_pad_r))
+                    footnote_rows(page.get("footnote"), footnote_st.get("align", "left"), "text"),
+                    is_footer=True, color_index_map=color_index_map,
+                    markup=doc_markup, pad_l=doc_pad_l, pad_r=doc_pad_r,
+                    style=footnote_st, font_half_points=fhp,
+                    current_page=p_idx, total_pages=total_pages))
             else:
-                lines.extend(R.render_text_block_table(
-                    page.get("footnote"), content_w, True, fhp, doc_pad_l, doc_pad_r,
-                    tf_valign, calign, color_index_map, doc_row_height, doc_markup))
+                fn_rtf = R.render_header_footer(
+                    footnote_hf(page.get("footnote"), footnote_st, footnote_w),
+                    footnote_w, is_footer=True, current_page=p_idx,
+                    total_pages=total_pages, color_index_map=color_index_map,
+                    font_half_points=fhp, doc_row_height=doc_row_height,
+                    doc_pad_l=doc_pad_l, doc_pad_r=doc_pad_r, doc_markup=doc_markup)
+                # An INDEPENDENT table: RTF merges consecutive \trowd runs that
+                # no paragraph separates, so without this the footnote would
+                # still be the body table wearing different \cellx values --
+                # and could not carry a width of its own.  \fs2 keeps the
+                # separating paragraph from adding visible space.
+                if fn_rtf:
+                    lines.append(r"{\pard\fs2\par}")
+                    lines.extend(fn_rtf)
 
             is_last_in_section = sp_idx == len(sec_pages) - 1
             is_last_section = rs_idx == len(resolved) - 1

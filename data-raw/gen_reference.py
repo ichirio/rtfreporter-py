@@ -92,13 +92,12 @@ GROUPS: list[tuple[str, str, list[str]]] = [
     ),
     (
         "Pagination strategies and helpers",
-        "Built-in page-split strategies as reusable callables for the `split=` "
-        "argument of `as_rtftables()`, plus the helpers for writing your own.  "
-        "`group_force` cuts on every `max_rows` and repeats the group header with "
-        "a continuation label; `group_safe` never splits a group.",
-        ["paginate", "Frame", "PaginationError", "add_cont_label",
-         "page_split_none", "page_split_rows", "page_split_by_value",
-         "page_split_group_safe", "page_split_group_force"],
+        "The standalone paginator and the helpers for writing your own split "
+        "function (the `split=<callable>` hook of `as_rtftables()`).  The "
+        "built-in strategies are named by string: `group_force` cuts on every "
+        "`max_rows` and repeats the group header with a continuation label; "
+        "`group_safe` never splits a group.",
+        ["paginate", "Frame", "PaginationError", "add_cont_label"],
     ),
     (
         "Borders",

@@ -287,8 +287,16 @@ def _collapse_repeats(rows, collapse_idx):
 
 
 def _paginate(rows, group_keys, split, split_rows, max_rows, min_group_rows, cont_label,
-              group_idx=None):
-    """Return a list of ``(page_rows, page_name)`` tuples."""
+              group_idx=None, group_mode=None):
+    """Return a list of ``(page_rows, page_name)`` tuples.
+
+    ``group_mode`` is the resolved ``group_by`` (``"value"`` / ``"indent"`` /
+    ``"filled"``; ``None`` reads as ``"value"``).  A VALUE-based group is a
+    key, so under ``split="by_value"`` its page gathers every row that has it,
+    scattered or not, and those rows keep the order they were in (R #485).  An
+    indent / filled group is a POSITION in the body -- there is no key to
+    gather by -- so it stays a run.
+    """
     n = len(rows)
     cont_col = group_idx if group_idx is not None else 0
     if split == "none":
@@ -306,16 +314,19 @@ def _paginate(rows, group_keys, split, split_rows, max_rows, min_group_rows, con
 
     if split == "by_value":
         pages = []
-        seen_order = []
-        buckets: dict[Any, list] = {}
-        for i, key in enumerate(group_keys):
-            if key not in buckets:
-                buckets[key] = []
-                seen_order.append(key)
-            buckets[key].append(rows[i])
-        for key in seen_order:
-            grp = buckets[key]
-            name = "" if key is None else str(key)
+        groups: list[tuple[Any, list]] = []
+        if group_mode in (None, "value"):
+            buckets: dict[Any, list] = {}
+            for i, key in enumerate(group_keys):
+                if key not in buckets:
+                    buckets[key] = []
+                    groups.append((key, buckets[key]))
+                buckets[key].append(rows[i])
+        else:
+            for s, e in _group_runs(group_keys):
+                groups.append((group_keys[s], rows[s:e]))
+        for g, (key, grp) in enumerate(groups, start=1):
+            name = str(key) if key not in (None, "") else f"group_{g}"
             if max_rows and len(grp) > max_rows:
                 pages.extend(_split_group_rows(grp, max_rows, name, cont_label, group_col=cont_col))
             else:
@@ -484,8 +495,10 @@ def _split_group_rows(grp, max_rows, name, cont_label, group_col):
         if not first and group_col is not None and chunk:
             cell = chunk[0][group_col]
             chunk[0][group_col] = (str(cell) if cell not in (None, "") else name) + cont_label
-        page_name = name if first else (name + cont_label if name else None)
-        pages.append((chunk, page_name))
+        # Every page of one group carries the SAME name: a page name is a
+        # heading, not an identifier (R #433), so the continuation is said in
+        # the group cell, never in the name.
+        pages.append((chunk, name))
         start += max_rows
         first = False
     return pages
@@ -519,6 +532,13 @@ def _detect_group_mode(values: list[str]) -> str:
     if any(not ne for ne in nonempty) and any(nonempty):
         return "filled"
     return "value"
+
+
+def _resolve_group_mode(rows, group_idx, group_by: str) -> str:
+    """The ``group_by`` a call resolves to: ``"auto"`` reads the column."""
+    if group_idx is None or group_by != "auto":
+        return group_by if group_by != "auto" else "value"
+    return _detect_group_mode([_as_text(row[group_idx]) for row in rows])
 
 
 def _compute_group_keys(rows, group_idx, group_by: str):
@@ -555,6 +575,42 @@ def _compute_group_keys(rows, group_idx, group_by: str):
 
 #: Accepted string shorthand for ``blank_rows`` (mirrors the R package).
 BETWEEN_GROUPS = "between_groups"
+
+
+def _trim_page_edges(pos, n: int) -> list[int]:
+    """A separator blank belongs BETWEEN rows.  Position 0 (before the first
+    row) and ``n`` (after the last row) are the page's edges, and those are
+    decided by ``blank_row_first`` / ``blank_row_end`` alone -- a group
+    boundary that happens to coincide with a page boundary must not put one
+    there, because on that page it separates nothing (R #332).
+
+    Explicit integer positions are NOT separators and never come through here:
+    ``blank_rows=2`` is a direct request for "after row 2 of each page" and is
+    honoured even when the page has exactly three rows.
+    """
+    return [p for p in pos if 0 < p < n]
+
+
+def _resolve_pagewise_blanks(spec, column_names, rows) -> list[int]:
+    """Resolve a per-page ``blank_rows`` spec to internal positions, trimming
+    the separator items (:class:`~rtfreporter.blank_rows.BlankRowsByChange` /
+    :class:`~rtfreporter.blank_rows.BlankRowsByRule`, which is also what
+    ``"between_groups"`` expands to) to the page's interior."""
+    from .blank_rows import BlankRowsByChange, BlankRowsByRule
+    from .table import _resolve_blank_rows
+
+    if spec is None:
+        return []
+    items = list(spec) if isinstance(spec, (list, tuple)) else [spec]
+    out: set[int] = set()
+    for item in items:
+        if item is None:
+            continue
+        pos = _resolve_blank_rows(item, column_names, rows)
+        if isinstance(item, (BlankRowsByChange, BlankRowsByRule)):
+            pos = _trim_page_edges(pos, len(rows))
+        out.update(pos)
+    return sorted(out)
 
 
 def _expand_between_groups(blank_rows, group_idx, group_by="auto"):
@@ -640,7 +696,8 @@ def as_rtftables(
             :mod:`rtfreporter.pagination`): a function taking a single
             :class:`~rtfreporter.pagination.Frame` and returning a list of
             :class:`~rtfreporter.pagination.Frame` (one per page).  The
-            ``page_split_*`` factory functions return such callables.
+            The built-in strategies are named by string; a callable is the
+            custom-split hook (R's ``split = <function>``).
         split_rows: For ``split="rows"`` -- an int page size or explicit cut
             positions.
         max_rows: Max data rows per page (required by the group splits).
@@ -788,9 +845,10 @@ def as_rtftables(
             realign_count_pct_df(rows, column_names)
 
     group_keys = _compute_group_keys(rows, group_idx, group_by)
+    group_mode = _resolve_group_mode(rows, group_idx, group_by)
 
     if callable(split):
-        # Custom split hook (or a page_split_* factory passed directly): build a
+        # Custom split hook: build a
         # Frame, run the split, and normalise the returned frames to the same
         # ``(rows, page_name)`` shape the string strategies produce.
         from .pagination import Frame, run_split
@@ -808,15 +866,14 @@ def as_rtftables(
         pages = [(f.rows, f.name) for f in frames]
     else:
         pages = _paginate(
-            rows, group_keys, split, split_rows, max_rows, min_group_rows, cont_label, group_idx
+            rows, group_keys, split, split_rows, max_rows, min_group_rows, cont_label,
+            group_idx, group_mode=group_mode,
         )
 
     # Per-page blank spec: explicit blank_rows wins; else derive from group_col.
     # R inserts NO blank rows unless `blank_rows` asks for them -- setting
     # `group_col` alone must not add separators.
     page_blank = _expand_between_groups(blank_rows, group_idx, group_by)
-
-    from .table import _resolve_blank_rows
 
     # auto_width: measure the WHOLE table once (all pages share the widths, so
     # paginated pages line up).  Carrier columns are dropped from the printed
@@ -859,7 +916,7 @@ def as_rtftables(
 
         # Resolve blank positions on the FULL page body (index-stable even when
         # the grouping column is later dropped) into plain integer positions.
-        blank_positions = _resolve_blank_rows(page_blank, column_names, page_rows)
+        blank_positions = _resolve_pagewise_blanks(page_blank, column_names, page_rows)
         if blank_row_first:
             blank_positions = sorted(set(blank_positions) | {0})
         if blank_row_end:

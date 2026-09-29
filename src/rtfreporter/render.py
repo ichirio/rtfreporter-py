@@ -14,6 +14,7 @@ from ._escape import (
     format_cell_text,
     render_tokens,
     resolve_markup,
+    substitute_page_tokens,
 )
 from .borders import (
     Border,
@@ -22,6 +23,7 @@ from .borders import (
     collect_table_border_colors,
     merge_border,
 )
+from .element_style import fs_cmd_for, resolve_block_width, resolve_element_metrics
 from .figure import Figure
 from .header_footer import HeaderFooter, normalize_hf
 from .table import HeaderRow, RtfTable, SpanCell
@@ -143,8 +145,13 @@ def build_cell_content(
     pad_l: int = 0,
     pad_r: int = 0,
     color_idx: int | None = None,
+    fs_cmd: str = "",
 ) -> str:
-    """Build one cell's content string (``\\q..\\li..\\ri.. text\\cell``)."""
+    """Build one cell's content string (``\\q..\\li..\\ri.. text\\cell``).
+
+    ``fs_cmd`` is the element's own ``\\fs`` run command, or ``""`` when it
+    matches the document (see :func:`~rtfreporter.element_style.fs_cmd_for`).
+    """
     align_cmd = _ALIGN_CMD.get(align, r"\ql")
     li = int(pad_l) + int(indent_twips)
     ri = int(pad_r)
@@ -156,7 +163,7 @@ def build_cell_content(
         text = f"\\b {text}\\b0 "
     if color_idx is not None:
         text = f"\\cf{int(color_idx)} {text}\\cf1 "
-    return f"{align_cmd}\\li{li}\\ri{ri} {text}\\cell"
+    return f"{align_cmd}\\li{li}\\ri{ri}{fs_cmd} {text}\\cell"
 
 
 def build_row(cell_defs, cell_contents, row_height_twips=None, table_align="left") -> str:
@@ -601,16 +608,27 @@ def render_header_footer(
     doc_row_height=None,
     doc_pad_l=None,
     doc_pad_r=None,
+    doc_markup=None,
 ) -> list[str]:
     """Render a header/footer band to a list of RTF row strings."""
     if hf is None or not hf.rows:
         return []
-    width = hf.width_twips if hf.width_twips is not None else writable
-    rh_full = (
-        hf.row_height_twips
-        if hf.row_height_twips is not None
-        else (doc_row_height if doc_row_height is not None else C.default_row_height_twips(font_half_points))
+    hf_markup = hf.markup if hf.markup is not None else doc_markup
+    # Width: the absolute `width_twips` wins (the legacy form), then the shared
+    # `width` vocabulary, then the writable width.  A header/footer band has no
+    # table body above it, so "content" resolves to the writable width too.
+    if hf.width_twips is not None:
+        width = int(hf.width_twips)
+    elif hf.width is not None:
+        width = resolve_block_width(hf.width, writable, writable, default="page")
+    else:
+        width = writable
+    # Font size and row height resolve together (#292): a band that sets its
+    # own size gets the height that size implies.
+    hf_fs_pt, rh_full = resolve_element_metrics(
+        hf.font_size_half_points, hf.row_height_twips, font_half_points, doc_row_height
     )
+    hf_fs = fs_cmd_for(hf_fs_pt, font_half_points)
     rh_str = C.ROW_HEIGHT_TEMPLATE.format(row_height_twips=rh_full)
 
     pad_l = _first_not_none(hf.cell_padding_left_twips, doc_pad_l, C.DEFAULT_CELL_PADDING_LEFT_TWIPS, 0)
@@ -633,8 +651,9 @@ def render_header_footer(
                 parts.append(f"\\cellx{cx}")
         for i in range(n_cols):
             at = _ALIGN_CMD.get(aligns[i], r"\ql")
-            txt = render_tokens(cols_display[i], current_page=current_page, total_pages=total_pages)
-            parts.append(f"{at}\\li{int(pad_l)}\\ri{int(pad_r)} {txt}\\cell")
+            txt = render_tokens(cols_display[i], current_page=current_page,
+                                total_pages=total_pages, markup=hf_markup)
+            parts.append(f"{at}\\li{int(pad_l)}\\ri{int(pad_r)}{hf_fs} {txt}\\cell")
         parts.append(C.ROW_END)
         out_rows.append("".join(parts))
     return out_rows
@@ -669,8 +688,8 @@ def _first_not_none(*values):
 # -- Title / footnote blocks --------------------------------------------------
 
 
-def _normalize_text_block(block, is_footer: bool) -> list[dict]:
-    def_align = "left" if is_footer else "center"
+def _normalize_text_block(block, is_footer: bool, align: str | None = None) -> list[dict]:
+    def_align = align if align is not None else ("left" if is_footer else "center")
     def_bold = not is_footer
     if block is None:
         if is_footer:
@@ -725,40 +744,60 @@ def render_text_block_table(
     block, total_width: int, is_footer: bool, font_half_points: int,
     pad_l: int, pad_r: int, valign_cmd: str, table_align: str,
     color_index_map=None, doc_row_height=None, markup="script",
+    style: dict | None = None, current_page=None, total_pages=None,
 ) -> list[str]:
-    rows = _normalize_text_block(block, is_footer)
+    style = style or {}
+    rows = _normalize_text_block(block, is_footer, style.get("align"))
     if not rows:
         return []
-    full_h = doc_row_height if doc_row_height is not None else C.default_row_height_twips(font_half_points)
+    # Title / footnote rows inherit the document default row height, else the
+    # font-aware baseline; a block-level size recomputes the height (#292).
+    fs, full_h = resolve_element_metrics(
+        style.get("font_size_half_points"), style.get("row_height_twips"),
+        font_half_points, doc_row_height,
+    )
+    fs_cmd = fs_cmd_for(fs, font_half_points)
+    if style.get("markup") is not None:
+        markup = style["markup"]
     cellx = int(total_width)
     out = []
     for rec in rows:
         cell_def = f"{build_border_commands(rec['border'], color_index_map)}{valign_cmd}\\cellx{cellx}"
         if rec["blank"]:
-            content = build_cell_content("", rec["align"], False, False, False, 0, pad_l, pad_r)
+            content = build_cell_content("", rec["align"], False, False, False, 0, pad_l, pad_r,
+                                         fs_cmd=fs_cmd)
         else:
             color_idx = color_index_map.get(rec["color"]) if rec["color"] and color_index_map else None
-            txt = format_cell_text(rec["text"], markup)
+            txt = substitute_page_tokens(format_cell_text(rec["text"], markup),
+                                         current_page, total_pages)
             content = build_cell_content(txt, rec["align"], rec["bold"], rec["italic"],
-                                         rec["underline"], 0, pad_l, pad_r, color_idx)
+                                         rec["underline"], 0, pad_l, pad_r, color_idx,
+                                         fs_cmd=fs_cmd)
         out.append(build_row([cell_def], [content], full_h, table_align))
     return out
 
 
 def render_text_block_text(
     block, is_footer: bool, color_index_map=None, markup="script", pad_l=0, pad_r=0,
+    style: dict | None = None, font_half_points: int = 18,
+    current_page=None, total_pages=None,
 ) -> list[str]:
-    rows = _normalize_text_block(block, is_footer)
+    style = style or {}
+    rows = _normalize_text_block(block, is_footer, style.get("align"))
     if not rows:
         return []
-    indent = f"\\li{int(pad_l)}\\ri{int(pad_r)}"
+    if style.get("markup") is not None:
+        markup = style["markup"]
+    fs_cmd = fs_cmd_for(style.get("font_size_half_points", font_half_points), font_half_points)
+    indent = f"\\li{int(pad_l)}\\ri{int(pad_r)}{fs_cmd}"
     out = []
     for rec in rows:
         align_cmd = _ALIGN_CMD.get(rec["align"], r"\ql")
         if rec["blank"]:
             out.append(f"\\pard{align_cmd}{indent}\\par")
             continue
-        txt = format_cell_text(rec["text"], markup)
+        txt = substitute_page_tokens(format_cell_text(rec["text"], markup),
+                                     current_page, total_pages)
         if rec["underline"]:
             txt = f"\\ul {txt}\\ulnone "
         if rec["italic"]:
@@ -805,7 +844,9 @@ def collect_report_colors(report) -> list[str]:
         if isinstance(ct, RtfTable):
             cols.extend(_table_colors(ct))
         cols.extend(text_block_colors(page.get("title"), is_footer=False))
-        cols.extend(text_block_colors(page.get("footnote"), is_footer=True))
+    fn_border = (getattr(report, "footnote_style", None) or {}).get("border")
+    if fn_border is not None:
+        cols.extend(collect_border_colors(fn_border))
     seen = []
     for c in cols:
         if not c:

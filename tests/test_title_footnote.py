@@ -1,5 +1,7 @@
 """Title and footnote rendering (title-footnote)."""
 
+import pytest
+
 from helpers import assert_valid_rtf
 from rtfreporter import DefaultFormat, RtfDocument, rtftable
 
@@ -66,11 +68,30 @@ def test_title_dict_align_left():
     assert "\\pard\\ql" in rtf
 
 
-def test_footnote_dict_underline():
+def test_footnote_per_row_styling_is_gone():
+    # R #296: the footnote uses the page footer's row model; per-row styling
+    # lists are an error pointing at the block-level arguments.
+    doc = RtfDocument().add_table({"A": [1]}, footnote=[{"text": "u", "underline": True}])
+    with pytest.raises(ValueError, match="Per-row styling"):
+        doc.to_rtf()
+
+
+def test_footnote_row_left_and_right_cells():
+    # A footnote row is c(l = , c = , r = ), as rtf_footer() takes it, so
+    # "Source" on the left and a run date on the right fit on one line.
+    doc = RtfDocument().add_table({"A": [1]}, footnote=[{"l": "Source: ADSL", "r": "Run 1"}])
+    rtf = doc.to_rtf()
+    fn = rtf.split("{\\pard\\fs2\\par}")[-1]
+    assert "\\ql\\li0\\ri0 Source: ADSL\\cell" in fn
+    assert "\\qr\\li0\\ri0 Run 1\\cell" in fn
+
+
+def test_footnote_named_row_needs_table_form():
     doc = RtfDocument(
         default_format=DefaultFormat(footnote_format="text")
-    ).add_table({"A": [1]}, footnote=[{"text": "u", "underline": True}])
-    assert "\\ul " in doc.to_rtf()
+    ).add_table({"A": [1]}, footnote=[{"l": "a", "r": "b"}])
+    with pytest.raises(ValueError, match="table form"):
+        doc.to_rtf()
 
 
 def test_title_and_footnote_valid_rtf():

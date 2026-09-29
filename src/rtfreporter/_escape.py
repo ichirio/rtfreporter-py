@@ -154,22 +154,43 @@ def render_tokens(
     value: object,
     current_page: int | None = None,
     total_pages: int | None = None,
+    markup=None,
 ) -> str:
-    """Replace page tokens (after escaping) and return RTF-ready text.
+    """Escape ``value`` (through the markup rules when ``markup`` is given, as a
+    band that asks for markup needs), then replace the page tokens.
 
-    Recognised tokens: ``{AUTO_PAGE}``, ``{AUTO_TOTAL_PAGES}``,
-    ``{SECTION_PAGES}`` (dynamic viewer fields) and ``{PAGE}`` /
-    ``{TOTAL_PAGES}`` (static, baked in at render time).
+    Recognised tokens: ``{AUTO_PAGE}``, ``{AUTO_TOTAL_PAGES}`` (dynamic viewer
+    fields) and ``{PAGE}`` / ``{TOTAL_PAGES}`` (static, baked in at render
+    time).  ``{SECTION_PAGES}`` was removed (#410) and is an error.
     """
     if value is None:
         return ""
-    out = escape(value)
-    # After escaping, "{" -> "\{" and "}" -> "\}", so tokens appear as \{TOKEN\}.
+    out = format_cell_text(value, markup) if markup else escape(value)
+    return substitute_page_tokens(out, current_page, total_pages)
+
+
+def substitute_page_tokens(
+    out: str, current_page: int | None = None, total_pages: int | None = None
+) -> str:
+    """The substitution half of :func:`render_tokens`, on text that is ALREADY
+    escaped (``{`` -> ``\\{``), so a token reads ``\\{PAGE\\}``.
+
+    Split out so the title and footnote blocks, which escape through
+    :func:`format_cell_text` themselves, resolve the same tokens with the same
+    semantics instead of printing them literally (#398).
+    """
+    if r"\{SECTION_PAGES\}" in out:
+        raise ValueError(
+            "`{SECTION_PAGES}` was removed: the RTF SECTIONPAGES field it wrote "
+            "equals `{AUTO_TOTAL_PAGES}` in a standalone file, and after "
+            "assemble_rtf() it keeps counting one table while the page number "
+            'counts the whole document ("Page 4 of 2").\n'
+            "  per-table total  -> `{TOTAL_PAGES}` (static, survives assembly)\n"
+            "  document total   -> `{AUTO_TOTAL_PAGES}`"
+        )
     out = out.replace(r"\{AUTO_PAGE\}", C.AUTO_PAGE)
     fallback = str(total_pages) if total_pages is not None else "?"
-    numpages = C.AUTO_TOTAL_PAGES.format(total_pages=fallback)
-    out = out.replace(r"\{AUTO_TOTAL_PAGES\}", numpages)
-    out = out.replace(r"\{SECTION_PAGES\}", C.SECTION_PAGES)
+    out = out.replace(r"\{AUTO_TOTAL_PAGES\}", C.AUTO_TOTAL_PAGES.format(total_pages=fallback))
     if current_page is not None:
         out = out.replace(r"\{PAGE\}", str(current_page))
     if total_pages is not None:

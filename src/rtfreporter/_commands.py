@@ -37,7 +37,9 @@ TABLE_END = r"\pard"
 
 #: Manual page break wrapped in tiny empty paragraphs (a bare ``\page`` is
 #: dropped by Word when not flanked by real paragraphs).
-PAGE_BREAK = r"{\pard\fs2\par}\page{\pard\fs2\par}"
+# One group (#408): LibreOffice dropped a break emitted as two separately
+# grouped paragraphs around the \page; Word renders both forms the same.
+PAGE_BREAK = r"{\pard\fs2\par\page\pard\fs2\par}"
 
 SECTION_BREAK = r"\sect"
 HEADER_WRAPPER = r"{{\header {content}}}"
@@ -106,7 +108,6 @@ JPEG_TEMPLATE = (
 
 AUTO_PAGE = r"\chpgn "
 AUTO_TOTAL_PAGES = r"{{\field{{\*\fldinst NUMPAGES}}{{\fldrslt {total_pages}}}}}"
-SECTION_PAGES = r"{\field{\*\fldinst SECTIONPAGES}{\fldrslt 1}}"
 
 # ============================================================================
 #  Package defaults (rtfreporter_defaults.R)

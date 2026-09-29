@@ -23,7 +23,7 @@ package, and follows the R package's name, arguments and defaults.
 | [Post-hoc styling verbs](#post-hoc-styling-verbs) | `style_header`, `style_body`, `style_cols`, `style_zone`, `add_header_row`, `collapse_repeats` |
 | [Cell-format functions](#cell-format-functions) | `format_count_pct`, `realign_count_pct`, `fmt_count_paren`, `fmt_count_paren_bare`, `fmt_right_align` |
 | [Blank rows](#blank-rows) | `set_blank_rows`, `blank_rows_by_change`, `blank_rows_by_rule`, `BlankRowsByChange`, `BlankRowsByRule`, `BEFORE_FIRST`, `AFTER_LAST` |
-| [Pagination strategies and helpers](#pagination-strategies-and-helpers) | `paginate`, `Frame`, `PaginationError`, `add_cont_label`, `page_split_none`, `page_split_rows`, `page_split_by_value`, `page_split_group_safe`, `page_split_group_force` |
+| [Pagination strategies and helpers](#pagination-strategies-and-helpers) | `paginate`, `Frame`, `PaginationError`, `add_cont_label` |
 | [Borders](#borders) | `rtf_border_side`, `rtf_border`, `rtf_border_with`, `rtf_border_none`, `rtf_border_top`, `rtf_border_bottom`, `rtf_border_box`, `rtf_table_border`, `rtf_border_tfl`, `Border`, `BorderSide`, `TableBorder` |
 | [Shared table styles](#shared-table-styles) | `rtf_table_style`, `rtf_table_style_with`, `rtf_table_style_tfl`, `TableStyle` |
 | [Column-width utilities](#column-width-utilities) | `text_width_in`, `auto_col_widths` |
@@ -197,7 +197,7 @@ Insert blank separator rows by position, by value change, or by rule.  Positions
 
 ## Pagination strategies and helpers
 
-Built-in page-split strategies as reusable callables for the `split=` argument of `as_rtftables()`, plus the helpers for writing your own.  `group_force` cuts on every `max_rows` and repeats the group header with a continuation label; `group_safe` never splits a group.
+The standalone paginator and the helpers for writing your own split function (the `split=<callable>` hook of `as_rtftables()`).  The built-in strategies are named by string: `group_force` cuts on every `max_rows` and repeats the group header with a continuation label; `group_safe` never splits a group.
 
 ::: rtfreporter.pagination.paginate
 
@@ -206,16 +206,6 @@ Built-in page-split strategies as reusable callables for the `split=` argument o
 ::: rtfreporter.pagination.PaginationError
 
 ::: rtfreporter.pagination.add_cont_label
-
-::: rtfreporter.pagination.page_split_none
-
-::: rtfreporter.pagination.page_split_rows
-
-::: rtfreporter.pagination.page_split_by_value
-
-::: rtfreporter.pagination.page_split_group_safe
-
-::: rtfreporter.pagination.page_split_group_force
 
 
 ## Borders
