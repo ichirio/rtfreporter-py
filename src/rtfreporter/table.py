@@ -20,7 +20,13 @@ from dataclasses import dataclass, field, replace
 from typing import Any
 
 from ._escape import resolve_markup
-from .borders import Border, TableBorder, normalize_table_border, rtf_border_tfl
+from .borders import (
+    Border,
+    TableBorder,
+    expand_table_border,
+    normalize_table_border,
+    warn_old_edge_reading,
+)
 
 _ALIGN = ("left", "center", "right")
 
@@ -709,7 +715,18 @@ def rtftable(
         col_spec, ncols, column_names, col_header_align, default_aligns,
         default_spec=_style_default_spec,
     )
-    border_resolved = normalize_table_border(border) if border != "tfl" else rtf_border_tfl()
+    # Border: normalise to a TableBorder (or None for no borders), then expand
+    # the whole-table shortcuts (outer / inside_h / inside_v) into the five
+    # zones.  Whether a column header was GIVEN decides where the table's top
+    # edge lands (as in R: the default header drawn from the column names does
+    # not count).
+    border_resolved = expand_table_border(
+        normalize_table_border(border),
+        has_header=spanning_header is not None or col_header is not None,
+    )
+    # Raised here because it needs the shape of the table to know whether the
+    # pre-0.5 reading would have produced anything different.
+    warn_old_edge_reading(normalize_table_border(border), ncols=ncols, nrows=len(rows))
 
     if _blank_positions is not None:
         blank_positions = sorted(p for p in set(_blank_positions) if 0 <= p <= len(rows))

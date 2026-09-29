@@ -76,8 +76,18 @@ def test_resolve_cell_format_list_positional():
 
 
 def test_resolve_cell_format_bad_type_raises():
-    with pytest.raises(TypeError, match="callable or a list"):
+    with pytest.raises(TypeError, match="built-in cell format"):
         resolve_cell_format(42, 3)
+
+
+def test_resolve_cell_format_by_name():
+    # A built-in can be NAMED, with or without the fmt_ prefix (R cell_format.R).
+    from rtfreporter import fmt_count_paren, fmt_value_paren
+
+    assert resolve_cell_format("count_paren", 2)[1] is fmt_count_paren
+    assert resolve_cell_format("fmt_value_paren", 2)[1] is fmt_value_paren
+    with pytest.raises(ValueError, match="not a built-in"):
+        resolve_cell_format("nope", 2)
 
 
 # -- apply_cell_format --------------------------------------------------------

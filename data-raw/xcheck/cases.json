@@ -7,183 +7,921 @@
     "give an object {\"r\": <1-based>, \"py\": <0-based>} and the renderers pick",
     "their own.  Keep every case deterministic: no dates, no random data."
   ],
-
   "cases": [
     {
       "id": "basic_table",
       "why": "The smallest end-to-end render: preamble, colour table, geometry, one table.",
-      "data": {"Subject": ["001", "002", "003"], "Age": [34, 45, 28], "Sex": ["M", "F", "M"]},
+      "data": {
+        "Subject": [
+          "001",
+          "002",
+          "003"
+        ],
+        "Age": [
+          34,
+          45,
+          28
+        ],
+        "Sex": [
+          "M",
+          "F",
+          "M"
+        ]
+      },
       "as_rtftables": {}
     },
     {
       "id": "col_rel_width",
       "why": "Relative widths drive the cellx boundaries.",
-      "data": {"Item": ["a", "b"], "N": [1, 2], "Pct": ["10%", "20%"]},
-      "as_rtftables": {"col_rel_width": [50, 25, 25]}
+      "data": {
+        "Item": [
+          "a",
+          "b"
+        ],
+        "N": [
+          1,
+          2
+        ],
+        "Pct": [
+          "10%",
+          "20%"
+        ]
+      },
+      "as_rtftables": {
+        "col_rel_width": [
+          50,
+          25,
+          25
+        ]
+      }
     },
     {
       "id": "border_none",
       "why": "border='none' must omit every border control word.",
-      "data": {"A": ["x", "y"], "B": [1, 2]},
-      "as_rtftables": {"border": "none"}
+      "data": {
+        "A": [
+          "x",
+          "y"
+        ],
+        "B": [
+          1,
+          2
+        ]
+      },
+      "as_rtftables": {
+        "border": "none"
+      }
     },
     {
       "id": "titles_and_footnotes",
       "why": "Title centred+bold, footnote left with the first-row top rule.",
-      "data": {"A": ["x", "y"], "B": [1, 2]},
+      "data": {
+        "A": [
+          "x",
+          "y"
+        ],
+        "B": [
+          1,
+          2
+        ]
+      },
       "as_rtftables": {},
-      "titles": ["Table 14.1.1", "", "Demographics"],
-      "footnotes": ["Source: ADSL", "Second footnote line"]
+      "titles": [
+        "Table 14.1.1",
+        "",
+        "Demographics"
+      ],
+      "footnotes": [
+        "Source: ADSL",
+        "Second footnote line"
+      ]
     },
     {
       "id": "header_and_footer_bands",
       "why": "The footer band's default top rule (the bug the maintainer spotted).",
-      "data": {"A": ["x"], "B": [1]},
+      "data": {
+        "A": [
+          "x"
+        ],
+        "B": [
+          1
+        ]
+      },
       "as_rtftables": {},
-      "header": [{"l": "Acme Biopharma", "r": "Page {AUTO_PAGE} of {AUTO_TOTAL_PAGES}"},
-                 {"c": "Protocol ABC-2026-001"}],
-      "footer": [{"l": "Note: percentages use non-missing denominators."},
-                 {"l": "Program: /prod/t14.R", "r": "CONFIDENTIAL"}]
+      "header": [
+        {
+          "l": "Acme Biopharma",
+          "r": "Page {AUTO_PAGE} of {AUTO_TOTAL_PAGES}"
+        },
+        {
+          "c": "Protocol ABC-2026-001"
+        }
+      ],
+      "footer": [
+        {
+          "l": "Note: percentages use non-missing denominators."
+        },
+        {
+          "l": "Program: /prod/t14.R",
+          "r": "CONFIDENTIAL"
+        }
+      ]
     },
     {
       "id": "footer_no_rule",
       "why": "border=None must switch the footer rule off in both.",
-      "data": {"A": ["x"], "B": [1]},
+      "data": {
+        "A": [
+          "x"
+        ],
+        "B": [
+          1
+        ]
+      },
       "as_rtftables": {},
-      "footer": [{"c": "No rule here"}],
+      "footer": [
+        {
+          "c": "No rule here"
+        }
+      ],
       "footer_border": "none"
     },
     {
       "id": "split_rows",
       "why": "Fixed-size pagination.",
-      "data": {"V": [1, 2, 3, 4, 5, 6, 7]},
-      "as_rtftables": {"split": "rows", "split_rows": {"r": 3, "py": 2}}
+      "data": {
+        "V": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      "as_rtftables": {
+        "split": "rows",
+        "split_rows": {
+          "r": 3,
+          "py": 2
+        }
+      }
     },
     {
       "id": "group_safe",
       "why": "Whole groups per page, never split.",
-      "data": {"G": ["A", "A", "A", "B", "B", "C"], "V": [1, 2, 3, 4, 5, 6]},
-      "as_rtftables": {"split": "group_safe", "group_col": "G", "max_rows": 4}
+      "data": {
+        "G": [
+          "A",
+          "A",
+          "A",
+          "B",
+          "B",
+          "C"
+        ],
+        "V": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "as_rtftables": {
+        "split": "group_safe",
+        "group_col": "G",
+        "max_rows": 4
+      }
     },
     {
       "id": "group_force_cont",
       "why": "Mid-group cut repeats the header with (Cont.) -- the pagination bug.",
-      "data": {"G": ["A", "A", "A", "A", "A"], "V": [1, 2, 3, 4, 5]},
-      "as_rtftables": {"split": "group_force", "group_col": "G", "max_rows": 3}
+      "data": {
+        "G": [
+          "A",
+          "A",
+          "A",
+          "A",
+          "A"
+        ],
+        "V": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      "as_rtftables": {
+        "split": "group_force",
+        "group_col": "G",
+        "max_rows": 3
+      }
     },
     {
       "id": "group_force_widow_orphan",
       "why": "min_group_rows nudges the cut.",
-      "data": {"G": ["A", "A", "A", "B", "B", "B", "B"], "V": [1, 2, 3, 4, 5, 6, 7]},
-      "as_rtftables": {"split": "group_force", "group_col": "G", "max_rows": 4,
-                       "min_group_rows": 3}
+      "data": {
+        "G": [
+          "A",
+          "A",
+          "A",
+          "B",
+          "B",
+          "B",
+          "B"
+        ],
+        "V": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      "as_rtftables": {
+        "split": "group_force",
+        "group_col": "G",
+        "max_rows": 4,
+        "min_group_rows": 3
+      }
     },
     {
       "id": "by_value",
       "why": "One page per group value, pages named by it.",
-      "data": {"G": ["A", "A", "B"], "V": [1, 2, 3]},
-      "as_rtftables": {"split": "by_value", "group_col": "G"}
+      "data": {
+        "G": [
+          "A",
+          "A",
+          "B"
+        ],
+        "V": [
+          1,
+          2,
+          3
+        ]
+      },
+      "as_rtftables": {
+        "split": "by_value",
+        "group_col": "G"
+      }
     },
     {
       "id": "blank_between_groups",
       "why": "between_groups on a plain value column.",
-      "data": {"G": ["A", "A", "B", "B"], "V": [1, 2, 3, 4]},
-      "as_rtftables": {"group_col": "G", "blank_rows": "between_groups"}
+      "data": {
+        "G": [
+          "A",
+          "A",
+          "B",
+          "B"
+        ],
+        "V": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "as_rtftables": {
+        "group_col": "G",
+        "blank_rows": "between_groups"
+      }
     },
     {
       "id": "blank_between_groups_stub",
       "why": "between_groups on an INDENTED stub -- must use group_by detection.",
       "data": {
-        "Characteristic": ["Age", "Age", "Age", "Sex", "Sex"],
-        "Statistic": ["n", "Mean", "Median", "Male", "Female"],
-        "Placebo": ["10", "50.1", "49.0", "4", "6"]
+        "Characteristic": [
+          "Age",
+          "Age",
+          "Age",
+          "Sex",
+          "Sex"
+        ],
+        "Statistic": [
+          "n",
+          "Mean",
+          "Median",
+          "Male",
+          "Female"
+        ],
+        "Placebo": [
+          "10",
+          "50.1",
+          "49.0",
+          "4",
+          "6"
+        ]
       },
-      "as_rtftables": {"stub_vars": ["Characteristic", "Statistic"], "stub_label": "",
-                       "blank_rows": "between_groups"}
+      "as_rtftables": {
+        "stub_vars": [
+          "Characteristic",
+          "Statistic"
+        ],
+        "stub_label": "",
+        "blank_rows": "between_groups"
+      }
     },
     {
       "id": "blank_by_change",
       "why": "The spec object, whose include_* default to TRUE.",
-      "data": {"G": ["A", "A", "B", "B"], "V": [1, 2, 3, 4]},
-      "as_rtftables": {"blank_rows_by_change": "G"}
+      "data": {
+        "G": [
+          "A",
+          "A",
+          "B",
+          "B"
+        ],
+        "V": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "as_rtftables": {
+        "blank_rows_by_change": "G"
+      }
     },
     {
       "id": "stub_vars",
       "why": "Hierarchy columns folded into one indented stub.",
       "data": {
-        "Characteristic": ["Age", "Age", "Sex", "Sex"],
-        "Statistic": ["n", "Mean (SD)", "Male", "Female"],
-        "Placebo": ["10", "50.1 (5.2)", "4", "6"],
-        "Active": ["12", "51.3 (4.8)", "5", "7"]
+        "Characteristic": [
+          "Age",
+          "Age",
+          "Sex",
+          "Sex"
+        ],
+        "Statistic": [
+          "n",
+          "Mean (SD)",
+          "Male",
+          "Female"
+        ],
+        "Placebo": [
+          "10",
+          "50.1 (5.2)",
+          "4",
+          "6"
+        ],
+        "Active": [
+          "12",
+          "51.3 (4.8)",
+          "5",
+          "7"
+        ]
       },
-      "as_rtftables": {"stub_vars": ["Characteristic", "Statistic"], "stub_label": ""}
+      "as_rtftables": {
+        "stub_vars": [
+          "Characteristic",
+          "Statistic"
+        ],
+        "stub_label": ""
+      }
     },
     {
       "id": "sort_and_collapse",
       "why": "sort_by ordering plus collapse_repeats blanking.",
-      "data": {"G": ["B", "A", "B", "A"], "V": [2, 1, 4, 3]},
-      "as_rtftables": {"sort_by": "G", "collapse_repeats": "G"}
+      "data": {
+        "G": [
+          "B",
+          "A",
+          "B",
+          "A"
+        ],
+        "V": [
+          2,
+          1,
+          4,
+          3
+        ]
+      },
+      "as_rtftables": {
+        "sort_by": "G",
+        "collapse_repeats": "G"
+      }
     },
     {
       "id": "drop_cols",
       "why": "A carrier column used for grouping but not printed.",
-      "data": {"G": ["A", "A", "B"], "Label": ["x", "y", "z"], "V": [1, 2, 3]},
-      "as_rtftables": {"group_col": "G", "drop_cols": ["G"]}
+      "data": {
+        "G": [
+          "A",
+          "A",
+          "B"
+        ],
+        "Label": [
+          "x",
+          "y",
+          "z"
+        ],
+        "V": [
+          1,
+          2,
+          3
+        ]
+      },
+      "as_rtftables": {
+        "group_col": "G",
+        "drop_cols": [
+          "G"
+        ]
+      }
     },
     {
       "id": "align_count_pct",
       "why": "The count/percent realigner.",
-      "data": {"Term": ["Headache", "Nausea", "None"],
-               "Placebo": ["14 (16.3%)", "8 (9.3%)", "0"],
-               "Active": ["21 (21.9%)", "5 (5.2%)", "3 (3.1%)"]},
-      "as_rtftables": {"align_count_pct": true}
+      "data": {
+        "Term": [
+          "Headache",
+          "Nausea",
+          "None"
+        ],
+        "Placebo": [
+          "14 (16.3%)",
+          "8 (9.3%)",
+          "0"
+        ],
+        "Active": [
+          "21 (21.9%)",
+          "5 (5.2%)",
+          "3 (3.1%)"
+        ]
+      },
+      "as_rtftables": {
+        "align_count_pct": true
+      }
     },
     {
       "id": "auto_width",
       "why": "protect_cols + the writable-width cap.",
-      "data": {"A very long row label column": ["short", "a much longer cell value here"],
-               "N": [1, 22]},
-      "as_rtftables": {"auto_width": true}
+      "data": {
+        "A very long row label column": [
+          "short",
+          "a much longer cell value here"
+        ],
+        "N": [
+          1,
+          22
+        ]
+      },
+      "as_rtftables": {
+        "auto_width": true
+      }
     },
     {
       "id": "auto_width_scaled",
       "why": "auto_width scaled to an explicit total.",
-      "data": {"A very long row label column": ["short", "a much longer cell value here"],
-               "N": [1, 22]},
-      "as_rtftables": {"auto_width": true, "table_width_twips": 10000}
+      "data": {
+        "A very long row label column": [
+          "short",
+          "a much longer cell value here"
+        ],
+        "N": [
+          1,
+          22
+        ]
+      },
+      "as_rtftables": {
+        "auto_width": true,
+        "table_width_twips": 10000
+      }
     },
     {
       "id": "group_by_indent",
       "why": "Indent-based group detection under group_safe.",
       "data": {
-        "Event": ["SOC1", "    PT a", "    PT b",
-                  "SOC2", "    PT c"],
-        "N": [10, 6, 4, 8, 8]
+        "Event": [
+          "SOC1",
+          "    PT a",
+          "    PT b",
+          "SOC2",
+          "    PT c"
+        ],
+        "N": [
+          10,
+          6,
+          4,
+          8,
+          8
+        ]
       },
-      "as_rtftables": {"split": "group_safe", "group_col": "Event",
-                       "group_by": "indent", "max_rows": 4}
+      "as_rtftables": {
+        "split": "group_safe",
+        "group_col": "Event",
+        "group_by": "indent",
+        "max_rows": 4
+      }
     },
     {
       "id": "spanning_header_from_names",
       "why": "header_sep rebuilds a spanning header from delimited names.",
-      "data": {"Item": ["a", "b"],
-               "Treatment____Placebo": [1, 2],
-               "Treatment____Active": [3, 4]},
+      "data": {
+        "Item": [
+          "a",
+          "b"
+        ],
+        "Treatment____Placebo": [
+          1,
+          2
+        ],
+        "Treatment____Active": [
+          3,
+          4
+        ]
+      },
       "as_rtftables": {}
     },
     {
       "id": "markup_super_sub",
       "why": "Inline markup resolves to RTF control words.",
-      "data": {"Term": ["Cmax^{ss}", "AUC_{0-t}"], "V": [1, 2]},
+      "data": {
+        "Term": [
+          "Cmax^{ss}",
+          "AUC_{0-t}"
+        ],
+        "V": [
+          1,
+          2
+        ]
+      },
       "as_rtftables": {}
     },
     {
       "id": "portrait_a4_margins",
       "why": "Page geometry: paper size, orientation and margins.",
-      "data": {"A": ["x"], "B": [1]},
+      "data": {
+        "A": [
+          "x"
+        ],
+        "B": [
+          1
+        ]
+      },
       "as_rtftables": {},
-      "page": {"paper_size": "a4", "orientation": "portrait",
-               "margin_left_in": 0.5, "margin_right_in": 0.5}
+      "page": {
+        "paper_size": "a4",
+        "orientation": "portrait",
+        "margin_left_in": 0.5,
+        "margin_right_in": 0.5
+      }
+    },
+    {
+      "id": "border_whole_table",
+      "why": "R #342: rtftable(border=rtf_border(...)) selects the whole table -- outer frame plus inside_h / inside_v; with the default column-name header the top edge lands on the first data row (R's has_header rule).",
+      "data": {
+        "A": [
+          "x",
+          "y",
+          "z"
+        ],
+        "B": [
+          1,
+          2,
+          3
+        ],
+        "C": [
+          "p",
+          "q",
+          "r"
+        ]
+      },
+      "as_rtftables": {
+        "border": {
+          "rtf_border": {
+            "all": true,
+            "inside_h": true,
+            "inside_v": "double"
+          }
+        }
+      }
+    },
+    {
+      "id": "border_whole_table_with_header",
+      "why": "Same whole-table border with an explicit col_header: the top edge lands on the header row and the header/body seam is the inside_h rule.",
+      "data": {
+        "A": [
+          "x",
+          "y",
+          "z"
+        ],
+        "B": [
+          1,
+          2,
+          3
+        ],
+        "C": [
+          "p",
+          "q",
+          "r"
+        ]
+      },
+      "as_rtftables": {
+        "border": {
+          "rtf_border": {
+            "all": true,
+            "inside_h": true,
+            "inside_v": true
+          }
+        },
+        "col_header": [
+          "Label",
+          "N",
+          "Code"
+        ]
+      }
+    },
+    {
+      "id": "zone_outer_inside",
+      "why": "R #340/#342: a zone's left/right are its OUTER edges and inside_v the rule between its cells; body top/bottom are the block's outer edges and inside_h the rule between rows.",
+      "data": {
+        "A": [
+          "x",
+          "y",
+          "z"
+        ],
+        "B": [
+          1,
+          2,
+          3
+        ],
+        "C": [
+          "p",
+          "q",
+          "r"
+        ]
+      },
+      "as_rtftables": {},
+      "style_zone": {
+        "header": {
+          "left": true,
+          "right": true,
+          "inside_v": "double"
+        },
+        "body": {
+          "top": true,
+          "bottom": "double",
+          "left": true,
+          "right": true,
+          "inside_h": {
+            "style": "dot",
+            "width": 10
+          },
+          "inside_v": true
+        }
+      }
+    },
+    {
+      "id": "footnote_lcr_rule_and_align",
+      "why": "R #296: a footnote row is c(l=, c=, r=) like rtf_footer(); a bare string lands in the block's align slot; border= puts a rule on the first row.",
+      "data": {
+        "A": [
+          "x",
+          "y"
+        ],
+        "B": [
+          1,
+          2
+        ]
+      },
+      "as_rtftables": {},
+      "footnotes": [
+        {
+          "l": "Source: ADSL",
+          "r": "Run 1"
+        },
+        "Second line"
+      ],
+      "footnotes_style": {
+        "align": "right",
+        "border": {
+          "top": true
+        }
+      }
+    },
+    {
+      "id": "footnote_block_size",
+      "why": "R #292: block-level font size recomputes the row height; row_height_twips wins when given.",
+      "data": {
+        "A": [
+          "x",
+          "y"
+        ],
+        "B": [
+          1,
+          2
+        ]
+      },
+      "as_rtftables": {},
+      "footnotes": [
+        "Note a",
+        "Note b"
+      ],
+      "footnotes_style": {
+        "font_size_half_points": 16
+      },
+      "r_bug": "ichirio/rtfreporter#496 (a size without a font registers a font named after the size)"
+    },
+    {
+      "id": "footnote_block_height",
+      "why": "An explicit row height on the footnote block.",
+      "data": {
+        "A": [
+          "x",
+          "y"
+        ],
+        "B": [
+          1,
+          2
+        ]
+      },
+      "as_rtftables": {},
+      "footnotes": [
+        "Note a"
+      ],
+      "footnotes_style": {
+        "row_height_twips": 320,
+        "font_size_half_points": 20
+      },
+      "r_bug": "ichirio/rtfreporter#496 (a size without a font registers a font named after the size)"
+    },
+    {
+      "id": "title_style_and_tokens",
+      "why": "R #292/#398: block-level title style (size, align) and page tokens resolving in a title across two pages.",
+      "data": {
+        "A": [
+          "a",
+          "b",
+          "c",
+          "d"
+        ],
+        "B": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "as_rtftables": {
+        "split": "rows",
+        "split_rows": {
+          "r": 3,
+          "py": 2
+        }
+      },
+      "titles": [
+        "Table 1",
+        "Page {PAGE} of {TOTAL_PAGES}"
+      ],
+      "titles_style": {
+        "font_size_half_points": 22,
+        "align": "left"
+      },
+      "r_bug": "ichirio/rtfreporter#496 (a size without a font registers a font named after the size)"
+    },
+    {
+      "id": "band_markup",
+      "why": "Header / footer bands inherit the document markup (R #292 fix): ^{a} and _{95} render as script.",
+      "data": {
+        "A": [
+          "x"
+        ],
+        "B": [
+          1
+        ]
+      },
+      "as_rtftables": {},
+      "header": [
+        {
+          "l": "Protocol X^{a}",
+          "r": "Page {PAGE}"
+        }
+      ],
+      "footer": [
+        {
+          "c": "CI_{95}"
+        }
+      ]
+    },
+    {
+      "id": "table_width_pct_auto_width",
+      "why": "R #382: auto_width sizes the columns within table_width_pct, not against the default page.",
+      "data": {
+        "Parameter": [
+          "Age (years)",
+          "Weight (kg)"
+        ],
+        "Mean": [
+          "61.3",
+          "78.2"
+        ],
+        "SD": [
+          "8.9",
+          "12.1"
+        ]
+      },
+      "as_rtftables": {
+        "auto_width": true,
+        "table_width_pct": 50
+      }
+    },
+    {
+      "id": "table_width_twips_forwarded",
+      "why": "R #382: as_rtftables(table_width_twips=) is the table's total width, forwarded to rtftable().",
+      "data": {
+        "A": [
+          "x",
+          "y"
+        ],
+        "B": [
+          1,
+          2
+        ]
+      },
+      "as_rtftables": {
+        "table_width_twips": 6000
+      }
+    },
+    {
+      "id": "align_count_pct_rounding",
+      "why": "R #476: the percent is rounded once with the package rule before the width branch is chosen (9.96 -> 10.0, 99.96 -> (100), 6.25 -> 6.2).",
+      "data": {
+        "Term": [
+          "a",
+          "b",
+          "c",
+          "d"
+        ],
+        "Trt": [
+          "1 (9.96)",
+          "2 (99.96)",
+          "3 (6.25)",
+          "0"
+        ]
+      },
+      "as_rtftables": {
+        "align_count_pct": true
+      }
+    },
+    {
+      "id": "explicit_blank_at_edge",
+      "why": "R #332: an explicit integer position is honoured even when it is the page's last row; only separators are trimmed.",
+      "data": {
+        "A": [
+          "x",
+          "y",
+          "z"
+        ],
+        "B": [
+          1,
+          2,
+          3
+        ]
+      },
+      "as_rtftables": {
+        "blank_rows": {
+          "r": 3,
+          "py": 2
+        }
+      }
+    },
+    {
+      "id": "footnote_text_format_and_title_width",
+      "why": "footnote_format='text' renders bare footnote strings as paragraphs; title_width='page' widens the title block to the writable width.",
+      "data": {
+        "A": [
+          "x",
+          "y"
+        ],
+        "B": [
+          1,
+          2
+        ]
+      },
+      "as_rtftables": {
+        "col_rel_width": [
+          30,
+          70
+        ],
+        "table_width_pct": 60
+      },
+      "default_format": {
+        "footnote_format": "text",
+        "title_format": "table",
+        "title_width": "page"
+      },
+      "titles": [
+        "Wide title"
+      ],
+      "footnotes": [
+        "Plain paragraph"
+      ]
     }
   ]
 }

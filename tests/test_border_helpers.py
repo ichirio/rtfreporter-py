@@ -153,10 +153,14 @@ def test_normalize_table_border_passthrough_tableborder():
     assert normalize_table_border(tb) is tb
 
 
-def test_normalize_table_border_border_goes_to_header_zone():
-    b = Border(top=rr.rtf_border_side())
+def test_normalize_table_border_border_selects_the_whole_table():
+    # R #342: an rtf_border here is the whole table -- its edges the outer
+    # frame, its inside_h / inside_v the rules between rows and cells.
+    b = rr.rtf_border(top=True, inside_h="double")
     tb = normalize_table_border(b)
-    assert tb.header is b
+    assert tb.outer is b
+    assert tb.inside_h == rr.rtf_border_side("double")
+    assert tb.header is None
 
 
 def test_normalize_table_border_bad_type_raises():

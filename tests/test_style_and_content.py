@@ -49,7 +49,7 @@ def test_style_header_align_and_bold():
 
 def test_style_zone_sets_body_border():
     tbl = rtftable({"A": [1]}, border="tfl")
-    styled = style_zone(tbl, "last_row", Border(bottom=BorderSide("double", 20)))
+    styled = style_zone(tbl, last_row=Border(bottom=BorderSide("double", 20)))
     assert styled.border.last_row is not None
     assert r"\brdrdb" in _render(styled)
 

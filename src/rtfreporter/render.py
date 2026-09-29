@@ -19,9 +19,12 @@ from ._escape import (
 from .borders import (
     Border,
     BorderSide,
+    cell_edge_border,
     collect_border_colors,
     collect_table_border_colors,
+    expand_table_border,
     merge_border,
+    zone_row_border,
 )
 from .element_style import fs_cmd_for, resolve_block_width, resolve_element_metrics
 from .figure import Figure
@@ -178,22 +181,33 @@ def build_row(cell_defs, cell_contents, row_height_twips=None, table_align="left
 
 
 def build_cell_defs(cellx, border, valign_cmd, color_index_map=None) -> list[str]:
-    border_cmds = build_border_commands(border, color_index_map)
-    return [f"{border_cmds}{valign_cmd}\\cellx{cx}" for cx in cellx]
+    """Cell definition strings (border + valign + ``\\cellx``) for all columns.
+
+    A row's ``left`` / ``right`` are its outer edges and ``inside_v`` the rule
+    between its cells, so the vertical rules are distributed per cell.  Nothing
+    to distribute when the row carries none, the common case.
+    """
+    n = len(cellx)
+    if border is None or (border.left is None and border.right is None and border.inside_v is None):
+        border_cmds = build_border_commands(border, color_index_map)
+        return [f"{border_cmds}{valign_cmd}\\cellx{cx}" for cx in cellx]
+    return [
+        f"{build_border_commands(cell_edge_border(border, j, n), color_index_map)}"
+        f"{valign_cmd}\\cellx{cellx[j]}"
+        for j in range(n)
+    ]
 
 
 def _header_outer_border(idx: int, n: int, zone: Border | None) -> Border | None:
+    """Outer-frame border for a header row at position ``idx`` of ``n``: the
+    same outer/inside rule as every other zone."""
     if zone is None:
         return None
-    is_first = idx == 0
-    is_last = idx == n - 1
-    top = zone.top if is_first else None
-    bot = zone.bottom if is_last else None
-    lft = zone.left
-    rgt = zone.right
-    if top is None and bot is None and lft is None and rgt is None:
+    b = zone_row_border(zone, idx, n)
+    if b.top is None and b.bottom is None and b.left is None and b.right is None \
+            and b.inside_v is None:
         return None
-    return Border(top=top, bottom=bot, left=lft, right=rgt)
+    return Border(top=b.top, bottom=b.bottom, left=b.left, right=b.right, inside_v=b.inside_v)
 
 
 # -- Header-row coverage (for spanning-cell group underlines) ------------------
@@ -243,8 +257,18 @@ def _render_spanning_row(
         for j in range(sp.start, sp.end + 1):
             coverage[j] = k
 
-    def cell_border(k: int | None, single_idx: int | None = None) -> Border | None:
-        eff = border
+    # Count the emitted cells first -- a span counts once -- so that inside_v
+    # can be placed on cell boundaries rather than column boundaries.
+    n_cells = 0
+    j = 0
+    while j < ncols:
+        k = coverage[j]
+        n_cells += 1
+        j = spans[k - 1].end + 1 if k > 0 else j + 1
+
+    def cell_border(k: int | None, single_idx: int | None = None,
+                    cell_idx: int = 0) -> Border | None:
+        eff = cell_edge_border(border, cell_idx, n_cells)
         if k is not None and k > 0:
             sp = spans[k - 1]
             multi_col = sp.end > sp.start
@@ -268,17 +292,20 @@ def _render_spanning_row(
 
     cell_defs: list[str] = []
     j = 0
+    ci = 0
     while j < ncols:
         k = coverage[j]
         if k > 0:
             end = spans[k - 1].end
-            bc = build_border_commands(cell_border(k), color_index_map)
+            bc = build_border_commands(cell_border(k, cell_idx=ci), color_index_map)
             cell_defs.append(f"{bc}{valign_cmd}\\cellx{cellx[end]}")
             j = end + 1
         else:
-            bc = build_border_commands(cell_border(None, single_idx=j), color_index_map)
+            bc = build_border_commands(cell_border(None, single_idx=j, cell_idx=ci),
+                                       color_index_map)
             cell_defs.append(f"{bc}{valign_cmd}\\cellx{cellx[j]}")
             j += 1
+        ci += 1
 
     def span_align(sp: SpanCell) -> str:
         if sp.align is not None:
@@ -328,8 +355,10 @@ def _render_header_row(
     ncols = len(cellx)
     cell_defs = []
     for j in range(ncols):
+        eff = cell_edge_border(border, j, ncols)
         col_border = col_spec[j].border
-        eff = _effective_row_border(border, col_border) if col_border is not None else border
+        if col_border is not None:
+            eff = _effective_row_border(eff, col_border)
         bc = build_border_commands(eff, color_index_map)
         cell_defs.append(f"{bc}{valign_cmd}\\cellx{cellx[j]}")
 
@@ -366,7 +395,9 @@ def _render_data_row(
         cell_defs = []
         for j in range(ncols):
             b = cell_borders[j] if j < len(cell_borders) else None
-            eff = border if b is None else _effective_row_border(border, b)
+            eff = cell_edge_border(border, j, ncols)
+            if b is not None:
+                eff = _effective_row_border(eff, b)
             cell_defs.append(
                 f"{build_border_commands(eff, color_index_map)}{valign_cmd}\\cellx{cellx[j]}"
             )
@@ -433,7 +464,7 @@ def render_rtftable(
     doc_markup="script",
 ) -> list[str]:
     """Render an :class:`RtfTable` to a list of RTF row strings."""
-    border = tbl.border
+    border = expand_table_border(tbl.border, has_header=bool(tbl.col_header))
     col_spec = tbl.col_spec
     eff_markup = tbl.markup if tbl.markup is not None else resolve_markup(doc_markup)
     pad_l = tbl.cell_padding_left_twips if tbl.cell_padding_left_twips is not None else doc_pad_l
@@ -553,7 +584,7 @@ def _render_section(
         if detect_blank and row_all_empty(row):
             add_blank()
         else:
-            row_border = border.body if border else None
+            row_border = zone_row_border(border.body, i, nrows) if border else None
             if i == 0 and border and border.first_row:
                 row_border = _effective_row_border(row_border, border.first_row)
             if i == nrows - 1 and border and border.last_row:

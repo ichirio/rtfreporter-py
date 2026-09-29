@@ -37,6 +37,9 @@ _FACTORY_DEFAULTS: dict[str, Any] = {
     "title_format": "text",
     "footnote_format": "table",
     "figure.default_dpi": 96,
+    # One rounding rule for the whole package (R #476): "r" = half to even,
+    # "sas" = half away from zero with SAS's fuzz.  See round_num().
+    "rounding": "r",
 }
 
 # Session overrides.  Empty by default; set via ``rtfreporter_options(**kw)``.

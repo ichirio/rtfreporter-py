@@ -573,6 +573,32 @@ def _compute_group_keys(rows, group_idx, group_by: str):
     return keys
 
 
+def _table_width_pct_frac(x, arg: str = "table_width_pct") -> float:
+    """A percentage in (0, 100] as a fraction; refused with rtftable()'s own
+    message instead of quietly resolving to NaN (R #388)."""
+    try:
+        pct = float(x)
+    except (TypeError, ValueError):
+        pct = float("nan")
+    if not (0 < pct <= 100):
+        raise ValueError(f"`{arg}` must be a number in (0, 100].")
+    return pct / 100
+
+
+def _resolve_total_width_twips(twips, user_args: dict) -> int | None:
+    """The table's total width in twips, resolved the way rtftable() resolves
+    it (R #382): an absolute ``table_width_twips`` first, then a percentage of
+    the writable width, then ``None`` for "whatever the page gives"."""
+    if twips is not None:
+        return int(twips)
+    frac = user_args.get("table_width_pct_of_writable")
+    if frac is None and user_args.get("table_width_pct") is not None:
+        frac = _table_width_pct_frac(user_args["table_width_pct"])
+    if frac is None:
+        return None
+    return int(round(_DEFAULT_WRITABLE_TWIPS * float(frac)))
+
+
 #: Accepted string shorthand for ``blank_rows`` (mirrors the R package).
 BETWEEN_GROUPS = "between_groups"
 
@@ -891,7 +917,11 @@ def as_rtftables(
             measured_rows = [[r[i] for i in keep] for r in rows]
         header_labels = table_kwargs.get("col_header", coerced.auto_header)
 
-        width_budget = table_width_twips
+        # The budget is the table's total width, resolved the way rtftable()
+        # resolves it: absolute first, then a percentage of the writable width
+        # (R #382).  Reading only `table_width_twips` here made auto_width deaf
+        # to `table_width_pct`.
+        width_budget = _resolve_total_width_twips(table_width_twips, table_kwargs)
         if width_budget is None:
             # No explicit budget: keep natural widths, but cap the total at the
             # default writable page width so a wide table still fits (as in R).
@@ -909,6 +939,12 @@ def as_rtftables(
             table_width_twips=width_budget,
             protect_cols=[0],
         )
+
+    # An absolute total width is a table setting, not an auto-sizing one
+    # (R #382): forward it so `as_rtftables(table_width_twips=)` means what
+    # `rtftable(table_width_twips=)` means.
+    if table_width_twips is not None and "table_width_twips" not in table_kwargs:
+        table_kwargs = dict(table_kwargs, table_width_twips=int(table_width_twips))
 
     out: list[RtfTable] = []
     for page_rows, page_name in pages:
@@ -936,9 +972,15 @@ def as_rtftables(
         else:
             printed_names, printed_header = column_names, auto_header
 
+        # col_header: the AUTO (adapter-derived) header travels with the body
+        # through the drop / stub reindexing.  A USER-supplied `col_header` is
+        # instead applied AFTER the table is built, against the FINAL printed
+        # columns (via set_col_header()), as R does -- which also means the
+        # table is built without a header as far as its border is concerned.
         col_header = printed_header if printed_header is not None else None
         kwargs = dict(table_kwargs)
-        if col_header is not None and "col_header" not in kwargs:
+        user_col_header = kwargs.pop("col_header", None)
+        if col_header is not None and user_col_header is None:
             kwargs["col_header"] = col_header
         if coerced.col_spec is not None and "col_spec" not in kwargs:
             kwargs["col_spec"] = coerced.col_spec
@@ -966,6 +1008,10 @@ def as_rtftables(
             _blank_positions=blank_positions or None,
             **kwargs,
         )
+        if user_col_header is not None:
+            from .post_hoc import set_col_header
+
+            tbl = set_col_header(tbl, user_col_header)
         if titles is not None:
             tbl.titles = titles
         if footnotes is not None:

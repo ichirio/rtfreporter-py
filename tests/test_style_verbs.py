@@ -74,13 +74,13 @@ def test_style_header_border():
 
 
 def test_style_zone_sets_border():
-    t = style_zone(rtftable({"A": [1]}, border="tfl"), "body", Border(top=BorderSide()))
+    t = style_zone(rtftable({"A": [1]}, border="tfl"), body=Border(top=BorderSide()))
     assert t.border.body is not None
 
 
 def test_style_zone_invalid_zone():
-    with pytest.raises(ValueError):
-        style_zone(rtftable({"A": [1]}), "middle", Border())
+    with pytest.raises(TypeError):
+        style_zone(rtftable({"A": [1]}), middle=Border())
 
 
 def test_style_zone_bad_border_type():
@@ -88,9 +88,13 @@ def test_style_zone_bad_border_type():
         style_zone(rtftable({"A": [1]}), "body", "thick")
 
 
-def test_style_zone_clear_with_none():
-    t = style_zone(rtftable({"A": [1]}, border="tfl"), "header", None)
-    assert t.border.header is None
+def test_style_zone_merges_side_by_side():
+    # R #348: layering happens where a border is attached -- a second call
+    # adds to the first instead of replacing it.
+    t = style_zone(rtftable({"A": [1]}, border="tfl"), header=Border(left=BorderSide("double")))
+    assert t.border.header.top == BorderSide()          # kept from "tfl"
+    assert t.border.header.left == BorderSide("double")  # added
+    assert style_zone(t).border == t.border             # nothing named: unchanged
 
 
 def test_chained_verbs_compose():
@@ -113,6 +117,6 @@ def test_style_body_index_out_of_range():
 
 
 def test_style_zone_double_renders():
-    t = style_zone(rtftable({"A": [1, 2]}, border="tfl"), "last_row",
-                   Border(bottom=BorderSide("double", 20)))
+    t = style_zone(rtftable({"A": [1, 2]}, border="tfl"),
+                   last_row=Border(bottom=BorderSide("double", 20)))
     assert "\\brdrdb" in render(t)

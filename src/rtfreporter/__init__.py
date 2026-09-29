@@ -77,6 +77,7 @@ from .format_count_pct import (
     fmt_count_paren,
     fmt_count_paren_bare,
     fmt_right_align,
+    fmt_value_paren,
     format_count_pct,
     realign_count_pct,
 )
@@ -87,6 +88,7 @@ from .header_footer import (
     update_footer_row,
     update_header_row,
 )
+from .num_format import round_num
 from .page import DefaultFormat, Page, rtf_default_format, rtf_page
 from .pagination import (
     Frame,
@@ -220,6 +222,8 @@ __all__ = [
     "blank_rows_by_rule",
     # count / percent formatters
     "format_count_pct",
+    "fmt_value_paren",
+    "round_num",
     "realign_count_pct",
     "fmt_count_paren",
     "fmt_count_paren_bare",

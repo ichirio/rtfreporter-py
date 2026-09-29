@@ -186,7 +186,7 @@ def test_rtf_border_with_none_start():
 
 
 def test_rtf_border_with_bad_side():
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError, match="must be one of"):
         rr.rtf_border_with(rr.rtf_border(), top="notaside")
 
 

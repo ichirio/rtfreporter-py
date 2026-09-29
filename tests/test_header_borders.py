@@ -56,8 +56,7 @@ def test_first_row_override():
 def test_last_row_override_double():
     t = style_zone(
         rtftable({"A": [1, 2, 3]}, border="tfl"),
-        "last_row",
-        Border(bottom=BorderSide("double", 20)),
+        last_row=Border(bottom=BorderSide("double", 20)),
     )
     rtf = render(t)
     assert "\\clbrdrb\\brdrdb\\brdrw20" in rtf
