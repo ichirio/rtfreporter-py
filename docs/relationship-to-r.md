@@ -61,6 +61,16 @@ The Python package deliberately mirrors the R one:
 There are two deliberate departures, both for Pythonic ergonomics; they are
 described on [Differences from the R package](r-differences.md).
 
+!!! note "Scope: the R package's ARD / plan layer is not ported"
+
+    The R package is gaining a table-planning layer — `table_plan()`, the
+    `plan_*()` verbs, `plan_apply()`, `plan_template()` — and an ARD family
+    — `normalize_ard()`, `spread_ard()`, `pull_ard()`, `list_ard_keys()`,
+    `cell_rows()`, `overall_row()`. These are **intentionally not ported**:
+    they consume `cards` / `cardx` analysis results data, which exist only
+    in R. The "every R export exists in Python" statement above refers to
+    the rendering toolkit and does not include this layer.
+
 ## Where the two packages necessarily differ
 
 The R package's headline feature is reading **table objects from the wider
@@ -90,6 +100,7 @@ from `tab_style()`, row groups, summary rows and footnotes. See
 | Exported functions | <span class="rtf-badge ok">74 / 74</span> every R export exists in Python |
 | Renderer, pagination, borders, styling, assembly | <span class="rtf-badge ok">ported</span> |
 | Table-object adapters | <span class="rtf-badge partial">pandas, polars, great_tables</span> — the R-only frameworks have no Python counterpart |
+| ARD / plan layer (`table_plan()`, `plan_*()`, `normalize_ard()`, …) | <span class="rtf-badge partial">not ported</span> — by design; it consumes `cards` / `cardx` data that exist only in R |
 | `rtf_config(font_table=)` | <span class="rtf-badge partial">partial</span> — a single built-in font table |
 
 `BUILD_REPORT.md` in the repository carries the authoritative, function-by-
