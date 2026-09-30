@@ -1,0 +1,62 @@
+[
+  {
+    "page": 1,
+    "name": "P1",
+    "group": "P1",
+    "row": 1,
+    "cell": 1,
+    "from": 1,
+    "to": 1,
+    "text": "Parameter"
+  },
+  {
+    "page": 1,
+    "name": "P1",
+    "group": "P1",
+    "row": 1,
+    "cell": 2,
+    "from": 2,
+    "to": 2,
+    "text": "Placebo\n(N=120)"
+  },
+  {
+    "page": 1,
+    "name": "P1",
+    "group": "P1",
+    "row": 1,
+    "cell": 3,
+    "from": 3,
+    "to": 3,
+    "text": "Drug\n(N=121) {x}"
+  },
+  {
+    "page": 2,
+    "name": "P2",
+    "group": "P2",
+    "row": 1,
+    "cell": 1,
+    "from": 1,
+    "to": 1,
+    "text": "Parameter"
+  },
+  {
+    "page": 2,
+    "name": "P2",
+    "group": "P2",
+    "row": 1,
+    "cell": 2,
+    "from": 2,
+    "to": 2,
+    "text": "Placebo\n(N=118)"
+  },
+  {
+    "page": 2,
+    "name": "P2",
+    "group": "P2",
+    "row": 1,
+    "cell": 3,
+    "from": 3,
+    "to": 3,
+    "text": "Drug\n(N=117) {x}"
+  }
+]

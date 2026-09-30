@@ -145,21 +145,38 @@ def add_header_row(x, row, position: str = "top"):
 # -- set_col_header() ---------------------------------------------------------
 
 
-def set_col_header(x, *rows, align=None):
+def set_col_header(x, *rows, align=None, values=None, by=None):
     """Replace the whole column header of a finished table (final-table coords).
 
     Args:
         x: An :class:`RtfTable` or a list of pages.
-        *rows: The header rows, top first -- each a list of labels or of
+        *rows: The header rows, top first -- each a list of labels, a dict
+            ``{column: label}`` (a named row: it may be shorter than the table,
+            the columns it leaves out keep their own name), or a list of
             :func:`~rtfreporter.col_cell` cells, resolved against the final
             columns.  A single pre-built ``rtf_col_header`` is accepted.  Passing
-            nothing clears the header (renders the column names).
+            nothing clears the header (renders the column names).  An unnamed
+            label row must carry one label per printed column.
         align: Optional column-header alignment for the final columns -- a single
             value or one per column.
+        values: Optional per-page values for the ``{tokens}`` in the header: a
+            table (DataFrame or dict of columns) with one row per page key and
+            one column per token, e.g. ``"Placebo\\n(N={n_pbo})"`` filled from
+            ``{"group": [...], "n_pbo": [...]}``.  ``{{`` / ``}}`` are literal
+            braces; the render-time tokens (``{PAGE}``, ``{AUTO_PAGE}``, ...)
+            are left for the renderer; any other unfilled token, a page with no
+            row and a row no page uses are errors.  :func:`header_map` shows
+            the result.
+        by: The page key ``values`` is matched on, which is also the name of
+            its key column: ``"group"`` (default; the value a ``by_value`` split
+            cut the page for, else the page's name), ``"rows"`` (its
+            ``page_by`` value) or ``"name"``; several for a combination.
 
     Returns:
         An object of the same shape as ``x``.
     """
+    from .table import check_col_header_width
+
     if len(rows) == 0:
         header = None
     elif len(rows) == 1:
@@ -167,9 +184,20 @@ def set_col_header(x, *rows, align=None):
     else:
         header = list(rows)
 
+    if values is not None:
+        pages = [x] if isinstance(x, RtfTable) else list(x)
+        idx, keys, records = _match_value_rows(pages, values, by)
+        filled = []
+        for p, i in zip(pages, idx, strict=True):
+            vals = {k: v for k, v in records[i].items() if k not in keys}
+            h = _fill_header_tokens(header, vals, "set_col_header(values = )")
+            filled.append(set_col_header(p, *([] if h is None else [h]), align=align))
+        return filled[0] if isinstance(x, RtfTable) else filled
+
     def one(tbl: RtfTable) -> RtfTable:
         out = tbl.copy()
         nc = out.ncols
+        check_col_header_width(header, nc, "set_col_header")
         out.col_header = _normalize_col_header(header, nc, out.column_names)
         # the whole header is replaced, spanning rows included
         out.spanning_rows = 0
@@ -186,6 +214,148 @@ def set_col_header(x, *rows, align=None):
         return out
 
     return _map_pages(x, one, "set_col_header")
+
+
+# -- set_col_header(values=) / header_map() -----------------------------------
+#
+# A column header is usually one shape with a few values that change page to
+# page -- "(N=120)" for one period, "(N=118)" for the next.  It is written ONCE
+# with `{token}` where a value belongs, and the values arrive as a table keyed
+# by the page's own key -- its group, its page_by value or its name -- never
+# its position (R col_header_values.R).
+
+#: Tokens the RENDERER fills later: left alone here.
+_RENDER_TOKENS = frozenset({
+    "PAGE", "TOTAL_PAGES", "DATE", "BOOK_PAGE", "AUTO_PAGE", "AUTO_TOTAL_PAGES",
+    "SECTION_PAGES", "PROGRAM", "PROGRAM_NAME", "PROGRAM_DIR", "DATETIME",
+})
+_TOKEN_RX = r"[{]([A-Za-z._][A-Za-z0-9._]*)[}]"
+
+
+def _fill_text_tokens(txt, vals: dict, where: str):
+    import re
+
+    from .catx import _as_text
+
+    if not isinstance(txt, str) or "{" not in txt:
+        return txt
+    s = txt.replace("{{", "\x01").replace("}}", "\x02")
+    for nm, v in vals.items():
+        s = s.replace("{" + nm + "}", _as_text(v))
+    left = [t for t in dict.fromkeys(re.findall(_TOKEN_RX, s)) if t not in _RENDER_TOKENS]
+    if left:
+        raise ValueError(
+            f"{where}: no value for " + ", ".join(f"`{{{t}}}`" for t in left)
+            + ".\n  Supply it in `values`, or write `{{` for a literal brace.\n"
+            "  values has: " + (", ".join(vals) if vals else "(nothing)")
+        )
+    return s.replace("\x01", "{").replace("\x02", "}")
+
+
+def _fill_header_tokens(spec, vals: dict, where: str):
+    """Fill every label a header spec carries, whatever shape it was written in."""
+    from dataclasses import replace as dc_replace
+
+    from .table import _ColCellSpec
+
+    if spec is None:
+        return spec
+    if isinstance(spec, _ColCellSpec):
+        return dc_replace(spec, label=_fill_text_tokens(spec.label, vals, where))
+    if isinstance(spec, str):
+        return _fill_text_tokens(spec, vals, where)
+    if isinstance(spec, dict):
+        return {k: _fill_header_tokens(v, vals, where) for k, v in spec.items()}
+    if isinstance(spec, (list, tuple)):
+        return [_fill_header_tokens(v, vals, where) for v in spec]
+    return spec
+
+
+def _page_key(tbl: RtfTable, axis: str):
+    if axis == "group":
+        return tbl.page_group if tbl.page_group else tbl.name
+    if axis == "rows":
+        return tbl.page_by if tbl.page_by else None
+    if axis == "name":
+        return tbl.name
+    raise ValueError(f'`by`: "{axis}" is not a page axis (group, rows, name).')
+
+
+def _match_value_rows(pages, values, by):
+    """Match each page to one row of ``values`` (R ``.match_value_rows()``);
+    returns ``(row index per page, key columns, the value records)``."""
+    import sys
+
+    from .catx import _as_text
+    from .table import _coerce_data
+
+    try:
+        names, rows = _coerce_data(values)
+    except Exception as exc:  # noqa: BLE001
+        raise ValueError("`values` must be a table (a DataFrame or a dict of columns): "
+                         "one row per page key, one column per token.") from exc
+    records = [dict(zip(names, r, strict=True)) for r in rows]
+    by = ["group"] if by is None else ([by] if isinstance(by, str) else list(by))
+    missing = [b for b in by if b not in names]
+    if missing:
+        raise ValueError(
+            "`values` has no key column " + ", ".join(f"`{m}`" for m in missing)
+            + ".  Name the key column after the axis it matches: `group`, `rows`, `name`."
+        )
+    if by == ["group"] and not any(p.page_group for p in pages):
+        print('set_col_header(values = ): no group axis, so `by = "group"` '
+              "matches on the page name instead.", file=sys.stderr)
+
+    def key_of_page(p):
+        return " + ".join(str(_page_key(p, a)) for a in by)
+
+    want = [" + ".join(_as_text(r[a]) for a in by) for r in records]
+    rowmap = {}
+    for i, w in enumerate(want):
+        rowmap.setdefault(w, i)
+    out = []
+    for i, p in enumerate(pages):
+        k = key_of_page(p)
+        if k not in rowmap:
+            raise ValueError(
+                f"`values` has no row for page {i} "
+                f"({'unnamed' if p.name is None else repr(p.name)}).\n"
+                f"  looked for {' + '.join(by)} = \"{k}\"\n"
+                "  values has: " + " | ".join(dict.fromkeys(want))
+            )
+        out.append(rowmap[k])
+    unused = [i for i in range(len(records)) if i not in set(out)]
+    if unused:
+        raise ValueError(
+            f"`values` row{'s' if len(unused) > 1 else ''} "
+            + ", ".join(str(i) for i in unused) + " matched no page: "
+            + " | ".join(dict.fromkeys(want[i] for i in unused))
+            + ".\n  Every row must be used -- a row left over is usually a label "
+            "that does not match the data."
+        )
+    return out, by, records
+
+
+def header_map(x) -> list[dict]:
+    """What every page's column header ended up with (R ``header_map()``).
+
+    One record per header cell: the page (0-based), its ``name``, ``group``
+    and ``rows`` (``page_by``) keys, the header ``row`` and ``cell`` (0-based),
+    the columns it covers (``from`` / ``to``, 0-based inclusive) and its
+    ``text``.  ``pandas.DataFrame(header_map(pages))`` makes it a table.
+    """
+    pages = [x] if isinstance(x, RtfTable) else list(x)
+    out = []
+    for i, p in enumerate(pages):
+        for r, row in enumerate(p.col_header):
+            cells = ([(k, k, k, lab) for k, lab in enumerate(row.labels or [])]
+                     if row.kind == "labels"
+                     else [(k, sp.start, sp.end, sp.label) for k, sp in enumerate(row.spans or [])])
+            for k, frm, to, text in cells:
+                out.append({"page": i, "name": p.name, "group": _page_key(p, "group"),
+                            "rows": _page_key(p, "rows"), "row": r, "cell": k,
+                            "from": frm, "to": to, "text": text})
+    return out
 
 
 # -- set_header_cell() --------------------------------------------------------

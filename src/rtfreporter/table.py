@@ -98,7 +98,11 @@ def col_cell(
 
     Args:
         cols: A single 0-based column index, a ``(start, end)`` inclusive range,
-            a column name, or a ``(name, name)`` pair.
+            a column name, a ``(name, name)`` pair -- or a **selector
+            function** of the data column names (see :func:`col_key`),
+            answering which columns the cell covers: a list of bools, of
+            0-based positions, or of column names.  It must match at least
+            one column, and the matched columns must be adjacent.
         label: Cell text.
         align: ``"left"`` / ``"center"`` / ``"right"`` (defaults from the
             leftmost covered column's header alignment, then center).
@@ -157,9 +161,101 @@ def _resolve_col(ref, names: list[str]) -> int:
     return idx
 
 
+def col_key(key, sep: str | None = None, part: int = 0):
+    """Select header columns by a column-name segment (R ``col_key()``).
+
+    Returns a selector for :func:`col_cell`: data columns produced by a wide
+    pivot are usually named ``<group><sep><sub-group>`` (``"Placebo____Day 1"``);
+    the selector splits each name on ``sep`` and keeps the columns whose
+    ``part``-th segment is one of ``key``, so a spanning cell is written in
+    terms of the value it labels rather than of column numbers::
+
+        col_cell(col_key("Placebo"), "Placebo\n(N=60)")
+        col_cell(col_key("Day 1", part=1), "Day 1")
+
+    Args:
+        key: One segment value, or several.
+        sep: The separator; ``None`` detects the one the names use (``"____"``,
+            then tfrmt's delimiter), as ``as_rtftables(header_sep=)`` does.
+        part: Which segment, **0-based** (0 = before the first separator);
+            negative counts from the right (-1 = the last).
+    """
+    keys = [key] if isinstance(key, str) else list(key)
+    if not keys or not all(isinstance(k, str) and k for k in keys):
+        raise ValueError("`key` must be one or more non-empty strings.")
+    if sep is not None and (not isinstance(sep, str) or not sep):
+        raise ValueError("`sep` must be None or a single non-empty string.")
+    if isinstance(part, bool) or not isinstance(part, int):
+        raise ValueError("`part` must be an integer.")
+
+    def segment(names):
+        use = sep
+        if use is None:
+            from .adapters import _DEFAULT_HEADER_SEPS
+
+            use = next((c for c in _DEFAULT_HEADER_SEPS if any(c in n for n in names)),
+                       _DEFAULT_HEADER_SEPS[0])
+        out = []
+        for n in names:
+            bits = str(n).split(use)
+            out.append(bits[part] if -len(bits) <= part < len(bits) else None)
+        return out
+
+    def select(names):
+        return [s is not None and s in keys for s in segment(names)]
+
+    select.rtf_sel_label = "col_key(" + ", ".join(f'"{k}"' for k in keys) + ")"
+    select.rtf_sel_choices = lambda names: list(dict.fromkeys(
+        s for s in segment(names) if s is not None))
+    return select
+
+
+def _resolve_col_sel(sel, names: list[str]) -> tuple[int, int]:
+    """Resolve a selector ``pos`` to a contiguous ``(start, end)`` range (R
+    ``.resolve_col_sel()``)."""
+    lab = getattr(sel, "rtf_sel_label", "The `cols` selector")
+    hit = list(sel(list(names)))
+    if hit and all(isinstance(h, bool) for h in hit):
+        if len(hit) != len(names):
+            raise ValueError(f"{lab} returned {len(hit)} logical values for "
+                             f"{len(names)} data columns.")
+        j = [i for i, h in enumerate(hit) if h]
+    elif all(isinstance(h, str) for h in hit):
+        unknown = [h for h in hit if h not in names]
+        if unknown:
+            raise ValueError(f"{lab} returned unknown column name(s): "
+                             + ", ".join(f'"{h}"' for h in unknown) + ".")
+        j = [names.index(h) for h in hit]
+    elif all(isinstance(h, int) and not isinstance(h, bool) for h in hit):
+        j = [int(h) for h in hit]
+    else:
+        raise ValueError(f"{lab} must return bools, integer positions or column names.")
+    j = sorted(set(j))
+    if not j:
+        ch = getattr(sel, "rtf_sel_choices", None)
+        avail = ch(list(names)) if callable(ch) else list(names)
+        raise ValueError(f"{lab} matched no data columns. Available "
+                         f"{'keys' if callable(ch) else 'columns'}: "
+                         + ", ".join(f'"{a}"' for a in avail) + ".")
+    if j[0] < 0 or j[-1] >= len(names):
+        raise ValueError(f"{lab} matched positions outside the data column range "
+                         f"0..{len(names) - 1}.")
+    if j != list(range(j[0], j[-1] + 1)):
+        runs, start = [], j[0]
+        for a, b in zip(j, j[1:] + [None], strict=True):
+            if b is None or b != a + 1:
+                runs.append(str(start) if start == a else f"{start}-{a}")
+                start = b
+        raise ValueError(f"{lab} matched non-adjacent data columns ({', '.join(runs)}); "
+                         "a header cell can only span a contiguous range.")
+    return j[0], j[-1]
+
+
 def _resolve_span_cell(spec: _ColCellSpec, names: list[str]) -> SpanCell:
     pos = spec.pos
-    if isinstance(pos, (list, tuple)):
+    if callable(pos):
+        start, end = _resolve_col_sel(pos, names)
+    elif isinstance(pos, (list, tuple)):
         if len(pos) == 1:
             start = end = _resolve_col(pos[0], names)
         elif len(pos) == 2:
@@ -200,6 +296,10 @@ def _normalize_col_header(col_header, ncols: int, names: list[str]) -> list[Head
     ):
         return [HeaderRow(kind="labels", labels=_pad_labels(list(col_header), ncols))]
 
+    # A single named label row (R #453).
+    if isinstance(col_header, dict):
+        return [_named_label_row(col_header, names)]
+
     # A single spanning row given directly.
     if _is_span_row(col_header):
         return [_span_header_row(col_header, names)]
@@ -211,10 +311,56 @@ def _normalize_col_header(col_header, ncols: int, names: list[str]) -> list[Head
             rows.append(_span_header_row(row, names))
         elif isinstance(row, HeaderRow):
             rows.append(row)
+        elif isinstance(row, dict):
+            rows.append(_named_label_row(row, names))
         else:
             labels = [("" if x is None else str(x)) for x in row]
             rows.append(HeaderRow(kind="labels", labels=_pad_labels(labels, ncols)))
     return rows
+
+
+def _named_label_row(row: dict, names: list[str]) -> HeaderRow:
+    """A label row that says which column each label belongs to (R #453): it
+    may be shorter than the table, and the columns it does not mention keep
+    their own name.  An unknown column is an error."""
+    unknown = [k for k in row if k not in names]
+    if unknown:
+        raise ValueError(
+            "A named column-header row names unknown column(s): "
+            + ", ".join(f'"{k}"' for k in unknown)
+            + ". Available: " + ", ".join(f'"{n}"' for n in names) + "."
+        )
+    return HeaderRow(kind="labels", labels=[
+        ("" if row[n] is None else str(row[n])) if n in row else n for n in names])
+
+
+def check_col_header_width(header, ncols: int, arg: str = "col_header") -> None:
+    """An UNNAMED label row carries one label per printed column (R #435):
+    a header written for the whole table and applied after the column split
+    no longer fits, and printing the first labels would say nothing.  A named
+    row (a dict) and a row of :func:`col_cell` cells carry their own
+    coordinates and are not checked."""
+    if header is None:
+        return
+    if isinstance(header, (list, tuple)) and header and all(isinstance(c, str) for c in header):
+        rows = [header]
+    elif isinstance(header, (list, tuple)):
+        rows = list(header)
+    else:
+        rows = [header]
+    for row in rows:
+        if not (isinstance(row, (list, tuple)) and row and all(isinstance(c, str) for c in row)):
+            continue
+        if len(row) <= 1 or len(row) == ncols:
+            continue
+        raise ValueError(
+            f"`{arg}`: the label row has {len(row)} labels but the table has "
+            f"{ncols} printed column{'' if ncols == 1 else 's'}.\n  A header row "
+            "carries one label per column.  After the column split each page "
+            "keeps only its own columns, so a header written for the whole table "
+            "no longer fits: set it BEFORE the split, or give each page its own "
+            "header (a named row -- a dict -- may be shorter)."
+        )
 
 
 def _spanning_header_row(spanning_header, ncols: int, names: list[str]) -> HeaderRow:
@@ -570,6 +716,10 @@ class RtfTable:
     row_title: list[int] | None = None
     spanning_rows: int = 0
     col_header_given: bool = False
+    #: The page's keys (R ``rtf_paginate_meta``): the value a ``by_value``
+    #: split cut it for, and its ``page_by`` value.
+    page_group: str | None = None
+    page_by: str | None = None
 
     @property
     def ncols(self) -> int:
@@ -915,6 +1065,7 @@ def override_rtftable_fields(tbl: RtfTable, ov: dict) -> RtfTable:
         t.col_header = rows + list(t.col_header[t.spanning_rows:])
         t.spanning_rows = len(rows)
     if has("col_header"):
+        check_col_header_width(ov["col_header"], ncols, "rtf_tables(col_header)")
         rows = _normalize_col_header(ov["col_header"], ncols, names)
         t.col_header = list(t.col_header[:t.spanning_rows]) + rows
         t.col_header_given = ov["col_header"] is not None

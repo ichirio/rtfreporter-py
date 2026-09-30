@@ -830,7 +830,8 @@ def _order_and_name_pages(pages, grp, by):
         b_first = {b: i for i, b in reversed(list(enumerate(by)))}
         order.sort(key=lambda i: (g_first[grp[i]], b_first[by[i]], i))
     names = grp if has_grp else by
-    return [(pages[i][0], names[i], pages[i][2], pages[i][3]) for i in order]
+    return [(pages[i][0], names[i], pages[i][2], pages[i][3],
+             grp[i] if has_grp else None, by[i]) for i in order]
 
 
 def _split_blank_positions(spec, column_names, rows):
@@ -1116,8 +1117,12 @@ def as_rtftables(
                     header_sep=header_sep, auto_width=auto_width,
                     table_width_twips=table_width_twips, border=border, style=style, **tk,
                 )
+                label = (", ".join(_as_text(rows[idx[0]][j]) for j in by_pre)
+                         if by_pre and idx else None)
                 for tbl in pages_k:
                     tbl.name = value if value else f"group_{k}"
+                    tbl.page_group = tbl.name
+                    tbl.page_by = label
                 out_pages.extend(pages_k)
         return out_pages
 
@@ -1230,7 +1235,7 @@ def as_rtftables(
         # Per-page blank spec: R inserts NO blank rows unless `blank_rows` asks
         # for them -- setting `group_col` alone must not add separators.
         pblank = _expand_between_groups(blank_rows, g_idx, group_by)
-        return [(r, nm, materialised, pblank) for r, nm in part_pages]
+        return [(r, nm, materialised, pblank, None, None) for r, nm in part_pages]
 
     if page_by is None:
         pages = paginate_part(rows, group_idx)
@@ -1296,7 +1301,7 @@ def as_rtftables(
         table_kwargs = dict(table_kwargs, table_width_twips=int(table_width_twips))
 
     out: list[RtfTable] = []
-    for page_rows, page_name, materialised, page_blank in pages:
+    for page_rows, page_name, materialised, page_blank, page_group, page_by_key in pages:
         if materialised:
             # The blanks were counted by the split: read them off the markers.
             page_rows, blank_positions = _collapse_blank_markers(
@@ -1371,6 +1376,8 @@ def as_rtftables(
             tbl.footnotes = footnotes
         if page_name:
             tbl.name = page_name
+        tbl.page_group = page_group
+        tbl.page_by = page_by_key
         out.append(tbl)
     return out
 
