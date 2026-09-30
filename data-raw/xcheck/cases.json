@@ -1436,6 +1436,88 @@
       "titles_style": {
         "font": "Arial"
       }
+    },
+    {
+      "id": "rtf_tables_overrides_auto_title",
+      "why": "rtf_tables() arguments override the pre-built pages (font, size, row height, placement, widths), and auto_title appends each page name as the last title row after the given titles.",
+      "data": {
+        "G": [
+          "A",
+          "A",
+          "B"
+        ],
+        "V": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "as_rtftables": {
+        "split": "by_value",
+        "group_col": "G"
+      },
+      "rtf_tables": {
+        "titles": [
+          [
+            "Table 2"
+          ]
+        ],
+        "auto_title": true,
+        "title_label_align": "center",
+        "font": "Arial",
+        "font_size_half_points": 16,
+        "row_height_twips": 300,
+        "table_align": "center",
+        "col_rel_width": [
+          2,
+          1
+        ],
+        "table_width_pct": 60
+      }
+    },
+    {
+      "id": "rtf_tables_overrides_header",
+      "why": "rtf_tables() overrides of a pre-built page's header and columns: col_header, col_header_align, col_spec (by name), row_title re-seeding the default alignments, and border re-resolved with the new header.",
+      "data": {
+        "Param": [
+          "Age",
+          "Sex"
+        ],
+        "Value": [
+          "45",
+          "F"
+        ],
+        "N": [
+          "10",
+          "12"
+        ]
+      },
+      "as_rtftables": {},
+      "rtf_tables": {
+        "col_header": [
+          "Parameter",
+          "Result",
+          "Count"
+        ],
+        "col_header_align": "right",
+        "col_spec": [
+          {
+            "col": "N",
+            "bold": true
+          }
+        ],
+        "row_title": {
+          "r": [
+            1,
+            2
+          ],
+          "py": [
+            0,
+            1
+          ]
+        },
+        "border": "tfl"
+      }
     }
   ]
 }

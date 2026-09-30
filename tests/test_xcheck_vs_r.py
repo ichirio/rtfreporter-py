@@ -76,7 +76,7 @@ def render_case(case: dict) -> str:
                    if isinstance(case.get("watermark"), dict) else case.get("watermark")),
     )
 
-    doc = rr.rtf_tables(doc, pages)
+    doc = rr.rtf_tables(doc, pages, **{k: _pick(v) for k, v in case.get("rtf_tables", {}).items()})
     if case.get("titles") is not None:
         doc = rr.rtf_titles(doc, [case["titles"]], **_as_style(case.get("titles_style")))
     if case.get("footnotes") is not None:

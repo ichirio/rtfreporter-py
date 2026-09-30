@@ -474,6 +474,8 @@ def rtf_tables(
     footnotes=None,
     auto_section: bool = False,
     section_label_align: str = "left",
+    auto_title: bool = False,
+    title_label_align: str = "left",
     **table_kwargs,
 ) -> RtfDocument:
     """Add one or more table content pages to ``doc`` (mirrors R ``rtf_tables()``).
@@ -493,17 +495,35 @@ def rtf_tables(
             ``split="by_value"``.
         section_label_align: Where the auto-appended label sits --
             ``"left"`` (default), ``"center"`` or ``"right"``.
-        **table_kwargs: Forwarded to :func:`~rtfreporter.rtftable`.
+        auto_title: When ``True``, a named page's name is appended as the
+            **last row of its title block**, just above the table; titles
+            already there (from ``titles`` or carried by the table) are kept
+            before it.  Composes with ``auto_section``.
+        title_label_align: Alignment of that row (default ``"left"``).
+        **table_kwargs: Forwarded to :func:`~rtfreporter.rtftable` for raw
+            data.  For a pre-built :class:`~rtfreporter.RtfTable` (e.g. from
+            :func:`~rtfreporter.as_rtftables`), the formatting arguments passed
+            here (``font``, ``font_size_half_points``, ``row_height_twips``,
+            ``border``, ``col_header``, widths, ...) override its own values;
+            those left out keep them.
 
     Returns:
         A **new** document; ``doc`` is left unchanged (as in R).
     """
     if not isinstance(doc, RtfDocument):
         raise TypeError("`doc` must be an RtfDocument.")
+    if auto_title and title_label_align not in ("left", "center", "right"):
+        raise ValueError('`title_label_align` must be "left", "center", or "right".')
     items = _as_table_list(tables)
     n = len(items)
     tlist = _broadcast_blocks(titles, n)
     flist = _broadcast_blocks(footnotes, n)
+    # A pre-built table takes the explicitly passed formatting arguments as
+    # overrides (R .override_rtftable_fields()); raw data is built with them.
+    from .table import override_rtftable_fields
+
+    items = [override_rtftable_fields(t, table_kwargs) if isinstance(t, RtfTable) else t
+             for t in items]
     out = doc
     base_header = _auto_section_base(doc) if auto_section else None
     open_label = None
@@ -520,9 +540,18 @@ def rtf_tables(
                 out = _open_auto_section(
                     out, _auto_section_header(base_header, open_label, section_label_align)
                 )
+        title = tlist[i] if tlist is not None else None
+        # auto_title: the page name as the LAST row of its title block, after
+        # the titles given or carried by the table.
+        label = getattr(tbl, "name", None)
+        if auto_title and label:
+            if title is None:
+                title = getattr(tbl, "titles", None)
+            rows = [] if title is None else ([title] if isinstance(title, str) else list(title))
+            title = rows + [{"text": str(label), "align": title_label_align}]
         out = out.add_table(
             tbl,
-            title=tlist[i] if tlist is not None else None,
+            title=title,
             footnote=flist[i] if flist is not None else None,
             **table_kwargs,
         )

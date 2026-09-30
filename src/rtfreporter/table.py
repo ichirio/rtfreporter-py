@@ -564,6 +564,12 @@ class RtfTable:
     titles: list[str] | None = None
     footnotes: list[str] | None = None
     name: str | None = None
+    #: What rtf_tables() overrides need to know about how the table was built:
+    #: the row-heading columns, how many leading header rows came from
+    #: ``spanning_header``, and whether a column header was given at all.
+    row_title: list[int] | None = None
+    spanning_rows: int = 0
+    col_header_given: bool = False
 
     @property
     def ncols(self) -> int:
@@ -804,7 +810,164 @@ def rtftable(
         cell_styles=cell_styles,
         blank_row_normalize=frozenset(blank_row_normalize or ()),
         markup=resolve_markup(markup) if markup is not None else None,
+        row_title=row_title_idx,
+        spanning_rows=1 if spanning_header is not None else 0,
+        col_header_given=spanning_header is not None or col_header is not None,
     )
+
+# -- rtf_tables() overrides of a pre-built table -----------------------------
+
+#: The table-formatting arguments rtf_tables() applies to a pre-built table
+#: when they are passed explicitly (R ``.fmt_args``).  ``style`` is a
+#: construction-time seed and is not re-applied, as in R.
+OVERRIDE_ARGS = (
+    "col_header", "col_header_align", "spanning_header", "col_spec", "row_title",
+    "border", "blank_rows", "style", "col_rel_width", "column_widths_twips",
+    "table_width_twips", "table_width_pct_of_writable", "table_width_pct",
+    "table_align", "row_height_twips", "row_height_exact",
+    "header_row_height_twips", "blank_row_height_twips",
+    "cell_padding_left_twips", "cell_padding_right_twips", "cell_valign",
+    "font_size_half_points", "font",
+)
+
+
+def override_rtftable_fields(tbl: RtfTable, ov: dict) -> RtfTable:
+    """Apply explicitly passed ``rtf_tables()`` formatting arguments onto a
+    pre-built table (R ``.override_rtftable_fields()``).
+
+    ``ov`` holds only the arguments the caller passed; every other field keeps
+    the table's own value.  Each value is normalised as :func:`rtftable`
+    would normalise it.
+    """
+    ov = {k: v for k, v in ov.items() if k in OVERRIDE_ARGS}
+    if not ov:
+        return tbl
+    t = tbl.copy()
+    names, ncols = t.column_names, t.ncols
+
+    def has(k):
+        return k in ov
+
+    def opt_int(v):
+        return None if v is None else int(v)
+
+    # -- column / table widths and placement
+    if has("col_rel_width"):
+        t.col_rel_width = None if ov["col_rel_width"] is None else [float(w) for w in ov["col_rel_width"]]
+    if has("column_widths_twips"):
+        v = ov["column_widths_twips"]
+        t.column_widths_twips = None if v is None else [int(w) for w in v]
+    if has("table_width_twips"):
+        t.table_width_twips = opt_int(ov["table_width_twips"])
+    if has("table_width_pct_of_writable"):
+        v = ov["table_width_pct_of_writable"]
+        t.table_width_pct_of_writable = None if v is None else float(v)
+    if has("table_width_pct") and ov["table_width_pct"] is not None:
+        pct = float(ov["table_width_pct"])
+        if not (0 < pct <= 100):
+            raise ValueError("`table_width_pct` must be a number in (0, 100].")
+        t.table_width_pct_of_writable = pct / 100.0
+    if has("table_align"):
+        if ov["table_align"] not in _ALIGN:
+            raise ValueError("`table_align` must be 'left', 'center', or 'right'.")
+        t.table_align = ov["table_align"]
+
+    # -- row heights
+    if has("row_height_twips"):
+        t.row_height_twips = opt_int(ov["row_height_twips"])
+    if has("row_height_exact"):
+        if not isinstance(ov["row_height_exact"], bool):
+            raise ValueError("`row_height_exact` must be True or False.")
+        t.row_height_exact = ov["row_height_exact"]
+    if has("header_row_height_twips"):
+        t.header_row_height_twips = opt_int(ov["header_row_height_twips"])
+    if has("blank_row_height_twips"):
+        t.blank_row_height_twips = opt_int(ov["blank_row_height_twips"])
+
+    # -- cell padding / valign
+    if has("cell_padding_left_twips"):
+        t.cell_padding_left_twips = opt_int(ov["cell_padding_left_twips"])
+    if has("cell_padding_right_twips"):
+        t.cell_padding_right_twips = opt_int(ov["cell_padding_right_twips"])
+    if has("cell_valign"):
+        if ov["cell_valign"] not in ("top", "center", "bottom"):
+            raise ValueError("`cell_valign` must be 'top', 'center', or 'bottom'.")
+        t.cell_valign = ov["cell_valign"]
+
+    # -- typography (R #299): settable on the table and overridable here
+    if has("font_size_half_points"):
+        t.font_size_half_points = check_font_size(ov["font_size_half_points"],
+                                                  "font_size_half_points")
+    if has("font"):
+        t.font = check_font(ov["font"], "font")
+
+    # -- border: a header given in the same call counts, so read `ov` first
+    if has("border"):
+        hdr_now = ov["spanning_header"] is not None if has("spanning_header") else t.spanning_rows > 0
+        col_now = ov["col_header"] is not None if has("col_header") else t.col_header_given
+        t.border = expand_table_border(normalize_table_border(ov["border"]),
+                                       has_header=hdr_now or col_now)
+
+    # -- spanning header / column header
+    if has("spanning_header"):
+        sp = ov["spanning_header"]
+        rows = [] if sp is None else [_spanning_header_row(sp, ncols, names)]
+        t.col_header = rows + list(t.col_header[t.spanning_rows:])
+        t.spanning_rows = len(rows)
+    if has("col_header"):
+        rows = _normalize_col_header(ov["col_header"], ncols, names)
+        t.col_header = list(t.col_header[:t.spanning_rows]) + rows
+        t.col_header_given = ov["col_header"] is not None
+
+    # -- blank rows, resolved against the table's data
+    if has("blank_rows"):
+        t.blank_rows = ([] if ov["blank_rows"] is None
+                        else _resolve_blank_rows(ov["blank_rows"], names, t.rows))
+
+    # -- row-title columns: re-seed the DEFAULT alignments only
+    if has("row_title"):
+        new_rt = _normalize_row_title(ov["row_title"], ncols, names)
+        old_rt = t.row_title if t.row_title is not None else [0]
+
+        def old_def(j):
+            return "left" if j in old_rt else "center"
+
+        def new_def(j):
+            return "left" if j in new_rt else "center"
+
+        for j, spec in enumerate(t.col_spec):
+            if spec.align == old_def(j):
+                header_align = new_def(j) if spec.header_align == old_def(j) else spec.header_align
+                t.col_spec[j] = replace(spec, align=new_def(j), header_align=header_align)
+        t.row_title = new_rt
+
+    # -- per-column spec: user fields merged over the existing spec
+    if has("col_spec") and ov["col_spec"] is not None:
+        for entry in ov["col_spec"]:
+            if not isinstance(entry, dict) or entry.get("col") is None:
+                raise ValueError("Each element of `col_spec` must be a dict with a `col` key.")
+            entry = dict(entry)
+            col = entry.pop("col")
+            try:
+                idx = _resolve_col(col, names)
+            except (KeyError, ValueError, IndexError):
+                continue
+            if not 0 <= idx < ncols:
+                continue
+            fields = _validate_spec_fields(entry)
+            # the header follows a changed `align` unless its own is set too
+            if "align" in fields and "header_align" not in fields:
+                fields["header_align"] = fields["align"]
+            t.col_spec[idx] = replace(t.col_spec[idx], **fields)
+
+    # -- column-header alignment: the top of the cascade
+    if has("col_header_align") and ov["col_header_align"] is not None:
+        cha = ov["col_header_align"]
+        for j, spec in enumerate(t.col_spec):
+            a = cha if isinstance(cha, str) else cha[j]
+            t.col_spec[j] = replace(spec, header_align=a)
+    return t
+
 
 
 def _coerce_data(data) -> tuple[list[str], list[list[Any]]]:

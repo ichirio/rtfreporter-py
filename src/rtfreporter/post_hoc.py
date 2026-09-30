@@ -171,6 +171,9 @@ def set_col_header(x, *rows, align=None):
         out = tbl.copy()
         nc = out.ncols
         out.col_header = _normalize_col_header(header, nc, out.column_names)
+        # the whole header is replaced, spanning rows included
+        out.spanning_rows = 0
+        out.col_header_given = header is not None
         if align is not None:
             a = [align] * nc if isinstance(align, str) else list(align)
             if len(a) != nc:

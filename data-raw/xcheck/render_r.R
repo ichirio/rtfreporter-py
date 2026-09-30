@@ -112,7 +112,13 @@ for (case in cases) {
   }
   doc <- do.call(rtf_document, doc_args)
 
-  doc <- rtf_tables(doc, pages)
+  # rtf_tables() arguments: overrides of the pre-built pages, auto_title, ...
+  rt <- lapply(case$rtf_tables %||% list(), pick)
+  for (nm in c("col_rel_width", "col_header", "row_title")) {
+    if (!is.null(rt[[nm]])) rt[[nm]] <- unlist(rt[[nm]], use.names = FALSE)
+  }
+  if (!is.null(rt$col_spec)) rt$col_spec <- lapply(rt$col_spec, function(s) s)
+  doc <- do.call(rtf_tables, c(list(doc, pages), rt))
   if (!is.null(case$titles)) {
     doc <- do.call(rtf_titles, c(list(doc, list(as_block(case$titles))),
                                  as_style(case$titles_style)))
