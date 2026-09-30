@@ -91,6 +91,7 @@ from .header_footer import (
 )
 from .num_format import fmt_numeric, fmt_round, fmt_signif, round_num
 from .page import DefaultFormat, Page, rtf_default_format, rtf_page
+from .paginate_cols import paginate_cols
 from .pagination import (
     Frame,
     PaginationError,
@@ -234,6 +235,7 @@ __all__ = [
     "catx",
     "col_key",
     "set_decimal_split",
+    "paginate_cols",
     "stub_spec",
     "StubSpec",
     "header_map",
