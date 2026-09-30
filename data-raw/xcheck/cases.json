@@ -2018,6 +2018,47 @@
       "rtf_tables": {
         "auto_title": true
       }
+    },
+    {
+      "id": "drop_cols_positional_args",
+      "why": "Positional arguments (widths, row_title positions) address the pre-drop columns and lose the dropped ones (R .apply_col_drop).",
+      "data": {
+        "G": [
+          "A",
+          "A",
+          "B"
+        ],
+        "Label": [
+          "x",
+          "y",
+          "z"
+        ],
+        "V": [
+          1,
+          2,
+          3
+        ]
+      },
+      "as_rtftables": {
+        "drop_cols": [
+          "G"
+        ],
+        "col_rel_width": [
+          1,
+          2,
+          3
+        ],
+        "row_title": {
+          "r": [
+            2,
+            3
+          ],
+          "py": [
+            1,
+            2
+          ]
+        }
+      }
     }
   ]
 }

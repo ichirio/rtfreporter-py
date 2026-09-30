@@ -53,6 +53,8 @@ def _coerce_input(x, read_meta, header_sep) -> _Coerced:
     ``auto_header`` is a list of :class:`HeaderRow` reconstructed from delimited
     names (or read from a GT object), or ``None`` when a flat header suffices.
     """
+    if isinstance(x, _Coerced):  # a by_value group's rows, metadata kept
+        return x
     if gt_adapter.is_gt(x):
         res = gt_adapter.gt_to_result(x, read_meta)
         return _Coerced(
@@ -1097,12 +1099,9 @@ def as_rtftables(
     # the same way (R #498) instead of being handed whole to every page,
     # where a second page could not take it.
     styles = coerced.cell_styles
-    if styles is not None and (spec is not None or drop_cols is not None):
-        raise ValueError(
-            "`stub` / `drop_cols` are not supported for great_tables "
-            "input; the GT adapter already reshapes the body (row groups "
-            "become an indented stub and hidden columns are dropped)."
-        )
+    gt_col_spec = coerced.col_spec
+    gt_rel_width = coerced.col_rel_width
+    gt_widths_twips = coerced.column_widths_twips
     user_styles = table_kwargs.get("cell_styles")
     if styles is None and user_styles is not None and len(user_styles) == len(rows):
         styles = list(table_kwargs.pop("cell_styles"))
@@ -1128,7 +1127,14 @@ def as_rtftables(
                       _page_by_runs([rows[i] for i in g_idx], by_pre)]
                      if by_pre else [g_idx])
             for idx in parts:
-                sub = {name: [rows[i][j] for i in idx] for j, name in enumerate(column_names)}
+                # the group's rows keep the source's own metadata (a GT
+                # table's labels, alignment, widths)
+                sub = _Coerced(
+                    column_names, [rows[i] for i in idx], auto_header, titles=titles,
+                    footnotes=footnotes, col_spec=coerced.col_spec,
+                    col_rel_width=coerced.col_rel_width,
+                    column_widths_twips=coerced.column_widths_twips,
+                )
                 if user_cs is not None and len(user_cs) == len(rows):
                     tk["cell_styles"] = [user_cs[i] for i in idx]
                 pages_k = as_rtftables(
@@ -1158,6 +1164,7 @@ def as_rtftables(
         from .stub import stub_cols
 
         n0 = len(column_names)
+        column_names_pre = list(column_names)
         vars_idx = _resolve_indices(spec.vars, column_names)
         keep = [j for j in range(n0) if j not in vars_idx]
         stubbed = stub_cols((column_names, rows), spec.vars, label=spec.label,
@@ -1173,7 +1180,21 @@ def as_rtftables(
             for r in stubbed.label_rows:
                 styles[r] = {**(styles[r] or {}), "span_row": True}
         if merged:
-            auto_header = None  # names changed; a flat header is used
+            # The column-indexed metadata an adapter brought (a GT table's
+            # labels, alignment) keeps the non-stub columns and gains the
+            # stub first; the widths describe the pre-merge columns and are
+            # dropped (R .apply_stub_vars()).  `layout = "columns"` moves no
+            # column, so nothing is touched there.
+            dropped = [column_names_pre[j] for j in vars_idx]
+            if auto_header is not None:
+                auto_header = _prepend_stub_header(_reindex_header(auto_header, keep),
+                                                   column_names[0])
+            if gt_col_spec is not None:
+                gt_col_spec = [
+                    {**e, "col": e["col"] + 1} if isinstance(e.get("col"), int) else e
+                    for e in _reindex_col_spec(gt_col_spec, keep, dropped) or []
+                ] or None
+            gt_rel_width = gt_widths_twips = None
 
     carry_styles = styles is not None
     if carry_styles:
@@ -1396,18 +1417,20 @@ def as_rtftables(
         user_col_header = kwargs.pop("col_header", None)
         if col_header is not None and user_col_header is None:
             kwargs["col_header"] = col_header
-        if coerced.col_spec is not None and "col_spec" not in kwargs:
-            kwargs["col_spec"] = coerced.col_spec
-        if coerced.col_rel_width is not None and "col_rel_width" not in kwargs:
-            kwargs["col_rel_width"] = coerced.col_rel_width
+        # col_spec: per-column deep merge, your fields win (R .merge_col_spec)
+        if gt_col_spec is not None:
+            kwargs["col_spec"] = _merge_col_spec(kwargs.get("col_spec"), gt_col_spec)
+        if gt_rel_width is not None and "col_rel_width" not in kwargs:
+            kwargs["col_rel_width"] = gt_rel_width
         if listing_meta is not None:
-            # the listing's relative widths, on the printed columns
-            gone = set(drop_idx or ())
-            kwargs["col_rel_width"] = [w for j, w in enumerate(listing_meta["col_rel_width"])
-                                       if j not in gone]
-        if coerced.column_widths_twips is not None and "column_widths_twips" not in kwargs:
-            kwargs["column_widths_twips"] = coerced.column_widths_twips
-        if page_cell_styles is not None:
+            kwargs["col_rel_width"] = listing_meta["col_rel_width"]
+        if gt_widths_twips is not None and "column_widths_twips" not in kwargs:
+            kwargs["column_widths_twips"] = gt_widths_twips
+        # Every position-indexed argument addresses the columns BEFORE the
+        # drop and loses the dropped ones (R .apply_col_drop()).
+        if drop_idx:
+            kwargs = _drop_positional_args(kwargs, column_names, drop_idx)
+        if page_cell_styles is not None and "cell_styles" not in kwargs:
             kwargs["cell_styles"] = page_cell_styles
 
         # auto_width sizes columns to their widest content.  The widths are
@@ -1466,6 +1489,93 @@ def _reindex_header(header, keep):
                         replace(sp, start=remap[covered[0]], end=remap[covered[-1]])
                     )
             out.append(HeaderRow(kind="spanning", spans=spans))
+    return out
+
+
+def _prepend_stub_header(header, stub_label):
+    """Header rows after a merged stub: the stub takes the first column, its
+    label on the leaf (last) row and blank above; every span shifts right
+    (R .prepend_stub_header())."""
+    out = []
+    for i, row in enumerate(header):
+        lab = stub_label if i == len(header) - 1 else ""
+        if row.kind == "labels":
+            out.append(HeaderRow(kind="labels", labels=[lab] + list(row.labels)))
+        else:
+            spans = [replace(sp, start=sp.start + 1, end=sp.end + 1) for sp in row.spans]
+            out.append(HeaderRow(kind="spanning", spans=[SpanCell(0, 0, lab)] + spans))
+    return out
+
+
+def _reindex_col_spec(col_spec, keep, drop_names):
+    """col_spec entries on the kept columns: an entry on a removed column goes,
+    an integer ``col`` moves to its new position, a name stays
+    (R .reindex_col_spec())."""
+    remap = {old: new for new, old in enumerate(keep)}
+    out = []
+    for e in col_spec:
+        col = e.get("col") if isinstance(e, dict) else None
+        if col is None:
+            out.append(e)
+        elif isinstance(col, str):
+            if col not in drop_names:
+                out.append(e)
+        elif int(col) in remap:
+            out.append({**e, "col": remap[int(col)]})
+    return out or None
+
+
+def _merge_col_spec(user, adapter):
+    """Per-column merge of col_spec lists: yours wins for any field it sets,
+    the rest falls back to the adapter's entry for the same ``col``
+    (R .merge_col_spec())."""
+    if user is None:
+        return adapter
+    if adapter is None:
+        return user
+
+    def key(e):
+        return "" if e.get("col") is None else f"col:{e['col']}"
+
+    merged: dict[str, dict] = {}
+    for e in adapter:
+        merged[key(e)] = dict(e)
+    for e in user:
+        k = key(e)
+        if k in merged:
+            merged[k].update({f: v for f, v in e.items() if f != "col"})
+        else:
+            merged[k] = dict(e)
+    return list(merged.values())
+
+
+def _drop_positional_args(kwargs, names, drop_idx):
+    """The position-indexed rtftable() arguments on the columns left after
+    ``drop_cols`` (R .apply_col_drop()): length-n vectors lose the dropped
+    entries, col_spec / row_title positions move, names survive."""
+    n0 = len(names)
+    keep = [j for j in range(n0) if j not in set(drop_idx)]
+    remap = {old: new for new, old in enumerate(keep)}
+    drop_names = [names[j] for j in drop_idx]
+    out = dict(kwargs)
+    for k in ("col_rel_width", "column_widths_twips", "col_header_align"):
+        v = out.get(k)
+        if isinstance(v, (list, tuple)) and len(v) == n0:
+            out[k] = [v[j] for j in keep]
+    if out.get("col_spec") is not None:
+        out["col_spec"] = _reindex_col_spec(out["col_spec"], keep, drop_names)
+    rt = out.get("row_title")
+    if rt is not None:
+        refs = rt if isinstance(rt, (list, tuple)) else [rt]
+        refs = [r if isinstance(r, str) else remap[int(r)] for r in refs
+                if (r not in drop_names if isinstance(r, str) else int(r) in remap)]
+        out["row_title"] = refs or None
+    cs = out.get("cell_styles")
+    if cs is not None:
+        out["cell_styles"] = [
+            {k: [v[j] for j in keep] if isinstance(v, list) and len(v) == n0 else v
+             for k, v in r.items()} if isinstance(r, dict) else r
+            for r in cs]
     return out
 
 
