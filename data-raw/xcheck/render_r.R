@@ -101,6 +101,10 @@ for (case in cases) {
   if (!is.null(case$default_format)) {
     doc_args$default_format <- do.call(rtf_default_format, case$default_format)
   }
+  # The declared fonts, first = the default: a list of family names.
+  if (!is.null(case$font_table)) {
+    doc_args$font_table <- lapply(case$font_table, function(f) list(name = f))
+  }
   # A watermark: a bare string, or {"text": , "angle": , ...} for rtf_watermark().
   if (!is.null(case$watermark)) {
     doc_args$watermark <- if (is.list(case$watermark))

@@ -15,7 +15,7 @@ from dataclasses import dataclass, replace
 from . import _commands as C
 from . import render as R
 from ._escape import resolve_markup
-from .element_style import check_font, element_style, resolve_block_width
+from .element_style import element_style, resolve_block_width
 from .figure import Figure, rtfplot
 from .footnote_band import footnote_hf, footnote_rows
 from .header_footer import HeaderFooter, normalize_hf
@@ -25,6 +25,39 @@ from .table import RtfTable, rtftable
 #: "Argument not given", where ``None`` is itself a value (a section that
 #: switches the watermark off).
 _NOT_GIVEN = object()
+
+
+def _font_names(font_table) -> list[str] | None:
+    """A font table -- a list of family names, or of ``{"name": ...}`` dicts
+    as R writes it -- as a list of names, first = the document default."""
+    if font_table is None:
+        return None
+    if isinstance(font_table, str):
+        font_table = [font_table]
+    names = []
+    for f in font_table:
+        name = f.get("name") if isinstance(f, dict) else f
+        if not isinstance(name, str):
+            raise ValueError("`font_table` must be a list of font family names.")
+        if name:
+            names.append(name)
+    return names or None
+
+
+def _collect_fonts(report) -> list[str]:
+    """Every family the document needs: the declared table first (its first
+    entry is the default), then any family an element asked for (R
+    ``.collect_fonts()`` / ``.collect_report_fonts()``)."""
+    declared = list(report.font_table) if report.font_table else [report.default_format.font]
+    wanted = [report.title_style.get("font"), report.footnote_style.get("font")]
+    for page in report.pages:
+        ct = page.get("content")
+        if isinstance(ct, RtfTable):
+            wanted.append(ct.font)
+    for sec in report.sections:
+        for band in (sec.get("header"), sec.get("footer")):
+            wanted.append(getattr(band, "font", None))
+    return list(dict.fromkeys(declared + [f for f in wanted if f]))
 
 
 @dataclass
@@ -39,6 +72,7 @@ class _Report:
     title_style: dict
     footnote_style: dict
     watermark: object = None
+    font_table: list | None = None
 
 
 class RtfDocument:
@@ -69,6 +103,7 @@ class RtfDocument:
         color_table: list[str] | None = None,
         program: str | None = None,
         watermark=None,
+        font_table=None,
     ) -> None:
         from .watermark import normalize_watermark
 
@@ -77,6 +112,9 @@ class RtfDocument:
         self.program = program
         #: The watermark on every page (R ``rtf_document(watermark=)``).
         self.watermark = normalize_watermark(watermark)
+        #: The declared fonts, first = the document default (R ``font_table``);
+        #: ``None`` declares ``default_format.font`` alone.
+        self.font_table = _font_names(font_table)
         self.default_format = default_format or DefaultFormat()
         self.color_table = list(color_table) if color_table else None
         self._sections: list[dict] = []
@@ -103,6 +141,7 @@ class RtfDocument:
         new.color_table = list(self.color_table) if self.color_table else None
         new.program = self.program
         new.watermark = self.watermark
+        new.font_table = list(self.font_table) if self.font_table else None
         new._sections = [dict(section) for section in self._sections]
         new._pages = [dict(page) for page in self._pages]
         new.title_style = dict(self.title_style)
@@ -277,6 +316,7 @@ class RtfDocument:
             title_style=dict(self.title_style),
             footnote_style=dict(self.footnote_style),
             watermark=self.watermark,
+            font_table=self.font_table,
         )
 
 
@@ -289,6 +329,7 @@ def rtf_document(
     color_table: list[str] | None = None,
     program: str | None = None,
     watermark=None,
+    font_table=None,
 ) -> RtfDocument:
     """Create a new :class:`RtfDocument` (mirrors R's ``rtf_document()``).
 
@@ -305,10 +346,14 @@ def rtf_document(
             :func:`~rtfreporter.rtf_watermark`, or a bare string
             (``"DRAFT"``) for the defaults.  A section can override it
             (:func:`rtf_section`), ``None`` there switching it off.
+        font_table: The fonts to declare, first = the document default: a list
+            of family names (or ``{"name": ...}`` dicts).  ``None`` declares
+            ``default_format.font``.  A font an element asks for (a table's,
+            a title's, a header's ``font=``) is added after these.
     """
     return RtfDocument(page=page, default_format=default_format,
                        color_table=color_table, program=program,
-                       watermark=watermark)
+                       watermark=watermark, font_table=font_table)
 
 
 def rtf_config(
@@ -336,20 +381,13 @@ def rtf_config(
         color_table: A replacement colour table (list of hex strings).
         watermark: A new watermark (an :func:`~rtfreporter.rtf_watermark` or a
             string); ``None`` / ``""`` removes it.  Not given: unchanged.
-        font_table: Accepted for R signature parity; the Python renderer manages
-            fonts automatically, so a non-``None`` value raises
-            :class:`NotImplementedError`.
+        font_table: A replacement font table (see :func:`rtf_document`).
 
     Returns:
         A new :class:`RtfDocument` (the pages and sections are carried over).
     """
     if not isinstance(doc, RtfDocument):
         raise TypeError("`doc` must be an RtfDocument.")
-    if font_table is not None:
-        raise NotImplementedError(
-            "rtf_config(font_table=...) is not supported; the Python renderer "
-            "manages the font table automatically."
-        )
     new_page = doc.page
     if page is not None:
         new_page = replace(doc.page, **page) if isinstance(page, dict) else page
@@ -364,7 +402,8 @@ def rtf_config(
 
     out = RtfDocument(page=new_page, default_format=new_fmt, color_table=new_colors,
                       program=doc.program,
-                      watermark=doc.watermark if watermark is _NOT_GIVEN else watermark)
+                      watermark=doc.watermark if watermark is _NOT_GIVEN else watermark,
+                      font_table=doc.font_table if font_table is None else font_table)
     out._sections = list(doc._sections)
     out._pages = list(doc._pages)
     out.title_style = dict(doc.title_style)
@@ -536,7 +575,7 @@ def rtf_titles(
             the height from that size; an explicit height always wins.
             ``align`` sets the block's default row alignment; a per-row
             ``align`` still beats it.
-        font: Per-block font family -- not supported yet (issue #3).
+        font: Font family for the block; declared in the font table as needed.
     """
     if not isinstance(doc, RtfDocument):
         raise TypeError("`doc` must be an RtfDocument.")
@@ -544,8 +583,8 @@ def rtf_titles(
     if n == 0:
         raise ValueError("Cannot set titles before any content has been added.")
     blocks = _broadcast_blocks(titles, n, require_list=True)
-    st = element_style(font_size_half_points, row_height_twips, markup, align, verb="rtf_titles")
-    check_font(font, "rtf_titles(font)")
+    st = element_style(font_size_half_points, row_height_twips, markup, align,
+                       verb="rtf_titles", font=font)
     new = doc.titles(blocks)
     if st:
         new.title_style = st
@@ -579,7 +618,7 @@ def rtf_footnotes(
             ``border=rtf_border(top=True)``.
         font_size_half_points, row_height_twips, markup, align: Style for the
             block, overriding the document default (see :func:`rtf_titles`).
-        font: Per-block font family -- not supported yet (issue #3).
+        font: Font family for the block; declared in the font table as needed.
     """
     from .borders import Border
 
@@ -590,9 +629,9 @@ def rtf_footnotes(
         raise ValueError("Cannot set footnotes before any content has been added.")
     blocks = _broadcast_blocks(footnotes, n, require_list=True)
     st = element_style(
-        font_size_half_points, row_height_twips, markup, align, verb="rtf_footnotes"
+        font_size_half_points, row_height_twips, markup, align, verb="rtf_footnotes",
+        font=font,
     )
-    check_font(font, "rtf_footnotes(font)")
     if border is not None:
         if not isinstance(border, Border):
             raise TypeError("`rtf_footnotes(border=)` must be None or an rtf_border() object.")
@@ -740,10 +779,16 @@ def _generate(report: _Report) -> str:
     color_table_str = R.build_color_table_rtf(doc_colors)
     color_index_map = R.build_color_index_map(doc_colors)
 
+    # Fonts: the declared table plus any an element asked for (R #293).
+    doc_fonts = _collect_fonts(report)
+    font_index_map = {name: i for i, name in enumerate(doc_fonts)}
+
     orientation_cmd = r"\landscape" if geo["orientation"] == "landscape" else ""
     lines: list[str] = [
         C.RTF_HEADER_OPEN,
-        C.FONT_TABLE_TEMPLATE.format(font_name=_esc(fmt.font)),
+        "{\\fonttbl" + "".join(
+            f"{{\\f{i}\\fnil\\fcharset0 {_esc(name)};}}" for i, name in enumerate(doc_fonts)
+        ) + "}",
         color_table_str,
         C.PAGE_SETTINGS_TEMPLATE.format(
             width_twips=geo["width_twips"],
@@ -808,12 +853,14 @@ def _generate(report: _Report) -> str:
                 cur_header, writable, is_footer=False, current_page=pg_for_hf,
                 total_pages=total_pages, color_index_map=color_index_map,
                 font_half_points=fhp, doc_row_height=doc_row_height,
-                doc_pad_l=doc_pad_l, doc_pad_r=doc_pad_r, doc_markup=doc_markup)
+                doc_pad_l=doc_pad_l, doc_pad_r=doc_pad_r, doc_markup=doc_markup,
+                font_index_map=font_index_map)
             footer_rtf = R.render_header_footer(
                 cur_footer, writable, is_footer=True, current_page=pg_for_hf,
                 total_pages=total_pages, color_index_map=color_index_map,
                 font_half_points=fhp, doc_row_height=doc_row_height,
-                doc_pad_l=doc_pad_l, doc_pad_r=doc_pad_r, doc_markup=doc_markup)
+                doc_pad_l=doc_pad_l, doc_pad_r=doc_pad_r, doc_markup=doc_markup,
+                font_index_map=font_index_map)
             # The watermark goes in even when there is no header text; then the
             # header group carries the shape and nothing else.
             if header_rtf or watermark_rtf:
@@ -851,19 +898,22 @@ def _generate(report: _Report) -> str:
                     page.get("title"), is_footer=False, color_index_map=color_index_map,
                     markup=doc_markup, pad_l=doc_pad_l, pad_r=doc_pad_r,
                     style=title_st, font_half_points=fhp,
-                    current_page=p_idx, total_pages=total_pages))
+                    current_page=p_idx, total_pages=total_pages,
+                    font_index_map=font_index_map))
             else:
                 lines.extend(R.render_text_block_table(
                     page.get("title"), title_w, False, fhp, doc_pad_l, doc_pad_r,
                     tf_valign, calign, color_index_map, doc_row_height, doc_markup,
-                    style=title_st, current_page=p_idx, total_pages=total_pages))
+                    style=title_st, current_page=p_idx, total_pages=total_pages,
+                    font_index_map=font_index_map))
 
             # Content.
             if isinstance(ct, RtfTable):
                 lines.extend(R.render_rtftable(
                     ct, writable, fhp, color_index_map,
                     doc_row_height=doc_row_height, doc_pad_l=doc_pad_l,
-                    doc_pad_r=doc_pad_r, doc_markup=doc_markup))
+                    doc_pad_r=doc_pad_r, doc_markup=doc_markup,
+                    font_index_map=font_index_map))
             elif isinstance(ct, Figure):
                 lines.append(R.render_rtfplot(ct, writable))
 
@@ -875,14 +925,16 @@ def _generate(report: _Report) -> str:
                     is_footer=True, color_index_map=color_index_map,
                     markup=doc_markup, pad_l=doc_pad_l, pad_r=doc_pad_r,
                     style=footnote_st, font_half_points=fhp,
-                    current_page=p_idx, total_pages=total_pages))
+                    current_page=p_idx, total_pages=total_pages,
+                    font_index_map=font_index_map))
             else:
                 fn_rtf = R.render_header_footer(
                     footnote_hf(page.get("footnote"), footnote_st, footnote_w),
                     footnote_w, is_footer=True, current_page=p_idx,
                     total_pages=total_pages, color_index_map=color_index_map,
                     font_half_points=fhp, doc_row_height=doc_row_height,
-                    doc_pad_l=doc_pad_l, doc_pad_r=doc_pad_r, doc_markup=doc_markup)
+                    doc_pad_l=doc_pad_l, doc_pad_r=doc_pad_r, doc_markup=doc_markup,
+                    font_index_map=font_index_map)
                 # An INDEPENDENT table: RTF merges consecutive \trowd runs that
                 # no paragraph separates, so without this the footnote would
                 # still be the body table wearing different \cellx values --

@@ -76,10 +76,13 @@ def test_font_size_row_height_align_checks():
             es.check_align(bad, "c")
 
 
-def test_per_element_font_is_not_ported_yet():
+def test_per_element_font_is_checked():
     assert es.check_font(None, "font") is None
-    with pytest.raises(NotImplementedError, match="not supported yet"):
-        es.check_font("Arial", "font")
+    assert es.check_font("Arial", "font") == "Arial"
+    with pytest.raises(ValueError, match="single font family name"):
+        es.check_font("", "font")
+    assert es.f_cmd_for("Arial", {"Courier": 0, "Arial": 1}) == r"\f1"
+    assert es.f_cmd_for("Courier", {"Courier": 0, "Arial": 1}) == ""
 
 
 def test_font_size_and_row_height_resolve_together():

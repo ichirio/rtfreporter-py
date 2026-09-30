@@ -1377,6 +1377,65 @@
           "r": "Page {AUTO_PAGE}"
         }
       ]
+    },
+    {
+      "id": "fonts_per_element",
+      "why": "A table, a title and a footnote each naming a font (R #293/#299): the fonts join the table after the declared ones, each element selects its \fN; the table's own size resizes its rows (#292).",
+      "data": {
+        "Param": [
+          "Age",
+          "Sex"
+        ],
+        "Value": [
+          "45",
+          "F"
+        ]
+      },
+      "as_rtftables": {
+        "font": "Arial",
+        "font_size_half_points": 20
+      },
+      "titles": [
+        "Table 1  Demographics"
+      ],
+      "titles_style": {
+        "font": "Times New Roman"
+      },
+      "footnotes": [
+        "Source: ADSL"
+      ],
+      "footnotes_style": {
+        "font": "Arial",
+        "font_size_half_points": 16
+      }
+    },
+    {
+      "id": "fonts_declared_table",
+      "why": "rtf_document(font_table = ) declares the fonts, the first being the default; an element naming a declared font reuses its index.",
+      "data": {
+        "A": [
+          "1",
+          "2"
+        ],
+        "B": [
+          "x",
+          "y"
+        ]
+      },
+      "as_rtftables": {
+        "font": "Courier New"
+      },
+      "font_table": [
+        "Courier",
+        "Courier New",
+        "Arial"
+      ],
+      "titles": [
+        "T"
+      ],
+      "titles_style": {
+        "font": "Arial"
+      }
     }
   ]
 }

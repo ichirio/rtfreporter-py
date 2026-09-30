@@ -49,14 +49,23 @@ def check_align(x, arg: str) -> str | None:
 
 
 def check_font(x, arg: str):
-    """Per-element font family (#293) -- not ported yet (rtfreporter-py #3)."""
+    """Per-element font family (R #293): one non-empty family name, or None."""
     if x is None:
         return None
-    raise NotImplementedError(
-        f"`{arg}` is not supported yet: the variable-length font table the R "
-        "package uses for per-element fonts is a later stage of "
-        "https://github.com/ichirio/rtfreporter-py/issues/3."
-    )
+    if not isinstance(x, str) or not x:
+        raise ValueError(f"`{arg}` must be a single font family name.")
+    return x
+
+
+def f_cmd_for(font, font_index_map) -> str:
+    """The ``\\fN`` an element needs, or ``""`` for the document default (index 0),
+    so an element that asks for nothing emits nothing (R ``.f_cmd_for()``)."""
+    if not font or not font_index_map:
+        return ""
+    idx = font_index_map.get(font)
+    if not idx:
+        return ""
+    return f"\\f{int(idx)}"
 
 
 def resolve_element_metrics(own_fs, own_rh, doc_fs, doc_rh) -> tuple[int, int]:
@@ -88,9 +97,11 @@ def element_style(
     markup=None,
     align=None,
     verb: str = "style",
+    font=None,
 ) -> dict:
     """Collect the style an element was given, dropping the entries left unset."""
     out = {
+        "font": check_font(font, f"{verb}(font)"),
         "font_size_half_points": check_font_size(
             font_size_half_points, f"{verb}(font_size_half_points)"
         ),

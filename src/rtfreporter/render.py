@@ -26,7 +26,7 @@ from .borders import (
     merge_border,
     zone_row_border,
 )
-from .element_style import fs_cmd_for, resolve_block_width, resolve_element_metrics
+from .element_style import f_cmd_for, fs_cmd_for, resolve_block_width, resolve_element_metrics
 from .figure import Figure
 from .header_footer import HeaderFooter, normalize_hf
 from .table import HeaderRow, RtfTable, SpanCell
@@ -250,6 +250,7 @@ def _render_spanning_row(
     next_boundaries: list[int] | None,
     markup,
     color_index_map,
+    fs_cmd: str = "",
 ) -> str:
     ncols = len(cellx)
     coverage = [0] * ncols
@@ -330,10 +331,10 @@ def _render_spanning_row(
             if sp.bold:
                 label = f"\\b {label}\\b0 "
             align_cmd = _ALIGN_CMD.get(span_align(sp), r"\qc")
-            cell_contents.append(f"{align_cmd}\\li{pad_l}\\ri{pad_r} {label}\\cell")
+            cell_contents.append(f"{align_cmd}\\li{pad_l}\\ri{pad_r}{fs_cmd} {label}\\cell")
             j = sp.end + 1
         else:
-            cell_contents.append(f"\\ql\\li{pad_l}\\ri{pad_r} \\cell")
+            cell_contents.append(f"\\ql\\li{pad_l}\\ri{pad_r}{fs_cmd} \\cell")
             j += 1
 
     return build_row(cell_defs, cell_contents, row_height, table_align)
@@ -351,6 +352,7 @@ def _render_header_row(
     table_align: str,
     markup,
     color_index_map,
+    fs_cmd: str = "",
 ) -> str:
     ncols = len(cellx)
     cell_defs = []
@@ -370,7 +372,7 @@ def _render_header_row(
         align = spec.header_align or "center"
         cell_contents.append(
             build_cell_content(text, align, spec.header_bold, spec.header_italic,
-                               False, 0, pad_l, pad_r)
+                               False, 0, pad_l, pad_r, fs_cmd=fs_cmd)
         )
     return build_row(cell_defs, cell_contents, row_height, table_align)
 
@@ -388,6 +390,7 @@ def _render_data_row(
     row_cell_styles: dict | None,
     color_index_map,
     markup,
+    fs_cmd: str = "",
 ) -> str:
     ncols = len(cellx)
     cell_borders = row_cell_styles.get("border") if row_cell_styles else None
@@ -435,7 +438,7 @@ def _render_data_row(
         )
         cell_contents.append(
             build_cell_content(text, align, bold, italic, underline, indent,
-                               pad_l, pad_r, color_idx=color_idx)
+                               pad_l, pad_r, color_idx=color_idx, fs_cmd=fs_cmd)
         )
     return build_row(cell_defs, cell_contents, row_height, table_align)
 
@@ -462,6 +465,7 @@ def render_rtftable(
     doc_pad_l=0,
     doc_pad_r=0,
     doc_markup="script",
+    font_index_map=None,
 ) -> list[str]:
     """Render an :class:`RtfTable` to a list of RTF row strings."""
     border = expand_table_border(tbl.border, has_header=bool(tbl.col_header))
@@ -477,13 +481,11 @@ def render_rtftable(
 
     cellx = compute_cellx(ncols, writable, tbl)
 
-    if tbl.row_height_twips is not None:
-        base_rh = tbl.row_height_twips
-    elif doc_row_height is not None:
-        base_rh = doc_row_height
-    else:
-        base_rh = None
-    effective = C.default_row_height_twips(font_half_points) if base_rh is None else int(base_rh)
+    # Font size and row height resolve together (R #292): a table that sets its
+    # own size gets the height that size implies.
+    fs, effective = resolve_element_metrics(
+        tbl.font_size_half_points, tbl.row_height_twips, font_half_points, doc_row_height)
+    fs_cmd = f_cmd_for(tbl.font, font_index_map) + fs_cmd_for(fs, font_half_points)
 
     hdr_h = _apply_exact(
         tbl.header_row_height_twips if tbl.header_row_height_twips is not None else effective,
@@ -498,13 +500,13 @@ def render_rtftable(
     return _render_section(
         tbl, cellx, border, col_spec, hdr_h, data_h, blank_h,
         set(tbl.blank_rows), pad_l, pad_r, valign_cmd, tbl.table_align,
-        color_index_map, eff_markup,
+        color_index_map, eff_markup, fs_cmd,
     )
 
 
 def _render_section(
     tbl, cellx, border, col_spec, hdr_h, data_h, blank_h, blank_set,
-    pad_l, pad_r, valign_cmd, table_align, color_index_map, markup,
+    pad_l, pad_r, valign_cmd, table_align, color_index_map, markup, fs_cmd="",
 ) -> list[str]:
     ncols = len(cellx)
     lines: list[str] = []
@@ -537,13 +539,14 @@ def _render_section(
                 _render_spanning_row(
                     hdr_row.spans, cellx, row_b, hdr_h, pad_l, pad_r, valign_cmd,
                     col_spec, table_align, gbs, nb, markup, color_index_map,
+                    fs_cmd=fs_cmd,
                 )
             )
         else:
             lines.append(
                 _render_header_row(
                     hdr_row.labels, cellx, row_b, hdr_h, pad_l, pad_r, valign_cmd,
-                    col_spec, table_align, markup, color_index_map,
+                    col_spec, table_align, markup, color_index_map, fs_cmd=fs_cmd,
                 )
             )
 
@@ -595,7 +598,7 @@ def _render_section(
             add_data(
                 _render_data_row(
                     row, cellx, row_border, data_h, pad_l, pad_r, valign_cmd,
-                    col_spec, table_align, rcs, color_index_map, markup,
+                    col_spec, table_align, rcs, color_index_map, markup, fs_cmd=fs_cmd,
                 )
             )
         if (i + 1) in blank_set:
@@ -640,6 +643,7 @@ def render_header_footer(
     doc_pad_l=None,
     doc_pad_r=None,
     doc_markup=None,
+    font_index_map=None,
 ) -> list[str]:
     """Render a header/footer band to a list of RTF row strings."""
     if hf is None or not hf.rows:
@@ -659,7 +663,7 @@ def render_header_footer(
     hf_fs_pt, rh_full = resolve_element_metrics(
         hf.font_size_half_points, hf.row_height_twips, font_half_points, doc_row_height
     )
-    hf_fs = fs_cmd_for(hf_fs_pt, font_half_points)
+    hf_fs = f_cmd_for(hf.font, font_index_map) + fs_cmd_for(hf_fs_pt, font_half_points)
     rh_str = C.ROW_HEIGHT_TEMPLATE.format(row_height_twips=rh_full)
 
     pad_l = _first_not_none(hf.cell_padding_left_twips, doc_pad_l, C.DEFAULT_CELL_PADDING_LEFT_TWIPS, 0)
@@ -776,6 +780,7 @@ def render_text_block_table(
     pad_l: int, pad_r: int, valign_cmd: str, table_align: str,
     color_index_map=None, doc_row_height=None, markup="script",
     style: dict | None = None, current_page=None, total_pages=None,
+    font_index_map=None,
 ) -> list[str]:
     style = style or {}
     rows = _normalize_text_block(block, is_footer, style.get("align"))
@@ -787,7 +792,7 @@ def render_text_block_table(
         style.get("font_size_half_points"), style.get("row_height_twips"),
         font_half_points, doc_row_height,
     )
-    fs_cmd = fs_cmd_for(fs, font_half_points)
+    fs_cmd = f_cmd_for(style.get("font"), font_index_map) + fs_cmd_for(fs, font_half_points)
     if style.get("markup") is not None:
         markup = style["markup"]
     cellx = int(total_width)
@@ -811,7 +816,7 @@ def render_text_block_table(
 def render_text_block_text(
     block, is_footer: bool, color_index_map=None, markup="script", pad_l=0, pad_r=0,
     style: dict | None = None, font_half_points: int = 18,
-    current_page=None, total_pages=None,
+    current_page=None, total_pages=None, font_index_map=None,
 ) -> list[str]:
     style = style or {}
     rows = _normalize_text_block(block, is_footer, style.get("align"))
@@ -819,7 +824,8 @@ def render_text_block_text(
         return []
     if style.get("markup") is not None:
         markup = style["markup"]
-    fs_cmd = fs_cmd_for(style.get("font_size_half_points", font_half_points), font_half_points)
+    fs_cmd = (f_cmd_for(style.get("font"), font_index_map)
+              + fs_cmd_for(style.get("font_size_half_points", font_half_points), font_half_points))
     indent = f"\\li{int(pad_l)}\\ri{int(pad_r)}{fs_cmd}"
     out = []
     for rec in rows:

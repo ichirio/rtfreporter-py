@@ -420,6 +420,7 @@ def test_rtf_config_merges_page():
     assert doc.page.paper_size == "letter"  # original untouched
 
 
-def test_rtf_config_font_table_not_supported():
-    with pytest.raises(NotImplementedError):
-        rr.rtf_config(rr.rtf_document(), font_table={})
+def test_rtf_config_replaces_the_font_table():
+    doc = rr.rtf_tables(rr.rtf_document(), [rr.rtftable({"A": ["1"]})])
+    rtf = rr.rtf_config(doc, font_table=["Arial", {"name": "Courier New"}]).to_rtf()
+    assert r"{\f0\fnil\fcharset0 Arial;}{\f1\fnil\fcharset0 Courier New;}" in rtf

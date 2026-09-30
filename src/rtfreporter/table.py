@@ -27,6 +27,7 @@ from .borders import (
     normalize_table_border,
     warn_old_edge_reading,
 )
+from .element_style import check_font, check_font_size
 
 _ALIGN = ("left", "center", "right")
 
@@ -548,6 +549,9 @@ class RtfTable:
     table_width_pct_of_writable: float | None = None
     table_align: str = "left"
     row_height_twips: int | None = None
+    #: Per-table typography (R #299); None inherits the document's.
+    font_size_half_points: int | None = None
+    font: str | None = None
     row_height_exact: bool = False
     header_row_height_twips: int | None = None
     blank_row_height_twips: int | None = None
@@ -599,6 +603,8 @@ def rtftable(
     table_width_pct=None,
     table_align="left",
     row_height_twips=None,
+    font_size_half_points=None,
+    font=None,
     row_height_exact=False,
     header_row_height_twips=None,
     blank_row_height_twips=None,
@@ -779,6 +785,8 @@ def rtftable(
         table_width_pct_of_writable=twpw,
         table_align=table_align,
         row_height_twips=int(row_height_twips) if row_height_twips is not None else None,
+        font_size_half_points=check_font_size(font_size_half_points, "font_size_half_points"),
+        font=check_font(font, "font"),
         row_height_exact=bool(row_height_exact),
         header_row_height_twips=(
             int(header_row_height_twips) if header_row_height_twips is not None else None
