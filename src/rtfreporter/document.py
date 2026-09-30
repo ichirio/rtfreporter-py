@@ -561,11 +561,28 @@ def rtf_tables(
 def rtf_figures(
     doc: RtfDocument,
     figures,
+    width_twips: int | None = None,
+    height_twips: int | None = None,
+    align: str = "center",
     titles=None,
     footnotes=None,
-    **fig_kwargs,
 ) -> RtfDocument:
-    """Add one or more figure content pages to ``doc`` (mirrors R ``rtf_figures()``)."""
+    """Add one or more figure content pages to ``doc`` (mirrors R ``rtf_figures()``).
+
+    Args:
+        doc: The :class:`RtfDocument` to add to.
+        figures: An image path (PNG / JPEG) or a :class:`~rtfreporter.Figure`,
+            or a list of them; one page each.
+        width_twips: Display width for the paths; ``None`` = the full writable
+            width.
+        height_twips: Display height for the paths; ``None`` = from the image's
+            aspect ratio.
+        align: ``"center"`` (default), ``"left"`` or ``"right"``, for the paths.
+            A :class:`~rtfreporter.Figure` already built with
+            :func:`~rtfreporter.rtfplot` keeps its own settings.
+        titles, footnotes: One block per figure, or one common to all.
+    """
+    fig_kwargs = {"width_twips": width_twips, "height_twips": height_twips, "align": align}
     if not isinstance(doc, RtfDocument):
         raise TypeError("`doc` must be an RtfDocument.")
     if not isinstance(figures, (list, tuple)):
