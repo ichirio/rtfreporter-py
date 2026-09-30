@@ -180,20 +180,45 @@ def build_row(cell_defs, cell_contents, row_height_twips=None, table_align="left
     )
 
 
-def build_cell_defs(cellx, border, valign_cmd, color_index_map=None) -> list[str]:
-    """Cell definition strings (border + valign + ``\\cellx``) for all columns.
+def cell_shading_cmd(hex_color, color_index_map=None) -> str:
+    """``\\clcbpat<N>``: a colour-table index as the cell's fill (R
+    ``.cell_shading_cmd()``).  It belongs in the cell DEFINITION, next to the
+    borders -- a fill is a property of the cell, not of its text."""
+    if not hex_color or not color_index_map:
+        return ""
+    idx = color_index_map.get(hex_color)
+    return "" if idx is None else f"\\clcbpat{int(idx)}"
+
+
+def row_backgrounds(col_spec, row_cell_styles, ncols: int) -> list:
+    """Each cell's fill: the column's ``background``, overridden by a set
+    ``cell_styles["background"]`` entry -- resolved as text colour is."""
+    cs = row_cell_styles.get("background") if row_cell_styles else None
+    out = []
+    for j in range(ncols):
+        bg = col_spec[j].background if j < len(col_spec) else None
+        if cs is not None and j < len(cs) and cs[j] is not None:
+            bg = str(cs[j])
+        out.append(bg)
+    return out
+
+
+def build_cell_defs(cellx, border, valign_cmd, color_index_map=None, shade=None) -> list[str]:
+    """Cell definition strings (border + fill + valign + ``\\cellx``) for all columns.
 
     A row's ``left`` / ``right`` are its outer edges and ``inside_v`` the rule
     between its cells, so the vertical rules are distributed per cell.  Nothing
     to distribute when the row carries none, the common case.
     """
     n = len(cellx)
+    shade_cmds = [cell_shading_cmd(shade[j] if shade and j < len(shade) else None,
+                                   color_index_map) for j in range(n)]
     if border is None or (border.left is None and border.right is None and border.inside_v is None):
         border_cmds = build_border_commands(border, color_index_map)
-        return [f"{border_cmds}{valign_cmd}\\cellx{cx}" for cx in cellx]
+        return [f"{border_cmds}{shade_cmds[j]}{valign_cmd}\\cellx{cellx[j]}" for j in range(n)]
     return [
         f"{build_border_commands(cell_edge_border(border, j, n), color_index_map)}"
-        f"{valign_cmd}\\cellx{cellx[j]}"
+        f"{shade_cmds[j]}{valign_cmd}\\cellx{cellx[j]}"
         for j in range(n)
     ]
 
@@ -362,7 +387,8 @@ def _render_header_row(
         if col_border is not None:
             eff = _effective_row_border(eff, col_border)
         bc = build_border_commands(eff, color_index_map)
-        cell_defs.append(f"{bc}{valign_cmd}\\cellx{cellx[j]}")
+        shade = cell_shading_cmd(col_spec[j].header_background, color_index_map)
+        cell_defs.append(f"{bc}{shade}{valign_cmd}\\cellx{cellx[j]}")
 
     cell_contents = []
     for j in range(ncols):
@@ -394,6 +420,8 @@ def _render_data_row(
 ) -> str:
     ncols = len(cellx)
     cell_borders = row_cell_styles.get("border") if row_cell_styles else None
+    # Cell fill, resolved per column the way text colour is.
+    shade = row_backgrounds(col_spec, row_cell_styles, ncols)
     if isinstance(cell_borders, list) and any(b is not None for b in cell_borders):
         cell_defs = []
         for j in range(ncols):
@@ -402,10 +430,11 @@ def _render_data_row(
             if b is not None:
                 eff = _effective_row_border(eff, b)
             cell_defs.append(
-                f"{build_border_commands(eff, color_index_map)}{valign_cmd}\\cellx{cellx[j]}"
+                f"{build_border_commands(eff, color_index_map)}"
+                f"{cell_shading_cmd(shade[j], color_index_map)}{valign_cmd}\\cellx{cellx[j]}"
             )
     else:
-        cell_defs = build_cell_defs(cellx, border, valign_cmd, color_index_map)
+        cell_defs = build_cell_defs(cellx, border, valign_cmd, color_index_map, shade=shade)
 
     cell_contents = []
     for j in range(ncols):
@@ -897,20 +926,21 @@ def collect_report_colors(report) -> list[str]:
 
 def _table_colors(tbl: RtfTable) -> list[str]:
     out = collect_table_border_colors(tbl.border)
+    out.extend(s.color for s in tbl.col_spec if s.color)
+    out.extend(s.background for s in tbl.col_spec if s.background)
+    out.extend(s.header_background for s in tbl.col_spec if s.header_background)
     for s in tbl.col_spec:
-        if s.color:
-            out.append(s.color)
         out.extend(collect_border_colors(s.border))
     for hdr in tbl.col_header:
         if hdr.kind == "spanning":
             for sp in hdr.spans:
                 out.extend(collect_border_colors(sp.border))
     if tbl.cell_styles:
-        for cs in tbl.cell_styles:
-            if isinstance(cs, dict):
-                for c in cs.get("color", []) or []:
-                    if c:
-                        out.append(c)
-                for b in cs.get("border", []) or []:
-                    out.extend(collect_border_colors(b))
+        dicts = [cs for cs in tbl.cell_styles if isinstance(cs, dict)]
+        for key in ("color", "background"):
+            for cs in dicts:
+                out.extend(c for c in (cs.get(key) or []) if c)
+        for cs in dicts:
+            for b in cs.get("border", []) or []:
+                out.extend(collect_border_colors(b))
     return [c for c in out if c]

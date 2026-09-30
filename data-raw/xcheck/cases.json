@@ -1651,6 +1651,51 @@
         "na": "-",
         "align_count_pct": true
       }
+    },
+    {
+      "id": "cell_background",
+      "why": "Cell fill: a column's background and header_background (col_spec) and a per-cell cell_styles background, as \\clcbpat in the cell definition; the fills join the colour table in R's order.",
+      "data": {
+        "A": [
+          "x",
+          "y",
+          "z"
+        ],
+        "B": [
+          "1",
+          "2",
+          "3"
+        ],
+        "C": [
+          "4",
+          "5",
+          "6"
+        ]
+      },
+      "as_rtftables": {
+        "col_spec": [
+          {
+            "col": "B",
+            "background": "#FFFF00",
+            "color": "#0000FF"
+          },
+          {
+            "col": "C",
+            "header_background": "#D9D9D9"
+          }
+        ],
+        "cell_styles": [
+          null,
+          {
+            "background": [
+              "#FF0000",
+              null,
+              "#00FF00"
+            ]
+          },
+          null
+        ]
+      }
     }
   ]
 }

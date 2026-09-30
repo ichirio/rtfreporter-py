@@ -23,8 +23,9 @@ from .borders import (
 )
 from .table import RtfTable
 
-_BODY_FIELDS = ("align", "bold", "italic", "underline", "indent_twips", "color", "border")
-_HEADER_FIELDS = ("header_align", "header_bold", "header_italic")
+_BODY_FIELDS = ("align", "bold", "italic", "underline", "indent_twips", "color",
+                "background", "border")
+_HEADER_FIELDS = ("header_align", "header_bold", "header_italic", "header_background")
 
 
 def _col_indices(tbl: RtfTable, cols) -> list[int]:
@@ -58,8 +59,9 @@ def style_cols(tbl: RtfTable, cols=None, **fields) -> RtfTable:
         tbl: The source table.
         cols: Column index/name, a list of them, or ``None`` for every column.
         **fields: Any of the body fields (``align``, ``bold``, ``italic``,
-            ``underline``, ``indent_twips``, ``color``, ``border``) or header
-            fields (``header_align``, ``header_bold``, ``header_italic``).  A
+            ``underline``, ``indent_twips``, ``color``, ``background`` -- the
+            cell fill, ``border``) or header fields (``header_align``,
+            ``header_bold``, ``header_italic``, ``header_background``).  A
             ``border`` merges side by side onto the column's existing one.
     """
     unknown = set(fields) - set(_BODY_FIELDS) - set(_HEADER_FIELDS)

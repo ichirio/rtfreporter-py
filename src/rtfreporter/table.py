@@ -44,6 +44,9 @@ class ColSpec:
         border: Per-column :class:`~rtfreporter.borders.Border` override.
         header_align: Column-header alignment (defaults to ``align`` or center).
         header_bold, header_italic: Column-header decoration flags.
+        background: Body-cell fill colour (hex string) or ``None``.
+        header_background: The column's header-cell fill colour, kept apart
+            from ``background`` so a shaded header needs no shaded body.
     """
 
     align: str | None = None
@@ -56,6 +59,8 @@ class ColSpec:
     header_align: str | None = None
     header_bold: bool = False
     header_italic: bool = False
+    background: str | None = None
+    header_background: str | None = None
 
 
 @dataclass
@@ -588,6 +593,8 @@ def _validate_spec_fields(entry: dict) -> dict:
         "header_align",
         "header_bold",
         "header_italic",
+        "background",
+        "header_background",
     }
     unknown = set(entry) - allowed
     if unknown:
