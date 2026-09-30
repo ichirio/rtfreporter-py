@@ -209,7 +209,10 @@ def _apply_stub(column_names, rows, stub_cols, stub_label, stub_indent):
     if not idxs:
         return column_names, rows
     keep = [j for j in range(len(column_names)) if j not in idxs]
-    new_names = [stub_label or ""] + [column_names[j] for j in keep]
+    # No label: the stub's columns named outer to inner, as R's stub_cols().
+    if stub_label is None:
+        stub_label = " / ".join(str(column_names[j]) for j in idxs)
+    new_names = [stub_label] + [column_names[j] for j in keep]
     n_levels = len(idxs)
 
     new_rows = []
@@ -1011,6 +1014,40 @@ def as_rtftables(
                 "become an indented stub and hidden columns are dropped)."
             )
         rows = [list(r) + [coerced.cell_styles[i]] for i, r in enumerate(rows)]
+
+    # by_value + stub_vars: each group is its own section, so the body is split
+    # by the PRE-stub `group_col` first (every row of a value gathered, in
+    # order) and the stub is built per group, one page each -- as R does.
+    # Built on the whole body, a constant intermediate level would collapse
+    # into one stub row spanning every group, and the groups would fragment.
+    if split == "by_value" and stub_vars is not None:
+        gi = _resolve_index(group_col, column_names) if group_col is not None else 0
+        gval = [_as_text(r[gi]) for r in rows]
+        tk = {k: v for k, v in table_kwargs.items()
+              if k not in ("table_width_twips", "style")}
+        user_cs = tk.get("cell_styles")
+        out_pages: list[RtfTable] = []
+        for k, value in enumerate(dict.fromkeys(gval), start=1):
+            idx = [i for i, g in enumerate(gval) if g == value]
+            sub = {name: [rows[i][j] for i in idx] for j, name in enumerate(column_names)}
+            if user_cs is not None and len(user_cs) == len(rows):
+                tk["cell_styles"] = [user_cs[i] for i in idx]
+            pages_k = as_rtftables(
+                sub, read_meta=read_meta, split="none", group_by=group_by,
+                sort_by=sort_by, sort_desc=sort_desc, cont_label=cont_label,
+                min_group_rows=min_group_rows, blank_rows=blank_rows,
+                blank_row_first=blank_row_first, blank_row_end=blank_row_end,
+                count_blank_rows=count_blank_rows, align_count_pct=align_count_pct,
+                cell_format=cell_format, collapse_repeats=collapse_repeats,
+                drop_cols=drop_cols, stub_vars=stub_vars, stub_label=stub_label,
+                stub_indent=stub_indent, stub_group_summary=stub_group_summary,
+                header_sep=header_sep, auto_width=auto_width,
+                table_width_twips=table_width_twips, border=border, style=style, **tk,
+            )
+            for tbl in pages_k:
+                tbl.name = value if value else f"group_{k}"
+            out_pages.extend(pages_k)
+        return out_pages
 
     # Stub: reshape BEFORE any index-based resolution below.
     if stub_vars is not None:

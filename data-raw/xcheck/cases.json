@@ -1230,6 +1230,75 @@
         "blank_row_end": true,
         "count_blank_rows": true
       }
+    },
+    {
+      "id": "between_groups_indent",
+      "why": "blank_rows='between_groups' honours group_by (R #263): an indented column blanks at the group heads only.",
+      "data": {
+        "Event": [
+          "Any AE",
+          "  Headache",
+          "  Nausea",
+          "Serious AE",
+          "  Headache",
+          "  Rash"
+        ],
+        "N": [
+          "10",
+          "4",
+          "6",
+          "3",
+          "1",
+          "2"
+        ]
+      },
+      "as_rtftables": {
+        "group_col": "Event",
+        "group_by": "indent",
+        "blank_rows": "between_groups"
+      }
+    },
+    {
+      "id": "by_value_stub_pre_stub_group",
+      "why": "split='by_value' with stub_vars splits on the PRE-stub group_col and builds the stub per page.",
+      "data": {
+        "Param": [
+          "Age",
+          "Age",
+          "Age",
+          "Sex",
+          "Sex"
+        ],
+        "Group": [
+          "Stat",
+          "Stat",
+          "Stat",
+          "Cat",
+          "Cat"
+        ],
+        "Stat": [
+          "n",
+          "Mean",
+          "SD",
+          "M",
+          "F"
+        ],
+        "Val": [
+          "10",
+          "50",
+          "5",
+          "4",
+          "6"
+        ]
+      },
+      "as_rtftables": {
+        "split": "by_value",
+        "group_col": "Param",
+        "stub_vars": [
+          "Group",
+          "Stat"
+        ]
+      }
     }
   ]
 }
