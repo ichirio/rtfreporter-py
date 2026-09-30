@@ -79,6 +79,8 @@ def _coerce_input(x, read_meta, header_sep) -> _Coerced:
 
     if hasattr(x, "columns") and hasattr(x, "itertuples"):  # pandas
         column_names, rows = _pandas_to_rows(x)
+    elif hasattr(x, "column_names") and hasattr(x, "rows"):  # a Frame (build_listing, stub_cols)
+        column_names, rows = list(x.column_names), [list(r) for r in x.rows]
     elif isinstance(x, dict):
         column_names = list(x.keys())
         cols = [list(v) for v in x.values()]
@@ -894,6 +896,7 @@ def as_rtftables(
     na: str = "",
     collapse_repeats=None,
     drop_cols=None,
+    listing=None,
     stub=None,
     stub_vars=None,
     stub_label=None,
@@ -962,6 +965,14 @@ def as_rtftables(
             (applied to columns ``1..n-1``) or a list of callables taken
             positionally.  Each takes one column (a list) and returns a list of
             the same length; see :func:`~rtfreporter.fmt_count_paren`.
+        listing: A :func:`~rtfreporter.listing_spec`: the source data is laid out
+            by :func:`~rtfreporter.build_listing` first (a body it already
+            built carries its own spec).  The listing supplies the header, the
+            relative widths and the alignment, and -- unless you set them --
+            keeps each record on one page (``group_col`` on the hidden record
+            column, ``split="group_safe"`` when ``max_rows`` is given, the
+            column dropped after the split), blanks its key columns' repeats and
+            puts a blank row at the top of each page.
         stub: The stub: a :func:`~rtfreporter.stub_spec` (every setting, including
             ``layout`` and ``label_span``), or just the hierarchy columns,
             parent first.  See :func:`~rtfreporter.stub_cols`.
@@ -1027,7 +1038,50 @@ def as_rtftables(
             )
         return out
 
+    # listing (R #241): lay the source out BEFORE anything else looks at it,
+    # so the rest of the pipeline sees an ordinary body.  Its header, widths
+    # and alignment are defaults an explicit argument beats, as an adapter's
+    # are; so are the pagination settings that keep a record whole.
+    listing_meta = None
+    lspec = getattr(x, "listing", None)
+    if listing is not None or lspec is not None:
+        from .listing import ListingSpec, build_listing, listing_metadata
+
+        if listing is not None and not isinstance(listing, ListingSpec):
+            raise ValueError(f"`listing` must be a listing_spec(); got '{type(listing).__name__}'.")
+        if listing is not None and lspec is not None:
+            raise ValueError("`data` was already built by build_listing(), and carries its own "
+                             "listing spec.  Drop the `listing` argument, or pass the unbuilt "
+                             "source data.")
+        if lspec is None:
+            x = build_listing(x, listing)
+            lspec = x.listing
+        listing_meta = listing_metadata(lspec, x.column_names)
+        keys = [c.name for c in lspec.cols if c.collapse_repeats]
+        if keys and collapse_repeats is None:
+            collapse_repeats = keys
+        if not blank_row_first and lspec.blank_row_first:
+            blank_row_first = True
+        rec = lspec.record_col
+        if rec is not None and rec in x.column_names:
+            if group_col is None:
+                group_col = rec
+            if group_by == "auto":
+                group_by = "value"
+            if not callable(split) and split == "none" and max_rows is not None:
+                split = "group_safe"
+            if drop_cols is None:
+                drop_cols = [rec]
+            else:
+                drop_cols = ([drop_cols] if isinstance(drop_cols, (str, int)) else list(drop_cols)) + [rec]
+
     coerced = _coerce_input(x, read_meta, header_sep)
+    if listing_meta is not None:
+        coerced.auto_header = [HeaderRow(kind="labels", labels=listing_meta["col_header"])]
+        if "col_spec" not in table_kwargs:
+            table_kwargs = {**table_kwargs, "col_spec": listing_meta["col_spec"]}
+        if "col_rel_width" in table_kwargs or "column_widths_twips" in table_kwargs:
+            listing_meta = None
     column_names = coerced.column_names
     rows = coerced.rows
     auto_header = coerced.auto_header
@@ -1346,6 +1400,11 @@ def as_rtftables(
             kwargs["col_spec"] = coerced.col_spec
         if coerced.col_rel_width is not None and "col_rel_width" not in kwargs:
             kwargs["col_rel_width"] = coerced.col_rel_width
+        if listing_meta is not None:
+            # the listing's relative widths, on the printed columns
+            gone = set(drop_idx or ())
+            kwargs["col_rel_width"] = [w for j, w in enumerate(listing_meta["col_rel_width"])
+                                       if j not in gone]
         if coerced.column_widths_twips is not None and "column_widths_twips" not in kwargs:
             kwargs["column_widths_twips"] = coerced.column_widths_twips
         if page_cell_styles is not None:

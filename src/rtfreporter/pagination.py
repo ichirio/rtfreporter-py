@@ -50,6 +50,8 @@ class Frame:
     #: an inserted label row), and the rows to render as one spanning cell.
     stub_src: list | None = None
     label_rows: list | None = None
+    #: From :func:`~rtfreporter.build_listing`: the resolved listing spec.
+    listing: object = None
 
 
 def as_frame(x) -> Frame:

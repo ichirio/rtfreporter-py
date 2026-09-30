@@ -89,6 +89,20 @@ from .header_footer import (
     update_footer_row,
     update_header_row,
 )
+from .listing import (
+    ListingCol,
+    ListingSpec,
+    build_listing,
+    fit_listing_widths,
+    listing_code,
+    listing_col,
+    listing_disp_width,
+    listing_spec,
+    listing_split_after,
+    listing_take,
+    listing_wrap,
+    listing_wrap_code,
+)
 from .num_format import fmt_numeric, fmt_round, fmt_signif, round_num
 from .page import DefaultFormat, Page, rtf_default_format, rtf_page
 from .paginate_cols import paginate_cols
@@ -236,6 +250,18 @@ __all__ = [
     "col_key",
     "set_decimal_split",
     "paginate_cols",
+    "ListingCol",
+    "ListingSpec",
+    "build_listing",
+    "fit_listing_widths",
+    "listing_code",
+    "listing_col",
+    "listing_disp_width",
+    "listing_spec",
+    "listing_split_after",
+    "listing_take",
+    "listing_wrap",
+    "listing_wrap_code",
     "stub_spec",
     "StubSpec",
     "header_map",
