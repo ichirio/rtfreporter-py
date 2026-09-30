@@ -967,6 +967,269 @@
           null
         ]
       }
+    },
+    {
+      "id": "group_safe_oversized",
+      "why": "group_safe force-splits a group larger than max_rows (with a (Cont.) row that counts) and packs the next groups onto its tail.",
+      "data": {
+        "G": [
+          "A",
+          "A",
+          "A",
+          "A",
+          "A",
+          "A",
+          "B",
+          "B",
+          "C"
+        ],
+        "V": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9"
+        ]
+      },
+      "as_rtftables": {
+        "split": "group_safe",
+        "group_col": "G",
+        "max_rows": 4
+      }
+    },
+    {
+      "id": "group_force_long",
+      "why": "group_force on a long group: the (Cont.) row is part of the next page's max_rows.",
+      "data": {
+        "G": [
+          "A",
+          "A",
+          "A",
+          "A",
+          "A",
+          "A",
+          "A",
+          "A",
+          "A",
+          "B",
+          "B"
+        ],
+        "V": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11"
+        ]
+      },
+      "as_rtftables": {
+        "split": "group_force",
+        "group_col": "G",
+        "max_rows": 4
+      }
+    },
+    {
+      "id": "by_value_oversized",
+      "why": "by_value splits a group larger than max_rows the way group_force does, every page keeping the group's name.",
+      "data": {
+        "G": [
+          "A",
+          "A",
+          "A",
+          "A",
+          "A",
+          "B",
+          "B"
+        ],
+        "V": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7"
+        ]
+      },
+      "as_rtftables": {
+        "split": "by_value",
+        "group_col": "G",
+        "max_rows": 3
+      }
+    },
+    {
+      "id": "count_blank_safe_edges",
+      "why": "count_blank_rows: between-group blanks and the page-edge blanks count toward max_rows (#362); group_safe still keeps groups whole (#330).",
+      "data": {
+        "G": [
+          "A",
+          "A",
+          "A",
+          "B",
+          "B",
+          "C",
+          "C",
+          "C",
+          "D",
+          "D"
+        ],
+        "V": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10"
+        ]
+      },
+      "as_rtftables": {
+        "split": "group_safe",
+        "group_col": "G",
+        "max_rows": 6,
+        "blank_rows": "between_groups",
+        "blank_row_first": true,
+        "blank_row_end": true,
+        "count_blank_rows": true
+      }
+    },
+    {
+      "id": "count_blank_force",
+      "why": "count_blank_rows with group_force: a materialised separator takes a row of the page.",
+      "data": {
+        "G": [
+          "A",
+          "A",
+          "A",
+          "A",
+          "A",
+          "A",
+          "A",
+          "B",
+          "B",
+          "B"
+        ],
+        "V": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10"
+        ]
+      },
+      "as_rtftables": {
+        "split": "group_force",
+        "group_col": "G",
+        "max_rows": 5,
+        "blank_rows": "between_groups",
+        "count_blank_rows": true
+      }
+    },
+    {
+      "id": "count_blank_explicit",
+      "why": "count_blank_rows with explicit positions: honoured wherever the page cut puts them.",
+      "data": {
+        "G": [
+          "A",
+          "A",
+          "A",
+          "A",
+          "B",
+          "B",
+          "B",
+          "B"
+        ],
+        "V": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "as_rtftables": {
+        "split": "group_force",
+        "group_col": "G",
+        "max_rows": 4,
+        "blank_rows": {
+          "r": [
+            2,
+            5
+          ],
+          "py": [
+            1,
+            4
+          ]
+        },
+        "count_blank_rows": true
+      }
+    },
+    {
+      "id": "count_blank_listing_drop",
+      "why": "A listing: records separated by blanks on a dropped record column; with the page edges on, max_rows is what the page prints (#362), and a row whose only content is in the dropped column is blank.",
+      "data": {
+        "REC": [
+          "r1",
+          "r1",
+          "r1",
+          "r1",
+          "r2",
+          "r2",
+          "r2",
+          "r2",
+          "r3",
+          "r3",
+          "r3",
+          "r3"
+        ],
+        "V": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12"
+        ]
+      },
+      "as_rtftables": {
+        "split": "group_safe",
+        "group_col": "REC",
+        "max_rows": 9,
+        "drop_cols": [
+          "REC"
+        ],
+        "blank_rows_by_change": "REC",
+        "blank_row_first": true,
+        "blank_row_end": true,
+        "count_blank_rows": true
+      }
     }
   ]
 }

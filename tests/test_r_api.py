@@ -265,13 +265,29 @@ def test_stub_vars_argument():
 @pytest.mark.parametrize(
     "kwargs",
     [
-        {"count_blank_rows": True},
         {"stub_group_summary": "parent"},
     ],
 )
 def test_as_rtftables_unimplemented_paths_raise(kwargs):
     with pytest.raises(NotImplementedError):
         as_rtftables({"A": [1, 2]}, **kwargs)
+
+
+def test_count_blank_rows_makes_max_rows_the_printed_rows():
+    # R #362: with the separators and both page edges counted, no page prints
+    # more than max_rows rows.
+    g = ["A"] * 3 + ["B"] * 2 + ["C"] * 3 + ["D"] * 2
+    data = {"G": g, "V": [str(i) for i in range(len(g))]}
+    pages = as_rtftables(data, split="group_safe", group_col="G", max_rows=6,
+                         blank_rows="between_groups", blank_row_first=True,
+                         blank_row_end=True, count_blank_rows=True)
+    for p in pages:
+        assert len(p.rows) + len(p.blank_rows or []) <= 6
+    # without counting, the same call packs more data rows on a page
+    loose = as_rtftables(data, split="group_safe", group_col="G", max_rows=6,
+                         blank_rows="between_groups", blank_row_first=True,
+                         blank_row_end=True)
+    assert len(loose) < len(pages)
 
 
 def test_as_rtftables_forwards_table_width_twips():

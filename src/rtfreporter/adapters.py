@@ -287,7 +287,8 @@ def _collapse_repeats(rows, collapse_idx):
 
 
 def _paginate(rows, group_keys, split, split_rows, max_rows, min_group_rows, cont_label,
-              group_idx=None, group_mode=None):
+              group_idx=None, group_mode=None, edge_first=False, edge_end=False,
+              blank_ignore=()):
     """Return a list of ``(page_rows, page_name)`` tuples.
 
     ``group_mode`` is the resolved ``group_by`` (``"value"`` / ``"indent"`` /
@@ -313,22 +314,34 @@ def _paginate(rows, group_keys, split, split_rows, max_rows, min_group_rows, con
         return pages or [(rows, None)]
 
     if split == "by_value":
-        pages = []
-        groups: list[tuple[Any, list]] = []
+        # One page per group; a group longer than max_rows is force-split the
+        # way group_force splits it, and every page keeps the group's name.
+        if group_idx is not None:
+            _, labels, headers = _group_info(rows, group_idx, group_mode)
+        else:
+            labels, headers = [""] * n, [i == 0 for i in range(n)]
+        groups: list[tuple[Any, list[int]]] = []
         if group_mode in (None, "value"):
-            buckets: dict[Any, list] = {}
+            buckets: dict[Any, list[int]] = {}
             for i, key in enumerate(group_keys):
                 if key not in buckets:
                     buckets[key] = []
                     groups.append((key, buckets[key]))
-                buckets[key].append(rows[i])
+                buckets[key].append(i)
         else:
-            for s, e in _group_runs(group_keys):
-                groups.append((group_keys[s], rows[s:e]))
-        for g, (key, grp) in enumerate(groups, start=1):
+            for s_, e_ in _group_runs(group_keys):
+                groups.append((group_keys[s_], list(range(s_, e_))))
+        pages = []
+        for g, (key, idx) in enumerate(groups, start=1):
             name = str(key) if key not in (None, "") else f"group_{g}"
+            grp = [rows[i] for i in idx]
             if max_rows and len(grp) > max_rows:
-                pages.extend(_split_group_rows(grp, max_rows, name, cont_label, group_col=cont_col))
+                sub = _split_group_force(
+                    grp, ([g] * len(idx), [labels[i] for i in idx],
+                          [headers[i] for i in idx]),
+                    max_rows, cont_label, cont_col, min_group_rows,
+                )
+                pages.extend((p, name) for p in sub)
             else:
                 pages.append((grp, name))
         return pages
@@ -336,10 +349,11 @@ def _paginate(rows, group_keys, split, split_rows, max_rows, min_group_rows, con
     if split in ("group_safe", "group_force"):
         if not max_rows:
             raise ValueError(f'`max_rows` is required for split="{split}".')
-        return _paginate_groups(
-            rows, group_keys, max_rows, split == "group_force", cont_label, cont_col,
-            min_group_rows,
-        )
+        info = _group_info(rows, group_idx, group_mode)
+        fn = _split_group_force if split == "group_force" else _split_group_safe
+        pages = fn(rows, info, max_rows, cont_label, cont_col, min_group_rows,
+                   edge_first=edge_first, edge_end=edge_end, blank_ignore=blank_ignore)
+        return [(p, None) for p in pages]
 
     raise ValueError(f"Unknown split strategy {split!r}.")
 
@@ -371,18 +385,50 @@ def _group_runs(group_keys):
     return runs
 
 
-def _group_info(group_keys):
-    """Per-row group id, header flag and label (mirrors R's compute_group_info)."""
-    gid: list[int] = []
-    headers: list[bool] = []
-    current = -1
-    for i, key in enumerate(group_keys):
-        is_header = i == 0 or key != group_keys[i - 1]
-        if is_header:
-            current += 1
-        gid.append(current)
-        headers.append(is_header)
-    return gid, headers, list(group_keys)
+def _group_info(rows, group_idx, mode):
+    """Per-row group id, label and header flag (R's ``.compute_group_info()``).
+
+    ``group_idx`` is the column the groups are read from (``None`` -> column
+    0, as in R).  ``mode`` is ``"value"``, ``"indent"`` or ``"filled"``
+    (``None`` / ``"auto"`` reads the column).  A row before the first header
+    (indent / filled) has id ``None``.  A materialised blank row
+    (:class:`_BlankMarker`) never opens a group: under ``"value"`` it joins
+    the group above it, so it does not break the run.
+    """
+    n = len(rows)
+    idx = 0 if group_idx is None else group_idx
+    col = [_as_text(r[idx]) if idx < len(r) else "" for r in rows]
+    if mode in (None, "auto"):
+        mode = _detect_group_mode(col)
+    if mode == "value":
+        keys = [r[idx] if idx < len(r) else None for r in rows]
+        for i in range(n):
+            if isinstance(rows[i], _BlankMarker) and i > 0:
+                keys[i] = keys[i - 1]
+                col[i] = col[i - 1]
+        gid: list = []
+        headers: list[bool] = []
+        current = 0
+        for i in range(n):
+            head = i == 0 or keys[i] != keys[i - 1]
+            if head:
+                current += 1
+            gid.append(current)
+            headers.append(head)
+        return gid, col, headers
+    gid, labels, headers = [], [], []
+    current_id, current_label = 0, ""
+    for i, v in enumerate(col):
+        nonempty = v != "" and not isinstance(rows[i], _BlankMarker)
+        head = nonempty if mode == "filled" else (
+            nonempty and v[:1] not in _GROUP_INDENT_CHARS)
+        if head:
+            current_id += 1
+            current_label = v
+        gid.append(current_id or None)
+        labels.append(current_label)
+        headers.append(head)
+    return gid, labels, headers
 
 
 def _continuation_row(row, cont_col, text):
@@ -393,115 +439,210 @@ def _continuation_row(row, cont_col, text):
     return out
 
 
-def _split_group_force(rows, group_keys, max_rows, cont_label, cont_col, min_group_rows):
+def _same_group(a, b) -> bool:
+    return a is not None and b is not None and a == b
+
+
+def _split_group_force(rows, info, max_rows, cont_label, cont_col, min_group_rows,
+                       edge_first=False, edge_end=False, blank_ignore=()):
     """Cut every ``max_rows`` rows, continuing a group across the break.
 
-    A port of R's ``.split_group_force()``.  Unlike ``group_safe`` this does
-    **not** wait for a group to exceed ``max_rows``: it cuts on the row limit
-    and, when the cut falls inside a group, repeats that group's header on the
-    next page with ``cont_label`` appended.  ``min_group_rows`` provides
-    widow/orphan control so a split never leaves a stub behind:
+    A port of R's ``.split_group_force()``: when the cut falls inside a group,
+    a ``(Cont.)`` row repeating the group's label opens the next page, and it
+    is one of that page's ``max_rows``.  ``min_group_rows`` is widow / orphan
+    control:
 
     * *orphan* -- the group starts on this page but would show fewer than
       ``min_group_rows`` children, so the whole group moves to the next page;
     * *widow* -- the cut would spill fewer than ``min_group_rows`` rows onto the
       next page, so the cut is pulled back.
+
+    Under ``count_blank_rows=True`` the page-edge blanks print rows too (R
+    #362): ``edge_first`` / ``edge_end`` take them off the page's budget unless
+    they fall against a blank row.
     """
+    rows = list(rows)
     n = len(rows)
     if n == 0:
-        return [(rows, None)]
-    gid, headers, labels = _group_info(group_keys)
-
+        return [rows]
+    gid, labels, headers = (list(v) for v in info)
     pages: list = []
-    pending: list | None = None  # continuation row to prepend to the next page
     pos = 0
     while pos < n:
-        end = min(pos + max_rows, n)
+        budget = max_rows - (
+            1 if edge_first and not _row_is_blank(rows[pos], blank_ignore) else 0
+        ) - (1 if edge_end else 0)
+        budget = max(budget, 1)
+        end = min(pos + budget, n)  # exclusive
+        if edge_end and end < n and _row_is_blank(rows[end], blank_ignore):
+            end = min(end + 1, n)  # the trailing edge merges with it
 
-        if min_group_rows > 0 and end < n and gid[end - 1] == gid[end]:
-            end_gid = gid[end - 1]
-            h = end - 1
+        if min_group_rows > 0 and end < n and _same_group(gid[end - 1], gid[end]):
+            last = end - 1
+            end_gid = gid[last]
+            h = last
             while h > pos and not headers[h]:
                 h -= 1
             starts_here = h > pos and headers[h] and gid[h] == end_gid
-            child_rows = (end - 1) - h
-            if starts_here and child_rows < min_group_rows:
+            if starts_here and (last - h) < min_group_rows:
                 end = h  # orphan: push the whole group to the next page
             else:
                 tail = 0
                 k = end
-                while k < n and gid[k] == end_gid:
+                while k < n and _same_group(gid[k], end_gid):
                     tail += 1
                     k += 1
                 if 0 < tail < min_group_rows:
-                    new_end = end - (min_group_rows - tail)
-                    g = end - 1
-                    while g > pos and gid[g - 1] == end_gid:
+                    new_last = last - (min_group_rows - tail)
+                    g = last
+                    while g > pos and _same_group(gid[g - 1], end_gid):
                         g -= 1
-                    if new_end > pos + 1 and (new_end - g) >= min_group_rows:
-                        end = new_end
+                    if new_last > pos and (new_last - g + 1) >= min_group_rows:
+                        end = new_last + 1
 
-        page = [list(r) for r in rows[pos:end]]
-        if pending is not None:
-            page.insert(0, pending)
-            pending = None
+        pages.append(rows[pos:end])
 
-        # Mid-group cut -> repeat the header on the next page with "(Cont.)".
-        if end < n and gid[end - 1] == gid[end]:
+        # Mid-group cut -> the next page opens with a "(Cont.)" row.
+        if end < n and _same_group(gid[end - 1], gid[end]):
             label = labels[end - 1]
             text = ("" if label is None else str(label)) + cont_label
-            pending = _continuation_row(rows[end], cont_col, text)
-
-        pages.append((page, None))
+            rows.insert(end, _continuation_row(rows[end], cont_col, text))
+            gid.insert(end, gid[end - 1])
+            labels.insert(end, label)
+            headers.insert(end, True)
+            n += 1
         pos = end
-
     return pages
 
 
-def _paginate_groups(rows, group_keys, max_rows, force, cont_label, cont_col,
-                     min_group_rows=2):
-    if force:
-        return _split_group_force(
-            rows, group_keys, max_rows, cont_label, cont_col, min_group_rows
-        )
-    runs = _group_runs(group_keys)
-    pages = []
-    current: list = []
-    for (s, e) in runs:
-        grp = rows[s:e]
-        if len(grp) > max_rows and force:
-            if current:
-                pages.append((current, None))
-                current = []
-            name = str(group_keys[s]) if group_keys[s] is not None else ""
-            pages.extend(_split_group_rows(grp, max_rows, name, cont_label, group_col=cont_col))
-            continue
-        if current and len(current) + len(grp) > max_rows:
-            pages.append((current, None))
-            current = []
-        current.extend(grp)
-    if current:
-        pages.append((current, None))
+def _split_group_safe(rows, info, max_rows, cont_label, cont_col, min_group_rows,
+                      edge_first=False, edge_end=False, blank_ignore=()):
+    """Pack whole groups onto each page (R's ``.split_group_safe()``).
+
+    A group that does not fit on a page by itself is force-split with
+    :func:`_split_group_force`, and its tail stays open so the next groups can
+    pack onto it.  What a page holds is what it would PRINT, the page-edge
+    blanks included when they are counted (R #362).
+    """
+    if not rows:
+        return [list(rows)]
+    gid_all, labels, headers = info
+
+    def printed(head, tail):
+        first = head[0] if head else tail[0]
+        return (len(head or []) + len(tail)
+                + (1 if edge_first and not _row_is_blank(first, blank_ignore) else 0)
+                + (1 if edge_end and not _row_is_blank(tail[-1], blank_ignore) else 0))
+
+    # Rows before the first header form a synthetic "preamble" group (id 0).
+    gid = [0 if g is None else g for g in gid_all]
+    order: list = []
+    members: dict = {}
+    for i, g in enumerate(gid):
+        if g not in members:
+            members[g] = []
+            order.append(g)
+        members[g].append(i)
+
+    pages: list = []
+    buf: list | None = None
+    for g in order:
+        idx = members[g]
+        grp = [rows[i] for i in idx]
+        if printed(None, grp) > max_rows:
+            if buf is not None:
+                pages.append(buf)
+                buf = None
+            sub = _split_group_force(
+                grp, ([gid_all[i] for i in idx], [labels[i] for i in idx],
+                      [headers[i] for i in idx]),
+                max_rows, cont_label, cont_col, min_group_rows,
+                edge_first=edge_first, edge_end=edge_end, blank_ignore=blank_ignore,
+            )
+            pages.extend(sub[:-1])
+            buf = sub[-1]
+        elif buf is not None and printed(buf, grp) > max_rows:
+            pages.append(buf)
+            buf = grp
+        else:
+            buf = grp if buf is None else buf + grp
+    if buf is not None:
+        pages.append(buf)
     return pages
 
 
-def _split_group_rows(grp, max_rows, name, cont_label, group_col):
-    """Split one oversized group across pages, marking continuations."""
-    pages = []
-    start = 0
-    first = True
-    while start < len(grp):
-        chunk = [list(r) for r in grp[start : start + max_rows]]
-        if not first and group_col is not None and chunk:
-            cell = chunk[0][group_col]
-            chunk[0][group_col] = (str(cell) if cell not in (None, "") else name) + cont_label
-        # Every page of one group carries the SAME name: a page name is a
-        # heading, not an identifier (R #433), so the continuation is said in
-        # the group cell, never in the name.
-        pages.append((chunk, name))
-        start += max_rows
-        first = False
-    return pages
+# -- count_blank_rows: materialise / collapse blank markers (R #362 / #330) --
+
+#: What a materialised blank row stands for: a separator (subject to the
+#: page-edge rule, R #332) or a position the caller named.
+_MARK_SEP, _MARK_EXPLICIT = 1, 2
+
+
+class _BlankMarker(list):
+    """An empty row standing in for a blank row, so the split counts it.
+
+    ``count_blank_rows=True`` inserts one wherever a blank row will print,
+    before the split; each page turns them back into blank positions.
+    """
+
+    code = _MARK_SEP
+
+
+def _row_is_blank(row, ignore=()) -> bool:
+    """A materialised blank, or a row with nothing to print (every cell empty
+    once the columns that will not be printed are left out)."""
+    if isinstance(row, _BlankMarker):
+        return True
+    return all(
+        _as_text(v).strip(" \t\r\n") == ""
+        for j, v in enumerate(row) if j not in ignore
+    )
+
+
+def _materialize_blank_markers(rows, sep_pos, exp_pos):
+    """Insert a :class:`_BlankMarker` before each 0-based row position (``n`` =
+    after the last row).  Position 0 is left to ``blank_row_first``, as in R."""
+    n = len(rows)
+    code = {p: _MARK_SEP for p in sep_pos if 1 <= p <= n}
+    for p in exp_pos:
+        if 1 <= p <= n and p not in code:
+            code[p] = _MARK_EXPLICIT
+    if not code:
+        return list(rows), False
+    out: list = []
+    for i in range(n + 1):
+        if i in code:
+            template = rows[i - 1]
+            mk = _BlankMarker(_continuation_row(template, -1, ""))
+            mk.code = code[i]
+            out.append(mk)
+        if i < n:
+            out.append(rows[i])
+    return out, True
+
+
+def _collapse_blank_markers(page_rows, blank_row_first, blank_row_end):
+    """Drop a page's markers and return ``(data_rows, blank_positions)``.
+
+    A marker's position is the number of data rows above it.  A separator may
+    only sit BETWEEN rows (R #332); a named position is honoured wherever it
+    lands.  The page edges are ``blank_row_first`` / ``blank_row_end``.
+    """
+    data: list = []
+    sep: list[int] = []
+    exp: list[int] = []
+    for r in page_rows:
+        if isinstance(r, _BlankMarker):
+            (sep if r.code == _MARK_SEP else exp).append(len(data))
+        else:
+            data.append(r)
+    n = len(data)
+    pos = set(_trim_page_edges(sep, n)) | set(exp)
+    if blank_row_first:
+        pos.add(0)
+    if blank_row_end:
+        pos.add(n)
+    return data, sorted(p for p in pos if 0 <= p <= n)
 
 
 # ============================================================================
@@ -639,6 +780,33 @@ def _resolve_pagewise_blanks(spec, column_names, rows) -> list[int]:
     return sorted(out)
 
 
+def _split_blank_positions(spec, column_names, rows):
+    """Resolve a ``blank_rows`` spec on the whole body into ``(separators,
+    explicit)`` internal positions, for :func:`_materialize_blank_markers`.
+
+    Separator items (a change / rule spec, which is also what
+    ``"between_groups"`` expands to) only sit between rows (R #332); an
+    explicitly named position is taken as it is.
+    """
+    from .blank_rows import BlankRowsByChange, BlankRowsByRule
+    from .table import _resolve_blank_rows
+
+    if spec is None:
+        return [], []
+    items = list(spec) if isinstance(spec, (list, tuple)) else [spec]
+    sep: set[int] = set()
+    exp: set[int] = set()
+    for item in items:
+        if item is None:
+            continue
+        pos = _resolve_blank_rows(item, column_names, rows)
+        if isinstance(item, (BlankRowsByChange, BlankRowsByRule)):
+            sep.update(_trim_page_edges(pos, len(rows)))
+        else:
+            exp.update(pos)
+    return sorted(sep), sorted(exp - sep)
+
+
 def _expand_between_groups(blank_rows, group_idx, group_by="auto"):
     """Expand the ``"between_groups"`` shorthand into a change-based spec.
 
@@ -735,8 +903,11 @@ def as_rtftables(
             ``NotImplementedError``.
         sort_by, sort_desc: Column(s) to sort rows by, and per-column descending
             flags, applied before pagination.
-        count_blank_rows: When ``True``, blank separator rows count toward
-            ``max_rows`` during pagination.  Not yet implemented (raises).
+        count_blank_rows: What ``max_rows`` counts.  ``False`` (default): the
+            data rows only.  ``True``: the rows the page prints -- the blank
+            rows from ``blank_rows`` are placed before the split so they count,
+            and the ``blank_row_first`` / ``blank_row_end`` page edges count
+            unless they fall against a blank row (R #362).
         align_count_pct: When ``True``, realign ``count (pct)`` cells to a
             uniform width in every column except the first (see
             :func:`~rtfreporter.realign_count_pct`).  Applied before pagination;
@@ -781,10 +952,6 @@ def as_rtftables(
     """
     # Guard the not-yet-implemented R argument paths with a clear error rather
     # than silently ignoring them.
-    if count_blank_rows:
-        raise NotImplementedError(
-            "as_rtftables(count_blank_rows=True) is not implemented."
-        )
     if stub_group_summary != "empty":
         raise NotImplementedError(
             f"as_rtftables(stub_group_summary={stub_group_summary!r}) is not "
@@ -878,8 +1045,30 @@ def as_rtftables(
         elif align_count_pct:
             realign_count_pct_df(rows, column_names)
 
-    group_keys = _compute_group_keys(rows, group_idx, group_by)
-    group_mode = _resolve_group_mode(rows, group_idx, group_by)
+    # `group_by="auto"` is settled BEFORE any blank marker goes in: a marker's
+    # empty cell would make a value-grouped column read as "filled", every row
+    # its own group, and group_safe free to cut anywhere (R #330).  With no
+    # `group_col` the group splits read column 0, as in R.
+    split_mode = group_by
+    if group_by == "auto":
+        gcol = group_idx if group_idx is not None else 0
+        split_mode = _detect_group_mode([_as_text(r[gcol]) for r in rows]) if rows else "value"
+
+    # count_blank_rows: every blank row that will print is materialised as a
+    # marker row BEFORE the split, so it counts toward `max_rows`; each page
+    # turns its markers back into blank positions (R #362).
+    materialised = False
+    if count_blank_rows:
+        spec = _expand_between_groups(blank_rows, group_idx, split_mode)
+        sep_pos, exp_pos = _split_blank_positions(spec, column_names, rows)
+        rows, materialised = _materialize_blank_markers(rows, sep_pos, exp_pos)
+
+    group_keys = _compute_group_keys(rows, group_idx, split_mode)
+    if materialised and split_mode == "value":
+        # A marker joins the group above it, so it does not break the run.
+        for i in range(1, len(rows)):
+            if isinstance(rows[i], _BlankMarker):
+                group_keys[i] = group_keys[i - 1]
 
     if callable(split):
         # Custom split hook: build a
@@ -899,9 +1088,18 @@ def as_rtftables(
         )
         pages = [(f.rows, f.name) for f in frames]
     else:
+        # Under count_blank_rows the page edges print rows too, so the group
+        # splits count them (R #362).  A row with content only in a column
+        # that is not printed (a drop_cols carrier) is blank on the page.
+        ignore = set(drop_idx or ())
+        if carry_styles:
+            ignore.add(len(column_names))
         pages = _paginate(
             rows, group_keys, split, split_rows, max_rows, min_group_rows, cont_label,
-            group_idx, group_mode=group_mode,
+            group_idx, group_mode=split_mode,
+            edge_first=count_blank_rows and blank_row_first,
+            edge_end=count_blank_rows and blank_row_end,
+            blank_ignore=ignore,
         )
 
     # Per-page blank spec: explicit blank_rows wins; else derive from group_col.
@@ -956,15 +1154,19 @@ def as_rtftables(
 
     out: list[RtfTable] = []
     for page_rows, page_name in pages:
+        if materialised:
+            # The blanks were counted by the split: read them off the markers.
+            page_rows, blank_positions = _collapse_blank_markers(
+                page_rows, blank_row_first, blank_row_end)
+        else:
+            # Resolve blank positions on the FULL page body (index-stable even
+            # when the grouping column is later dropped) into plain positions.
+            blank_positions = _resolve_pagewise_blanks(page_blank, column_names, page_rows)
+            if blank_row_first:
+                blank_positions = sorted(set(blank_positions) | {0})
+            if blank_row_end:
+                blank_positions = sorted(set(blank_positions) | {len(page_rows)})
         prows = _collapse_repeats(page_rows, collapse_idx) if collapse_idx else [list(r) for r in page_rows]
-
-        # Resolve blank positions on the FULL page body (index-stable even when
-        # the grouping column is later dropped) into plain integer positions.
-        blank_positions = _resolve_pagewise_blanks(page_blank, column_names, page_rows)
-        if blank_row_first:
-            blank_positions = sorted(set(blank_positions) | {0})
-        if blank_row_end:
-            blank_positions = sorted(set(blank_positions) | {len(page_rows)})
 
         # Split the trailing cell-style element back off each row.
         page_cell_styles = None

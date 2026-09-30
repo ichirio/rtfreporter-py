@@ -173,6 +173,7 @@ def _group_factory(max_rows, group_col, min_group_rows, cont_label, group_by, sp
 
         pages = _paginate(
             frame.rows, gkeys, split, None, max_rows, min_group_rows, cont_label, gidx,
+            group_mode=None if group_by == "auto" else group_by,
         )
         return _frames_from_pages(frame, pages)
 
