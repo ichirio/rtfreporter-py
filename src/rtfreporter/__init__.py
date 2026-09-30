@@ -58,6 +58,7 @@ from .borders import (
     rtf_border_with,
     rtf_table_border,
 )
+from .catx import catx
 from .config import rtfreporter_options, rtfreporter_reset_defaults
 from .document import (
     RtfDocument,
@@ -88,7 +89,7 @@ from .header_footer import (
     update_footer_row,
     update_header_row,
 )
-from .num_format import round_num
+from .num_format import fmt_numeric, fmt_round, fmt_signif, round_num
 from .page import DefaultFormat, Page, rtf_default_format, rtf_page
 from .pagination import (
     Frame,
@@ -224,6 +225,10 @@ __all__ = [
     "format_count_pct",
     "fmt_value_paren",
     "round_num",
+    "fmt_signif",
+    "fmt_round",
+    "fmt_numeric",
+    "catx",
     "realign_count_pct",
     "fmt_count_paren",
     "fmt_count_paren_bare",
