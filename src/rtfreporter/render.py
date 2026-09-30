@@ -419,6 +419,16 @@ def _render_data_row(
     fs_cmd: str = "",
 ) -> str:
     ncols = len(cellx)
+    # A spanned label row (stub_cols(label_span=True), R #312) is ONE cell
+    # running to the table's right edge: its first non-empty value, styled as
+    # the first column.
+    if row_cell_styles and row_cell_styles.get("span_row"):
+        txt = next((v for v in vals if v is not None and str(v) != ""), "")
+        cell_def = (f"{build_border_commands(border, color_index_map)}"
+                    f"{valign_cmd}\\cellx{cellx[-1]}")
+        content = _data_cell_content(col_spec[0], txt, 0, row_cell_styles, pad_l, pad_r,
+                                     markup, color_index_map, fs_cmd)
+        return build_row([cell_def], [content], row_height, table_align)
     cell_borders = row_cell_styles.get("border") if row_cell_styles else None
     # Cell fill, resolved per column the way text colour is.
     shade = row_backgrounds(col_spec, row_cell_styles, ncols)
@@ -436,40 +446,45 @@ def _render_data_row(
     else:
         cell_defs = build_cell_defs(cellx, border, valign_cmd, color_index_map, shade=shade)
 
-    cell_contents = []
-    for j in range(ncols):
-        spec = col_spec[j]
-        raw = vals[j] if j < len(vals) else None
-        text = format_cell_text("" if raw is None else str(raw), markup)
-        align = spec.align or "left"
-        bold = spec.bold
-        italic = spec.italic
-        underline = spec.underline
-        indent = int(spec.indent_twips or 0)
-        color_hex = spec.color
-        if row_cell_styles:
-            cs = row_cell_styles
-
-            def pick(key, cur, j=j, cs=cs):
-                seq = cs.get(key)
-                if seq is not None and j < len(seq) and seq[j] is not None:
-                    return seq[j]
-                return cur
-
-            align = pick("align", align)
-            bold = _as_bool(pick("bold", bold))
-            italic = _as_bool(pick("italic", italic))
-            underline = _as_bool(pick("underline", underline))
-            indent = int(pick("indent_twips", indent))
-            color_hex = pick("color", color_hex)
-        color_idx = (
-            color_index_map.get(color_hex) if color_hex and color_index_map else None
-        )
-        cell_contents.append(
-            build_cell_content(text, align, bold, italic, underline, indent,
-                               pad_l, pad_r, color_idx=color_idx, fs_cmd=fs_cmd)
-        )
+    cell_contents = [
+        _data_cell_content(col_spec[j], vals[j] if j < len(vals) else None, j,
+                           row_cell_styles, pad_l, pad_r, markup, color_index_map, fs_cmd)
+        for j in range(ncols)
+    ]
     return build_row(cell_defs, cell_contents, row_height, table_align)
+
+
+def _data_cell_content(spec, raw, j, row_cell_styles, pad_l, pad_r, markup,
+                       color_index_map, fs_cmd) -> str:
+    """One body cell's content: the column's spec, overridden per cell by the
+    row's ``cell_styles`` (R ``.data_cell_content()``)."""
+    text = format_cell_text("" if raw is None else str(raw), markup)
+    align = spec.align or "left"
+    bold = spec.bold
+    italic = spec.italic
+    underline = spec.underline
+    indent = int(spec.indent_twips or 0)
+    color_hex = spec.color
+    if row_cell_styles:
+        cs = row_cell_styles
+
+        def pick(key, cur, j=j, cs=cs):
+            seq = cs.get(key)
+            if seq is not None and j < len(seq) and seq[j] is not None:
+                return seq[j]
+            return cur
+
+        align = pick("align", align)
+        bold = _as_bool(pick("bold", bold))
+        italic = _as_bool(pick("italic", italic))
+        underline = _as_bool(pick("underline", underline))
+        indent = int(pick("indent_twips", indent))
+        color_hex = pick("color", color_hex)
+    color_idx = (
+        color_index_map.get(color_hex) if color_hex and color_index_map else None
+    )
+    return build_cell_content(text, align, bold, italic, underline, indent,
+                              pad_l, pad_r, color_idx=color_idx, fs_cmd=fs_cmd)
 
 
 def _as_bool(v):

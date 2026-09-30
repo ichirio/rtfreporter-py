@@ -1696,6 +1696,328 @@
           null
         ]
       }
+    },
+    {
+      "id": "stub_ae_group_summary",
+      "why": "stub_vars folds a group-summary row (NA leaf, or a leaf repeating its parent) onto the group's label row; an empty parent keeps a summary row flush left (R stub_cols group_summary, both modes by default).",
+      "data": {
+        "SOC": [
+          "",
+          "Cardiac",
+          "Cardiac",
+          "Cardiac",
+          "GI",
+          "GI"
+        ],
+        "PT": [
+          "Any adverse event",
+          null,
+          "Atrial fibrillation",
+          "Bradycardia",
+          "GI",
+          "Nausea"
+        ],
+        "N": [
+          "9 (6.3)",
+          "4 (2.8)",
+          "3 (2.1)",
+          "1 (0.7)",
+          "5 (3.5)",
+          "5 (3.5)"
+        ]
+      },
+      "as_rtftables": {
+        "stub_vars": [
+          "SOC",
+          "PT"
+        ]
+      }
+    },
+    {
+      "id": "stub_three_levels",
+      "why": "A three-level stub: each level indents one step further; the default heading joins the variables.",
+      "data": {
+        "A": [
+          "X",
+          "X",
+          "X",
+          "Y"
+        ],
+        "B": [
+          "b1",
+          "b1",
+          "b2",
+          "b3"
+        ],
+        "C": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "V": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "as_rtftables": {
+        "stub": {
+          "vars": [
+            "A",
+            "B",
+            "C"
+          ],
+          "indent": 2
+        }
+      }
+    },
+    {
+      "id": "stub_label_span",
+      "why": "stub_spec(label_span = TRUE): each group label row is one cell spanning the table (R #312); a folded summary row is not spanned.",
+      "data": {
+        "SOC": [
+          "",
+          "Cardiac",
+          "Cardiac",
+          "Cardiac",
+          "GI",
+          "GI"
+        ],
+        "PT": [
+          "Any adverse event",
+          null,
+          "Atrial fibrillation",
+          "Bradycardia",
+          "GI",
+          "Nausea"
+        ],
+        "N": [
+          "9 (6.3)",
+          "4 (2.8)",
+          "3 (2.1)",
+          "1 (0.7)",
+          "5 (3.5)",
+          "5 (3.5)"
+        ]
+      },
+      "as_rtftables": {
+        "stub": {
+          "vars": [
+            "SOC",
+            "PT"
+          ],
+          "label_span": true,
+          "label": "SOC / PT"
+        }
+      }
+    },
+    {
+      "id": "stub_layout_columns",
+      "why": "stub_spec(layout = 'columns'): the hierarchy columns stay, the group value on its own row and blank on its members.",
+      "data": {
+        "SOC": [
+          "",
+          "Cardiac",
+          "Cardiac",
+          "Cardiac",
+          "GI",
+          "GI"
+        ],
+        "PT": [
+          "Any adverse event",
+          null,
+          "Atrial fibrillation",
+          "Bradycardia",
+          "GI",
+          "Nausea"
+        ],
+        "N": [
+          "9 (6.3)",
+          "4 (2.8)",
+          "3 (2.1)",
+          "1 (0.7)",
+          "5 (3.5)",
+          "5 (3.5)"
+        ]
+      },
+      "as_rtftables": {
+        "stub": {
+          "vars": [
+            "SOC",
+            "PT"
+          ],
+          "layout": "columns"
+        }
+      }
+    },
+    {
+      "id": "stub_cell_styles",
+      "why": "A cell_styles of your own follows its rows through the stub's inserted label rows, the stub column reindexed (R .stub_remap_styles()).",
+      "data": {
+        "G": [
+          "a",
+          "a",
+          "b"
+        ],
+        "S": [
+          "n",
+          "Mean",
+          "n"
+        ],
+        "V": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "as_rtftables": {
+        "stub_vars": [
+          "G",
+          "S"
+        ],
+        "cell_styles": [
+          null,
+          {
+            "bold": [
+              null,
+              null,
+              true
+            ]
+          },
+          {
+            "italic": [
+              true,
+              true,
+              true
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "stub_group_summary_none",
+      "why": "stub_group_summary = 'none': an NA leaf becomes an empty indented row instead of folding.",
+      "data": {
+        "SOC": [
+          "",
+          "Cardiac",
+          "Cardiac",
+          "Cardiac",
+          "GI",
+          "GI"
+        ],
+        "PT": [
+          "Any adverse event",
+          null,
+          "Atrial fibrillation",
+          "Bradycardia",
+          "GI",
+          "Nausea"
+        ],
+        "N": [
+          "9 (6.3)",
+          "4 (2.8)",
+          "3 (2.1)",
+          "1 (0.7)",
+          "5 (3.5)",
+          "5 (3.5)"
+        ]
+      },
+      "as_rtftables": {
+        "stub_vars": [
+          "SOC",
+          "PT"
+        ],
+        "stub_group_summary": "none"
+      }
+    },
+    {
+      "id": "stub_label_span_dm",
+      "why": "label_span on a demographics stub: every parameter's label row is ONE cell to the table's right edge (R #312), its leaf rows indented below.",
+      "data": {
+        "Param": [
+          "Age",
+          "Age",
+          "Sex",
+          "Sex"
+        ],
+        "Stat": [
+          "n",
+          "Mean (SD)",
+          "F",
+          "M"
+        ],
+        "A": [
+          "10",
+          "50 (5)",
+          "4",
+          "6"
+        ],
+        "B": [
+          "12",
+          "48 (6)",
+          "7",
+          "5"
+        ]
+      },
+      "as_rtftables": {
+        "stub": {
+          "vars": [
+            "Param",
+            "Stat"
+          ],
+          "label_span": true
+        }
+      }
+    },
+    {
+      "id": "stub_page_by",
+      "why": "page_by with a stub: a stub label row has no BY value of its own and goes with the row it introduces (R #427: no one-row pages).",
+      "data": {
+        "Period": [
+          "P1",
+          "P1",
+          "P1",
+          "P2",
+          "P2"
+        ],
+        "Param": [
+          "Age",
+          "Age",
+          "Sex",
+          "Age",
+          "Age"
+        ],
+        "Stat": [
+          "n",
+          "Mean",
+          "F",
+          "n",
+          "Mean"
+        ],
+        "V": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ]
+      },
+      "as_rtftables": {
+        "stub_vars": [
+          "Param",
+          "Stat"
+        ],
+        "page_by": "Period",
+        "drop_cols": [
+          "Period"
+        ]
+      },
+      "rtf_tables": {
+        "auto_title": true
+      }
     }
   ]
 }

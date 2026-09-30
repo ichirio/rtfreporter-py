@@ -75,6 +75,13 @@ for (case in cases) {
                "col_rel_width", "col_header")) {
     if (!is.null(a[[nm]])) a[[nm]] <- unlist(a[[nm]], use.names = FALSE)
   }
+  # stub: {"vars": [...], "layout": , "label_span": , ...} -> stub_spec().
+  if (is.list(a$stub)) {
+    s <- a$stub
+    s$vars <- unlist(s$vars, use.names = FALSE)
+    if (!is.null(s$group_summary)) s$group_summary <- unlist(s$group_summary)
+    a$stub <- do.call(stub_spec, s)
+  }
   # cell_styles: one entry per row, null or {"bold": [null, true], ...};
   # a null inside a vector is NA ("use the column's own").
   if (!is.null(a$cell_styles)) {

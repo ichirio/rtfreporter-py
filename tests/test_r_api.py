@@ -262,15 +262,9 @@ def test_stub_vars_argument():
     assert pages[0].column_names[0] != "Cat" or len(pages[0].column_names) == 2
 
 
-@pytest.mark.parametrize(
-    "kwargs",
-    [
-        {"stub_group_summary": "parent"},
-    ],
-)
-def test_as_rtftables_unimplemented_paths_raise(kwargs):
-    with pytest.raises(NotImplementedError):
-        as_rtftables({"A": [1, 2]}, **kwargs)
+def test_stub_and_the_superseded_family_do_not_mix():
+    with pytest.raises(ValueError, match="not both"):
+        as_rtftables({"A": ["a"], "B": ["b"], "C": ["1"]}, stub=["A", "B"], stub_label="x")
 
 
 def test_count_blank_rows_makes_max_rows_the_printed_rows():

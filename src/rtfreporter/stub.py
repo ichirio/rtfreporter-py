@@ -10,6 +10,8 @@ leaf row.  Non-breaking spaces are used for the indent so viewers preserve it.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from .pagination import Frame
 
 _NBSP = " "
@@ -41,6 +43,8 @@ def stub_cols(
     label: str | None = None,
     indent: int = 4,
     group_summary=("empty", "parent"),
+    layout: str = "merged",
+    label_span: bool = False,
 ) -> Frame:
     """Merge hierarchy columns into one indented clinical stub column.
 
@@ -57,14 +61,36 @@ def stub_cols(
             ``"empty"`` for an empty leaf, ``"parent"`` for a leaf equal to its
             deepest non-empty parent.  Also accepts ``"all"`` / ``"none"`` /
             ``None``.
+        layout: ``"merged"`` (default) replaces the hierarchy columns with one
+            indented stub column; ``"columns"`` keeps them where they were --
+            a group value moves onto its own row, blank on its member rows,
+            whose leaf is indented in the leaf column.
+        label_span: Render each group label row as one cell spanning the table
+            (``layout="merged"`` only).  A group-summary row folded onto a
+            label row is never spanned: it carries statistics.
 
     Returns:
-        A :class:`~rtfreporter.pagination.Frame`: the stub column first, then
-        every non-``vars`` column of ``data`` in order.  Label rows hold ``None``
-        in the non-stub columns.
+        A :class:`~rtfreporter.pagination.Frame`: under ``"merged"`` the stub
+        column first, then every non-``vars`` column of ``data`` in order;
+        under ``"columns"`` every column in its place.  Label rows hold
+        ``None`` in the other columns.  ``stub_src`` gives each row's source
+        row (``None`` for an inserted label row) and ``label_rows`` the rows
+        to span, which :func:`~rtfreporter.rtftable` reads.
     """
     from .adapters import _resolve_indices
     from .table import _coerce_data
+
+    if layout not in ("merged", "columns"):
+        raise ValueError('`layout` must be "merged" or "columns".')
+    if not isinstance(label_span, bool):
+        raise ValueError("`label_span` must be True or False.")
+    if layout == "columns":
+        if label_span:
+            raise ValueError('`label_span` applies to layout="merged" only; with '
+                             'layout="columns" the group value stays in its own column.')
+        if label is not None:
+            raise ValueError('`label` names the merged stub column, which '
+                             'layout="columns" does not create.')
 
     names, rows = _coerce_data(data)
     idx = _resolve_indices(vars, names)
@@ -88,13 +114,16 @@ def stub_cols(
     pad = _NBSP * indent
 
     def as_chr(v) -> str:
-        return "" if v is None else str(v)
+        from .catx import _as_text
+
+        return _as_text(v)
 
     parents = [[as_chr(r[j]) for r in rows] for j in par_i]
     leafv = [as_chr(r[leaf_i]) for r in rows]
 
     stub: list[str] = []
     src: list[int | None] = []
+    lvl_of: list[int | None] = []   # the parent level of a label row, None for a leaf
     prev: list[str] | None = None
     label_pos: list[int | None] = [None] * n_par
 
@@ -113,6 +142,7 @@ def stub_cols(
                 depth_l = sum(1 for v in cur[:lvl] if v)
                 stub.append(pad * depth_l + cur[lvl])
                 src.append(None)
+                lvl_of.append(lvl)
                 label_pos[lvl] = len(stub) - 1
 
         nz = [lvl for lvl in range(n_par) if cur[lvl]]
@@ -129,16 +159,60 @@ def stub_cols(
             depth = sum(1 for v in cur if v)
             stub.append(pad * depth + leafv[i])
             src.append(i)
+            lvl_of.append(None)
         prev = cur
 
     keep = [j for j in range(len(names)) if j not in idx]
-    if label is None:
-        label = " / ".join(names[j] for j in idx)
-    out_names = [label] + [names[j] for j in keep]
-
     out_rows: list[list] = []
-    for k, s in enumerate(src):
-        rest = [None] * len(keep) if s is None else [rows[s][j] for j in keep]
-        out_rows.append([stub[k]] + rest)
+    if layout == "columns":
+        # Keep the hierarchy columns: a label row carries its own value in its
+        # own column and nothing else; a leaf row blanks every parent and holds
+        # the indented leaf.
+        out_names = list(names)
+        for k, s in enumerate(src):
+            row = [None] * len(names) if s is None else list(rows[s])
+            for j in idx:
+                row[j] = None
+            target = idx[-1] if lvl_of[k] is None else idx[lvl_of[k]]
+            row[target] = stub[k]
+            out_rows.append(row)
+    else:
+        if label is None:
+            label = " / ".join(str(names[j]) for j in idx)
+        out_names = [label] + [names[j] for j in keep]
+        for k, s in enumerate(src):
+            rest = [None] * len(keep) if s is None else [rows[s][j] for j in keep]
+            out_rows.append([stub[k]] + rest)
 
-    return Frame(column_names=out_names, rows=out_rows)
+    label_rows = [k for k, s in enumerate(src) if s is None] if label_span else None
+    return Frame(column_names=out_names, rows=out_rows, stub_src=src,
+                 label_rows=label_rows or None)
+
+
+@dataclass(frozen=True)
+class StubSpec:
+    """Every stub setting in one object, built by :func:`stub_spec`."""
+
+    vars: object
+    label: str | None = None
+    indent: int = 4
+    group_summary: object = ("empty", "parent")
+    layout: str = "merged"
+    label_span: bool = False
+
+
+def stub_spec(vars, label: str | None = None, indent: int = 4,
+              group_summary=("empty", "parent"), layout: str = "merged",
+              label_span: bool = False) -> StubSpec:
+    """Every stub setting in one object, for ``as_rtftables(stub=)`` (R
+    ``stub_spec()``, #314).
+
+    The arguments are :func:`stub_cols`'s.  A bare list of columns
+    (``stub=["SOC", "PT"]``) is the common case and needs no spec.
+    """
+    if vars is None:
+        raise ValueError("`vars` is required: the hierarchy columns, parent first.")
+    if layout not in ("merged", "columns"):
+        raise ValueError('`layout` must be "merged" or "columns".')
+    return StubSpec(vars=vars, label=label, indent=indent, group_summary=group_summary,
+                    layout=layout, label_span=label_span)

@@ -46,6 +46,10 @@ class Frame:
     rows: list[list] = field(default_factory=list)
     name: str | None = None
     blank_rows: list | None = None
+    #: From :func:`~rtfreporter.stub_cols`: each row's source row (``None`` for
+    #: an inserted label row), and the rows to render as one spanning cell.
+    stub_src: list | None = None
+    label_rows: list | None = None
 
 
 def as_frame(x) -> Frame:

@@ -155,7 +155,7 @@ def test_between_groups_via_as_rtftables_matches_r():
         ("as_rtftables", "border", "tfl"),
         ("as_rtftables", "read_meta", True),
         ("as_rtftables", "split", "none"),
-        ("as_rtftables", "stub_group_summary", "empty"),
+        ("as_rtftables", "stub_group_summary", ("empty", "parent")),
         ("rtftable", "table_align", "left"),
         ("rtftable", "border", "tfl"),
         ("rtftable", "row_height_exact", False),

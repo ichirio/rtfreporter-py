@@ -198,57 +198,33 @@ def _resolve_indices(refs, names) -> list[int]:
 # ============================================================================
 
 
-def _apply_stub(column_names, rows, stub_cols, stub_label, stub_indent):
-    """Merge ``stub_cols`` (outer->inner) into one indented leading stub column.
+def _resolve_stub_spec(stub, stub_vars, stub_label, stub_indent, stub_group_summary):
+    """``as_rtftables(stub=)`` plus the superseded flat arguments as one spec,
+    or ``None`` (R ``.resolve_stub_spec()``).  Mixing the two is an error."""
+    from .stub import StubSpec, stub_spec
 
-    Each non-leaf level emits its own un-indented label row when its value
-    changes; the leaf level becomes the indented stub of each data row.
-    Returns ``(new_names, new_rows)``.
-    """
-    idxs = _resolve_indices(stub_cols, column_names)
-    if not idxs:
-        return column_names, rows
-    keep = [j for j in range(len(column_names)) if j not in idxs]
-    # No label: the stub's columns named outer to inner, as R's stub_cols().
-    if stub_label is None:
-        stub_label = " / ".join(str(column_names[j]) for j in idxs)
-    new_names = [stub_label] + [column_names[j] for j in keep]
-    n_levels = len(idxs)
-
-    new_rows = []
-    prev = [None] * n_levels
-    for row in rows:
-        levels = [row[j] for j in idxs]
-        # Emit header rows for changed non-leaf levels.
-        for lv in range(n_levels - 1):
-            if levels[lv] != prev[lv] or any(
-                levels[x] != prev[x] for x in range(lv)
-            ):
-                stub_text = _indent(levels[lv], lv, stub_indent)
-                new_rows.append([stub_text] + [None] * len(keep))
-        leaf_indent = (n_levels - 1) if n_levels > 1 else 0
-        stub_text = _indent(levels[-1], leaf_indent, stub_indent)
-        new_rows.append([stub_text] + [row[j] for j in keep])
-        prev = levels
-    return new_names, new_rows
+    # R asks missing(); here a flat argument counts as given when it is set,
+    # or differs from its default.
+    flat_given = (stub_vars is not None or stub_label is not None or stub_indent != 4
+                  or tuple(stub_group_summary if not isinstance(stub_group_summary, str)
+                           else [stub_group_summary]) != ("empty", "parent"))
+    if stub is not None:
+        if flat_given:
+            raise ValueError("Pass either `stub` or the superseded `stub_vars` family, not both.")
+        return stub if isinstance(stub, StubSpec) else stub_spec(stub)
+    if stub_vars is None:
+        return None
+    return stub_spec(stub_vars, label=stub_label, indent=stub_indent,
+                     group_summary=stub_group_summary)
 
 
-#: Stub indents use a NON-BREAKING space, as R does.  A plain space is a wrap
-#: opportunity and may be collapsed by the viewer, so the indent would not
-#: survive; U+00A0 does.  It is also what group_by="indent" detection expects.
-_STUB_INDENT_CHAR = chr(0xA0)
-
-
-def _indent(value, level: int, stub_indent: int) -> str:
-    text = "" if value is None else str(value)
-    if level <= 0:
-        return text
-    return _STUB_INDENT_CHAR * (level * stub_indent) + text
-
-
-# ============================================================================
-#  Sorting / collapse
-# ============================================================================
+def _stub_reindex_style(row_style, n0, keep, merged):
+    """A row's cell_styles after the stub: under ``"merged"`` the per-column
+    vectors lose the hierarchy columns and gain an empty stub entry first."""
+    if not isinstance(row_style, dict) or not merged:
+        return row_style
+    return {k: ([None] + [v[j] for j in keep]) if isinstance(v, list) and len(v) == n0 else v
+            for k, v in row_style.items()}
 
 
 def _sort_rows(rows, sort_idx, sort_desc):
@@ -918,10 +894,11 @@ def as_rtftables(
     na: str = "",
     collapse_repeats=None,
     drop_cols=None,
+    stub=None,
     stub_vars=None,
     stub_label=None,
     stub_indent: int = 4,
-    stub_group_summary: str = "empty",
+    stub_group_summary=("empty", "parent"),
     header_sep=_DEFAULT_HEADER_SEPS,
     auto_width: bool = False,
     table_width_twips=None,
@@ -985,8 +962,13 @@ def as_rtftables(
             (applied to columns ``1..n-1``) or a list of callables taken
             positionally.  Each takes one column (a list) and returns a list of
             the same length; see :func:`~rtfreporter.fmt_count_paren`.
-        stub_group_summary: Forwarded to the stub builder -- ``"empty"`` (default)
-            or ``"parent"``.  Only ``"empty"`` is implemented.
+        stub: The stub: a :func:`~rtfreporter.stub_spec` (every setting, including
+            ``layout`` and ``label_span``), or just the hierarchy columns,
+            parent first.  See :func:`~rtfreporter.stub_cols`.
+        stub_vars, stub_label, stub_indent, stub_group_summary: **Superseded**
+            by ``stub`` (still supported): the columns, the heading, the indent
+            and the group-summary folding of a merged stub.  Passing both
+            ``stub`` and any of these is an error.
         auto_width: When ``True``, size each column to its widest content --
             column-header label or data cell -- via
             :func:`~rtfreporter.auto_col_widths`, so long labels do not wrap.
@@ -1019,13 +1001,8 @@ def as_rtftables(
         A list of :class:`RtfTable` objects, one per page.  When a page carries
         a name (group value), it is stored on the table's ``name`` attribute.
     """
-    # Guard the not-yet-implemented R argument paths with a clear error rather
-    # than silently ignoring them.
-    if stub_group_summary != "empty":
-        raise NotImplementedError(
-            f"as_rtftables(stub_group_summary={stub_group_summary!r}) is not "
-            "implemented; only 'empty' is supported."
-        )
+    # One stub spec from `stub=` or the superseded flat family (R #314).
+    spec = _resolve_stub_spec(stub, stub_vars, stub_label, stub_indent, stub_group_summary)
     if table_width_twips is not None:
         table_kwargs = {**table_kwargs, "table_width_twips": table_width_twips}
     if style is not None:
@@ -1044,8 +1021,7 @@ def as_rtftables(
                     blank_row_first=blank_row_first, blank_row_end=blank_row_end,
                     align_count_pct=align_count_pct,
                     collapse_repeats=collapse_repeats, drop_cols=drop_cols,
-                    stub_vars=stub_vars, stub_label=stub_label,
-                    stub_indent=stub_indent, header_sep=header_sep,
+                    stub=spec, header_sep=header_sep,
                     border=border, **table_kwargs,
                 )
             )
@@ -1066,32 +1042,28 @@ def as_rtftables(
     # A `cell_styles` of your own, one element per body row, follows its rows
     # the same way (R #498) instead of being handed whole to every page,
     # where a second page could not take it.
+    styles = coerced.cell_styles
+    if styles is not None and (spec is not None or drop_cols is not None):
+        raise ValueError(
+            "`stub` / `drop_cols` are not supported for great_tables "
+            "input; the GT adapter already reshapes the body (row groups "
+            "become an indented stub and hidden columns are dropped)."
+        )
     user_styles = table_kwargs.get("cell_styles")
-    if (coerced.cell_styles is None and user_styles is not None
-            and stub_vars is None and drop_cols is None
-            and len(user_styles) == len(rows)):
-        coerced.cell_styles = list(table_kwargs.pop("cell_styles"))
-    carry_styles = coerced.cell_styles is not None
-    if carry_styles:
-        if stub_vars is not None or drop_cols is not None:
-            raise ValueError(
-                "`stub_vars` / `drop_cols` are not supported for great_tables "
-                "input; the GT adapter already reshapes the body (row groups "
-                "become an indented stub and hidden columns are dropped)."
-            )
-        rows = [list(r) + [coerced.cell_styles[i]] for i, r in enumerate(rows)]
+    if styles is None and user_styles is not None and len(user_styles) == len(rows):
+        styles = list(table_kwargs.pop("cell_styles"))
 
     # by_value + stub_vars: each group is its own section, so the body is split
     # by the PRE-stub `group_col` first (every row of a value gathered, in
     # order) and the stub is built per group, one page each -- as R does.
     # Built on the whole body, a constant intermediate level would collapse
     # into one stub row spanning every group, and the groups would fragment.
-    if split == "by_value" and stub_vars is not None:
+    if split == "by_value" and spec is not None:
         gi = _resolve_index(group_col, column_names) if group_col is not None else 0
         gval = [_as_text(r[gi]) for r in rows]
         tk = {k: v for k, v in table_kwargs.items()
               if k not in ("table_width_twips", "style")}
-        user_cs = tk.get("cell_styles")
+        user_cs = styles
         out_pages: list[RtfTable] = []
         by_pre = _resolve_indices(page_by, column_names) if page_by is not None else []
         for k, value in enumerate(dict.fromkeys(gval), start=1):
@@ -1112,8 +1084,7 @@ def as_rtftables(
                     blank_row_first=blank_row_first, blank_row_end=blank_row_end,
                     count_blank_rows=count_blank_rows, align_count_pct=align_count_pct,
                     cell_format=cell_format, na=na, collapse_repeats=collapse_repeats,
-                    drop_cols=drop_cols, stub_vars=stub_vars, stub_label=stub_label,
-                    stub_indent=stub_indent, stub_group_summary=stub_group_summary,
+                    drop_cols=drop_cols, stub=spec,
                     header_sep=header_sep, auto_width=auto_width,
                     table_width_twips=table_width_twips, border=border, style=style, **tk,
                 )
@@ -1126,10 +1097,33 @@ def as_rtftables(
                 out_pages.extend(pages_k)
         return out_pages
 
-    # Stub: reshape BEFORE any index-based resolution below.
-    if stub_vars is not None:
-        column_names, rows = _apply_stub(column_names, rows, stub_vars, stub_label, stub_indent)
-        auto_header = None  # names changed; a flat header is used
+    # Stub: reshape BEFORE any index-based resolution below, through
+    # stub_cols() (R .apply_stub_vars()); a cell_styles of your own follows
+    # its rows through the inserted label rows.
+    if spec is not None:
+        from .stub import stub_cols
+
+        n0 = len(column_names)
+        vars_idx = _resolve_indices(spec.vars, column_names)
+        keep = [j for j in range(n0) if j not in vars_idx]
+        stubbed = stub_cols((column_names, rows), spec.vars, label=spec.label,
+                            indent=spec.indent, group_summary=spec.group_summary,
+                            layout=spec.layout, label_span=spec.label_span)
+        column_names, rows = stubbed.column_names, stubbed.rows
+        merged = spec.layout == "merged"
+        if styles is not None:
+            styles = [None if src is None else _stub_reindex_style(styles[src], n0, keep, merged)
+                      for src in stubbed.stub_src]
+        if stubbed.label_rows:
+            styles = list(styles) if styles is not None else [None] * len(rows)
+            for r in stubbed.label_rows:
+                styles[r] = {**(styles[r] or {}), "span_row": True}
+        if merged:
+            auto_header = None  # names changed; a flat header is used
+
+    carry_styles = styles is not None
+    if carry_styles:
+        rows = [list(r) + [styles[i]] for i, r in enumerate(rows)]
 
     # Resolve carrier / grouping / sort columns on the (possibly reshaped) body.
     drop_idx = _resolve_indices(drop_cols, column_names)
@@ -1321,6 +1315,14 @@ def as_rtftables(
         if carry_styles:
             page_cell_styles = [r[-1] for r in prows]
             prows = [r[:-1] for r in prows]
+            if drop_idx:
+                # the styles' per-column vectors lose the dropped columns too
+                kept = [j for j in range(len(column_names)) if j not in set(drop_idx)]
+                page_cell_styles = [
+                    None if cs is None else {
+                        k: [v[j] for j in kept] if isinstance(v, list) and len(v) == len(column_names) else v
+                        for k, v in cs.items()}
+                    for cs in page_cell_styles]
 
         # Drop carrier columns from the printed body + reindex the header.
         if drop_idx:

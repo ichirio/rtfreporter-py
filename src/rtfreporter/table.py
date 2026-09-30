@@ -863,6 +863,15 @@ def rtftable(
 
     if blank_rows is None and read_attributes:
         blank_rows = _read_attr_blank_rows(data)
+    # A spanned label row (stub_cols(label_span=True), R #312) is carried as a
+    # per-row cell style, so it rides the machinery that already slices styles
+    # per page.
+    label_rows = getattr(data, "label_rows", None) if read_attributes else None
+    if label_rows and not hasattr(data, "columns"):
+        cell_styles = list(cell_styles) if cell_styles is not None else [None] * len(rows)
+        for r in label_rows:
+            if 0 <= r < len(cell_styles):
+                cell_styles[r] = {**(cell_styles[r] or {}), "span_row": True}
 
     row_title_idx = _normalize_row_title(row_title, ncols, column_names)
     default_aligns = _default_aligns_from_row_title(row_title_idx, ncols)

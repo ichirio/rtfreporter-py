@@ -53,6 +53,8 @@ def _as_style(st: dict | None) -> dict:
 def render_case(case: dict) -> str:
     """Build the case with this port and return the RTF text."""
     kwargs = {key: _pick(v) for key, v in case.get("as_rtftables", {}).items()}
+    if isinstance(kwargs.get("stub"), dict):
+        kwargs["stub"] = rr.stub_spec(**kwargs["stub"])
 
     watch = kwargs.pop("blank_rows_by_change", None)
     if watch is not None:
