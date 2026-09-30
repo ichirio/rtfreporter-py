@@ -1524,6 +1524,16 @@ port.</p>
 </ul>
 <p>There are two deliberate departures, both for Pythonic ergonomics; they are
 described on <a href="../r-differences/">Differences from the R package</a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Scope: the R package's ARD / plan layer is not ported</p>
+<p>The R package is gaining a table-planning layer — <code>table_plan()</code>, the
+<code>plan_*()</code> verbs, <code>plan_apply()</code>, <code>plan_template()</code> — and an ARD family
+— <code>normalize_ard()</code>, <code>spread_ard()</code>, <code>pull_ard()</code>, <code>list_ard_keys()</code>,
+<code>cell_rows()</code>, <code>overall_row()</code>. These are <strong>intentionally not ported</strong>:
+they consume <code>cards</code> / <code>cardx</code> analysis results data, which exist only
+in R. The "every R export exists in Python" statement above refers to
+the rendering toolkit and does not include this layer.</p>
+</div>
 <h2 id="where-the-two-packages-necessarily-differ">Where the two packages necessarily differ<a class="headerlink" href="#where-the-two-packages-necessarily-differ" title="Permanent link">&para;</a></h2>
 <p>The R package's headline feature is reading <strong>table objects from the wider
 pharmaverse</strong> — <code>gt</code>, <code>gtsummary</code>, <code>rtables</code>/<code>tern</code>, <code>tfrmt</code>, <code>flextable</code>,
@@ -1582,6 +1592,10 @@ from <code>tab_style()</code>, row groups, summary rows and footnotes. See
 <tr>
 <td>Table-object adapters</td>
 <td><span class="rtf-badge partial">pandas, polars, great_tables</span> — the R-only frameworks have no Python counterpart</td>
+</tr>
+<tr>
+<td>ARD / plan layer (<code>table_plan()</code>, <code>plan_*()</code>, <code>normalize_ard()</code>, …)</td>
+<td><span class="rtf-badge partial">not ported</span> — by design; it consumes <code>cards</code> / <code>cardx</code> data that exist only in R</td>
 </tr>
 <tr>
 <td><code>rtf_config(font_table=)</code></td>

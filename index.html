@@ -1449,8 +1449,11 @@ The Python repository keeps its own
 defects specific to the port.</p>
 </div>
 <p>All 74 exported R functions exist here under the same names, and the worked
-examples assert their figures against numbers produced by R. See
-<a href="relationship-to-r/">Relationship to R</a>.</p>
+examples assert their figures against numbers produced by R. The one
+exception is deliberate: the R package's ARD / plan layer (<code>table_plan()</code>,
+<code>plan_*()</code>, <code>normalize_ard()</code>, <code>spread_ard()</code>, …) is not ported because it
+consumes <code>cards</code> / <code>cardx</code> data that exist only in R. See
+<a href="relationship-to-r/#what-a-faithful-port-means-here">Relationship to R</a>.</p>
 <h2 id="where-to-next">Where to next<a class="headerlink" href="#where-to-next" title="Permanent link">&para;</a></h2>
 <div class="grid cards">
 <ul>
