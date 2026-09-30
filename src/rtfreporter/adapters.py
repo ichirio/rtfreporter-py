@@ -827,6 +827,14 @@ def as_rtftables(
     # *with* their row (appended as a trailing element) so sorting and
     # pagination keep every style aligned to its cell; they are split back off
     # per page below.
+    # A `cell_styles` of your own, one element per body row, follows its rows
+    # the same way (R #498) instead of being handed whole to every page,
+    # where a second page could not take it.
+    user_styles = table_kwargs.get("cell_styles")
+    if (coerced.cell_styles is None and user_styles is not None
+            and stub_vars is None and drop_cols is None
+            and len(user_styles) == len(rows)):
+        coerced.cell_styles = list(table_kwargs.pop("cell_styles"))
     carry_styles = coerced.cell_styles is not None
     if carry_styles:
         if stub_vars is not None or drop_cols is not None:

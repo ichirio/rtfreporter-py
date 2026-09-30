@@ -725,8 +725,7 @@
       ],
       "footnotes_style": {
         "font_size_half_points": 16
-      },
-      "r_bug": "ichirio/rtfreporter#496 (a size without a font registers a font named after the size)"
+      }
     },
     {
       "id": "footnote_block_height",
@@ -748,8 +747,7 @@
       "footnotes_style": {
         "row_height_twips": 320,
         "font_size_half_points": 20
-      },
-      "r_bug": "ichirio/rtfreporter#496 (a size without a font registers a font named after the size)"
+      }
     },
     {
       "id": "title_style_and_tokens",
@@ -782,8 +780,7 @@
       "titles_style": {
         "font_size_half_points": 22,
         "align": "left"
-      },
-      "r_bug": "ichirio/rtfreporter#496 (a size without a font registers a font named after the size)"
+      }
     },
     {
       "id": "band_markup",
@@ -922,6 +919,54 @@
       "footnotes": [
         "Plain paragraph"
       ]
+    },
+    {
+      "id": "cell_styles_across_pages",
+      "why": "A cell_styles of your own follows its rows across pages (R #498): row 4's bold / italic land on page 2 with row 4, instead of the whole list being handed to every page.",
+      "data": {
+        "Subject": [
+          "001",
+          "002",
+          "003",
+          "004",
+          "005"
+        ],
+        "Age": [
+          34,
+          45,
+          28,
+          51,
+          39
+        ]
+      },
+      "as_rtftables": {
+        "split": "rows",
+        "split_rows": {
+          "r": 3,
+          "py": 2
+        },
+        "cell_styles": [
+          null,
+          {
+            "bold": [
+              null,
+              true
+            ]
+          },
+          null,
+          {
+            "bold": [
+              true,
+              true
+            ],
+            "italic": [
+              null,
+              true
+            ]
+          },
+          null
+        ]
+      }
     }
   ]
 }

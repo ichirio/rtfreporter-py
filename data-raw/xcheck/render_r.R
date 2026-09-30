@@ -4,7 +4,7 @@
 #   Rscript data-raw/xcheck/render_r.R [path/to/rtfreporter]
 #
 # The path should be a checkout of the R RELEASE the port tracks (a `git
-# worktree add ../rtfreporter-v0.8.1 v0.8.1`), so the goldens say which R the
+# worktree add ../rtfreporter-v0.8.2 v0.8.2`), so the goldens say which R the
 # port matches.  Writes one RTF per case into tests/xcheck_golden/, which is
 # committed so the Python test suite can compare against R's output without
 # needing R installed.
@@ -72,6 +72,14 @@ for (case in cases) {
   for (nm in c("stub_vars", "sort_by", "drop_cols", "collapse_repeats",
                "col_rel_width", "col_header")) {
     if (!is.null(a[[nm]])) a[[nm]] <- unlist(a[[nm]], use.names = FALSE)
+  }
+  # cell_styles: one entry per row, null or {"bold": [null, true], ...};
+  # a null inside a vector is NA ("use the column's own").
+  if (!is.null(a$cell_styles)) {
+    a$cell_styles <- lapply(a$cell_styles, function(r) {
+      if (is.null(r)) return(NULL)
+      lapply(r, function(v) unlist(lapply(v, function(z) if (is.null(z)) NA else z)))
+    })
   }
   # A whole-table border written as {"rtf_border": {...}}.
   if (is.list(a$border) && !is.null(a$border$rtf_border)) {
