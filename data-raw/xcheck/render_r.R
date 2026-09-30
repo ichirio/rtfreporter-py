@@ -101,6 +101,11 @@ for (case in cases) {
   if (!is.null(case$default_format)) {
     doc_args$default_format <- do.call(rtf_default_format, case$default_format)
   }
+  # A watermark: a bare string, or {"text": , "angle": , ...} for rtf_watermark().
+  if (!is.null(case$watermark)) {
+    doc_args$watermark <- if (is.list(case$watermark))
+      do.call(rtf_watermark, case$watermark) else case$watermark
+  }
   doc <- do.call(rtf_document, doc_args)
 
   doc <- rtf_tables(doc, pages)

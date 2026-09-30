@@ -71,6 +71,8 @@ def render_case(case: dict) -> str:
     doc = rr.rtf_document(
         page=rr.rtf_page(**{k: _pick(v) for k, v in page_spec.items()}) if page_spec else None,
         default_format=rr.rtf_default_format(**fmt_spec) if fmt_spec else None,
+        watermark=(rr.rtf_watermark(**case["watermark"])
+                   if isinstance(case.get("watermark"), dict) else case.get("watermark")),
     )
 
     doc = rr.rtf_tables(doc, pages)

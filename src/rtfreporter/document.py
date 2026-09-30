@@ -22,6 +22,10 @@ from .header_footer import HeaderFooter, normalize_hf
 from .page import DefaultFormat, Page
 from .table import RtfTable, rtftable
 
+#: "Argument not given", where ``None`` is itself a value (a section that
+#: switches the watermark off).
+_NOT_GIVEN = object()
+
 
 @dataclass
 class _Report:
@@ -34,6 +38,7 @@ class _Report:
     pages: list[dict]
     title_style: dict
     footnote_style: dict
+    watermark: object = None
 
 
 class RtfDocument:
@@ -63,10 +68,15 @@ class RtfDocument:
         default_format: DefaultFormat | None = None,
         color_table: list[str] | None = None,
         program: str | None = None,
+        watermark=None,
     ) -> None:
+        from .watermark import normalize_watermark
+
         self.page = page or Page()
         #: The program ``{PROGRAM}`` names (R ``rtf_document(program=)``).
         self.program = program
+        #: The watermark on every page (R ``rtf_document(watermark=)``).
+        self.watermark = normalize_watermark(watermark)
         self.default_format = default_format or DefaultFormat()
         self.color_table = list(color_table) if color_table else None
         self._sections: list[dict] = []
@@ -92,6 +102,7 @@ class RtfDocument:
         new.default_format = self.default_format
         new.color_table = list(self.color_table) if self.color_table else None
         new.program = self.program
+        new.watermark = self.watermark
         new._sections = [dict(section) for section in self._sections]
         new._pages = [dict(page) for page in self._pages]
         new.title_style = dict(self.title_style)
@@ -105,6 +116,7 @@ class RtfDocument:
         header: HeaderFooter | None = None,
         footer: HeaderFooter | None = None,
         from_page: int | None = None,
+        watermark=_NOT_GIVEN,
     ) -> RtfDocument:
         """Start a new section with a running ``header`` / ``footer``.
 
@@ -120,9 +132,12 @@ class RtfDocument:
         new = self._copy()
         if from_page is None:
             from_page = len(new._pages) + 1
-        new._sections.append(
-            {"header": header, "footer": footer, "from_page": int(from_page)}
-        )
+        section = {"header": header, "footer": footer, "from_page": int(from_page)}
+        if watermark is not _NOT_GIVEN:
+            from .watermark import normalize_watermark
+
+            section["watermark"] = normalize_watermark(watermark)
+        new._sections.append(section)
         return new
 
     def add_table(
@@ -261,6 +276,7 @@ class RtfDocument:
             pages=list(self._pages),
             title_style=dict(self.title_style),
             footnote_style=dict(self.footnote_style),
+            watermark=self.watermark,
         )
 
 
@@ -272,6 +288,7 @@ def rtf_document(
     default_format: DefaultFormat | None = None,
     color_table: list[str] | None = None,
     program: str | None = None,
+    watermark=None,
 ) -> RtfDocument:
     """Create a new :class:`RtfDocument` (mirrors R's ``rtf_document()``).
 
@@ -284,9 +301,14 @@ def rtf_document(
             ``{PROGRAM}`` / ``{PROGRAM_NAME}`` / ``{PROGRAM_DIR}`` tokens.
             ``None`` falls back to the ``program`` option, then the script
             Python is running; :func:`generate_rtfreport` can also say it.
+        watermark: A diagonal word behind the page body on every page: an
+            :func:`~rtfreporter.rtf_watermark`, or a bare string
+            (``"DRAFT"``) for the defaults.  A section can override it
+            (:func:`rtf_section`), ``None`` there switching it off.
     """
     return RtfDocument(page=page, default_format=default_format,
-                       color_table=color_table, program=program)
+                       color_table=color_table, program=program,
+                       watermark=watermark)
 
 
 def rtf_config(
@@ -295,6 +317,7 @@ def rtf_config(
     default_format=None,
     color_table=None,
     font_table=None,
+    watermark=_NOT_GIVEN,
 ) -> RtfDocument:
     """Return a copy of ``doc`` with page / default-format / colour overrides.
 
@@ -311,6 +334,8 @@ def rtf_config(
         default_format: A :class:`~rtfreporter.DefaultFormat` or a dict of field
             overrides.
         color_table: A replacement colour table (list of hex strings).
+        watermark: A new watermark (an :func:`~rtfreporter.rtf_watermark` or a
+            string); ``None`` / ``""`` removes it.  Not given: unchanged.
         font_table: Accepted for R signature parity; the Python renderer manages
             fonts automatically, so a non-``None`` value raises
             :class:`NotImplementedError`.
@@ -338,7 +363,8 @@ def rtf_config(
     new_colors = doc.color_table if color_table is None else color_table
 
     out = RtfDocument(page=new_page, default_format=new_fmt, color_table=new_colors,
-                      program=doc.program)
+                      program=doc.program,
+                      watermark=doc.watermark if watermark is _NOT_GIVEN else watermark)
     out._sections = list(doc._sections)
     out._pages = list(doc._pages)
     out.title_style = dict(doc.title_style)
@@ -582,6 +608,7 @@ def rtf_section(
     page: int | None = None,
     header=None,
     footer=None,
+    watermark=_NOT_GIVEN,
 ) -> RtfDocument:
     """Attach a running header/footer from a given page onward (R ``rtf_section()``).
 
@@ -593,10 +620,14 @@ def rtf_section(
         header, footer: Bands built with :func:`~rtfreporter.rtf_header` /
             :func:`~rtfreporter.rtf_footer`.  ``None`` inherits the previous
             section's band.
+        watermark: This section's watermark, overriding the document's (R
+            ``secinfo$watermark``); ``None`` switches it off for this section.
+            Not given: the document's.
     """
     if not isinstance(doc, RtfDocument):
         raise TypeError("`doc` must be an RtfDocument.")
-    return doc.add_section(header=header, footer=footer, from_page=page)
+    return doc.add_section(header=header, footer=footer, from_page=page,
+                           watermark=watermark)
 
 
 def generate_rtfreport(doc: RtfDocument, file_path: str, overwrite: bool = False,
@@ -675,6 +706,8 @@ def _resolve_sections(report: _Report) -> list[dict]:
     sections = list(report.sections)
     if not sections:
         return [{"header": None, "footer": None, "from_page": 1, "to_page": n_pages}]
+    # A section that names a watermark (None included) wins over the
+    # document's; the others take the document's.
 
     # Order by from_page, then reassign contiguous ranges.
     order = sorted(range(len(sections)), key=lambda i: sections[i]["from_page"] or 1)
@@ -689,6 +722,7 @@ def _resolve_sections(report: _Report) -> list[dict]:
             "footer": sections[i]["footer"],
             "from_page": from_pages[i],
             "to_page": to_pages[i],
+            **({"watermark": sections[i]["watermark"]} if "watermark" in sections[i] else {}),
         }
         for i in range(n_sec)
     ]
@@ -747,7 +781,16 @@ def _generate(report: _Report) -> str:
         cur_footer = normalize_hf(rs["footer"]) or prev_footer
         prev_footer = cur_footer
 
-        def emit_preamble(pg_for_hf, cur_header=None, cur_footer=None):
+        # The watermark rides in the header group, so it is resolved per
+        # section: one the section names wins, else the document's.
+        from .watermark import render_watermark_rtf
+
+        watermark_rtf = render_watermark_rtf(
+            rs["watermark"] if "watermark" in rs else report.watermark,
+            geo["width_twips"], geo["height_twips"], default_font=fmt.font)
+
+        def emit_preamble(pg_for_hf, cur_header=None, cur_footer=None,
+                          watermark_rtf=watermark_rtf):
             lines.append(C.SECTION_DEFAULTS)
             lnd = r"\lndscpsxn" if geo["orientation"] == "landscape" else ""
             lines.append(
@@ -771,8 +814,11 @@ def _generate(report: _Report) -> str:
                 total_pages=total_pages, color_index_map=color_index_map,
                 font_half_points=fhp, doc_row_height=doc_row_height,
                 doc_pad_l=doc_pad_l, doc_pad_r=doc_pad_r, doc_markup=doc_markup)
-            if header_rtf:
-                lines.append(C.HEADER_WRAPPER.format(content=fs_cmd + "".join(header_rtf)))
+            # The watermark goes in even when there is no header text; then the
+            # header group carries the shape and nothing else.
+            if header_rtf or watermark_rtf:
+                lines.append(C.HEADER_WRAPPER.format(
+                    content=watermark_rtf + fs_cmd + "".join(header_rtf)))
             if footer_rtf:
                 lines.append(C.FOOTER_WRAPPER.format(content=fs_cmd + "".join(footer_rtf)))
 

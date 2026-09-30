@@ -1336,6 +1336,47 @@
         "program": "C:/study/prog/t_dm.R",
         "render_time": "2026-09-07 09:05:00"
       }
+    },
+    {
+      "id": "watermark_default",
+      "why": "rtf_document(watermark = \"DRAFT\"): the shape alone in a header group when there is no header text.",
+      "data": {
+        "A": [
+          "1",
+          "2"
+        ]
+      },
+      "as_rtftables": {},
+      "watermark": "DRAFT"
+    },
+    {
+      "id": "watermark_styled",
+      "why": "rtf_watermark() with every setting, in front of a header's own rows, on a portrait page; a non-ASCII word.",
+      "data": {
+        "A": [
+          "1",
+          "2"
+        ]
+      },
+      "as_rtftables": {},
+      "watermark": {
+        "text": "CONFIDENTIEL é",
+        "font_size_half_points": 96,
+        "color": "#FF8000",
+        "angle": 30,
+        "font": "Arial",
+        "width_in": 5.5,
+        "height_in": 1.5
+      },
+      "page": {
+        "orientation": "portrait"
+      },
+      "header": [
+        {
+          "l": "Study X",
+          "r": "Page {AUTO_PAGE}"
+        }
+      ]
     }
   ]
 }

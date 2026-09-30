@@ -128,6 +128,7 @@ from .table import (
     rtftable,
 )
 from .text_width import auto_col_widths, text_width_in
+from .watermark import Watermark, rtf_watermark
 
 __version__ = "0.3.0"
 
@@ -229,6 +230,8 @@ __all__ = [
     "fmt_round",
     "fmt_numeric",
     "catx",
+    "rtf_watermark",
+    "Watermark",
     "realign_count_pct",
     "fmt_count_paren",
     "fmt_count_paren_bare",
