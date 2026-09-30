@@ -114,7 +114,7 @@ def format_count_pct(
     na = check_na_text(na)
     counts = _seq(count)
     pcts = _seq(pct)
-    for name, vals in (("count", counts), ("pct", pcts)):
+    for vals in (counts, pcts):
         for v in vals:
             if not (_is_na(v) or (isinstance(v, (int, float)) and not isinstance(v, bool))):
                 raise TypeError("`count` and `pct` must both be numeric.")
