@@ -87,7 +87,15 @@ def render_case(case: dict) -> str:
             footer = rr.rtf_footer(case["footer"], border=border)
         doc = rr.rtf_section(doc, page=1, header=header, footer=footer)
 
-    return rr.to_rtf(doc)
+    # The run tokens: a fixed program and time, so R and the port agree.
+    run = case.get("run")
+    if run is None:
+        return rr.to_rtf(doc)
+    old = rr.rtfreporter_options(render_time=run["render_time"])
+    try:
+        return doc.to_rtf(program=run["program"])
+    finally:
+        rr.rtfreporter_options(**old)
 
 
 def _normalise(text: str) -> str:

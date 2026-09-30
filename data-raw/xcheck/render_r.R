@@ -129,7 +129,14 @@ for (case in cases) {
 
   path <- file.path(out_dir, paste0(id, ".rtf"))
   if (file.exists(path)) file.remove(path)
-  generate_rtfreport(doc, path)
+  # The run tokens: a fixed program and time, so R and the port agree.
+  if (!is.null(case$run)) {
+    old <- options(rtfreporter.render_time = as.POSIXct(case$run$render_time))
+    generate_rtfreport(doc, path, program = case$run$program)
+    options(old)
+  } else {
+    generate_rtfreport(doc, path)
+  }
   written <- c(written, id)
   cat("  wrote", id, "\n")
 }

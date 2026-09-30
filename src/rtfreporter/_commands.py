@@ -107,6 +107,9 @@ JPEG_TEMPLATE = (
 # -- Dynamic field templates --------------------------------------------------
 
 AUTO_PAGE = r"\chpgn "
+#: The ``{BOOK_PAGE}`` slot (R #413): an empty ignorable destination, filled by
+#: ``assemble_rtf(book_page=)`` with the compiled document's page number.
+BOOK_PAGE_SLOT = r"{\*\rtfreporterbookpage}"
 AUTO_TOTAL_PAGES = r"{{\field{{\*\fldinst NUMPAGES}}{{\fldrslt {total_pages}}}}}"
 
 # ============================================================================

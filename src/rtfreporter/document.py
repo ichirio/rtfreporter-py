@@ -62,8 +62,11 @@ class RtfDocument:
         page: Page | None = None,
         default_format: DefaultFormat | None = None,
         color_table: list[str] | None = None,
+        program: str | None = None,
     ) -> None:
         self.page = page or Page()
+        #: The program ``{PROGRAM}`` names (R ``rtf_document(program=)``).
+        self.program = program
         self.default_format = default_format or DefaultFormat()
         self.color_table = list(color_table) if color_table else None
         self._sections: list[dict] = []
@@ -88,6 +91,7 @@ class RtfDocument:
         new.page = self.page
         new.default_format = self.default_format
         new.color_table = list(self.color_table) if self.color_table else None
+        new.program = self.program
         new._sections = [dict(section) for section in self._sections]
         new._pages = [dict(page) for page in self._pages]
         new.title_style = dict(self.title_style)
@@ -215,16 +219,26 @@ class RtfDocument:
 
     # -- output --------------------------------------------------------------
 
-    def to_rtf(self) -> str:
-        """Render the whole document to an RTF string."""
-        return _generate(self._report())
+    def to_rtf(self, program: str | None = None) -> str:
+        """Render the whole document to an RTF string.
 
-    def save(self, path: str, overwrite: bool = True) -> str:
+        Args:
+            program: The program the run tokens (``{PROGRAM}`` ...) name;
+                ``None`` uses the document's, then the ``program`` option, then
+                the script Python is running.
+        """
+        from ._run_tokens import run_context
+
+        with run_context(program if program is not None else self.program):
+            return _generate(self._report())
+
+    def save(self, path: str, overwrite: bool = True, program: str | None = None) -> str:
         """Render and write the document to ``path``.
 
         Args:
             path: Destination ``.rtf`` file path.
             overwrite: When ``False``, raises if the file already exists.
+            program: As in :meth:`to_rtf`.
 
         Returns:
             The path written.
@@ -233,7 +247,7 @@ class RtfDocument:
 
         if os.path.exists(path) and not overwrite:
             raise FileExistsError(f"{path!r} already exists. Set overwrite=True.")
-        rtf = self.to_rtf()
+        rtf = self.to_rtf(program=program)
         with open(path, "w", encoding="ascii", newline="\n") as fh:
             fh.write(rtf)
         return path
@@ -257,14 +271,22 @@ def rtf_document(
     page: Page | None = None,
     default_format: DefaultFormat | None = None,
     color_table: list[str] | None = None,
+    program: str | None = None,
 ) -> RtfDocument:
     """Create a new :class:`RtfDocument` (mirrors R's ``rtf_document()``).
 
     This is the head of the module-level "pipe" API
     (``rtf_document() -> rtf_tables() -> ... -> generate_rtfreport()``); the
     fluent :class:`RtfDocument` methods are an equivalent convenience.
+
+    Args:
+        program: The path of the program that writes the file, for the
+            ``{PROGRAM}`` / ``{PROGRAM_NAME}`` / ``{PROGRAM_DIR}`` tokens.
+            ``None`` falls back to the ``program`` option, then the script
+            Python is running; :func:`generate_rtfreport` can also say it.
     """
-    return RtfDocument(page=page, default_format=default_format, color_table=color_table)
+    return RtfDocument(page=page, default_format=default_format,
+                       color_table=color_table, program=program)
 
 
 def rtf_config(
@@ -315,7 +337,8 @@ def rtf_config(
         )
     new_colors = doc.color_table if color_table is None else color_table
 
-    out = RtfDocument(page=new_page, default_format=new_fmt, color_table=new_colors)
+    out = RtfDocument(page=new_page, default_format=new_fmt, color_table=new_colors,
+                      program=doc.program)
     out._sections = list(doc._sections)
     out._pages = list(doc._pages)
     out.title_style = dict(doc.title_style)
@@ -576,20 +599,26 @@ def rtf_section(
     return doc.add_section(header=header, footer=footer, from_page=page)
 
 
-def generate_rtfreport(doc: RtfDocument, file_path: str, overwrite: bool = False) -> str:
+def generate_rtfreport(doc: RtfDocument, file_path: str, overwrite: bool = False,
+                       program: str | None = None) -> str:
     """Render ``doc`` and write it to ``file_path`` (mirrors R ``generate_rtfreport()``).
 
     Args:
         doc: The :class:`RtfDocument` to render.
         file_path: Destination ``.rtf`` path (required, as in R).
         overwrite: When ``False`` (the R default), raise if ``file_path`` exists.
+        program: The program the run tokens name (``{PROGRAM}``,
+            ``{PROGRAM_NAME}``, ``{PROGRAM_DIR}``); ``None`` uses the
+            document's, then the ``program`` option, then the running script.
+            ``{DATETIME}`` is the time of this call (or the ``render_time``
+            option), the same on every page.
 
     Returns:
         The path written.
     """
     if not isinstance(doc, RtfDocument):
         raise TypeError("`doc` must be an RtfDocument.")
-    return doc.save(file_path, overwrite=overwrite)
+    return doc.save(file_path, overwrite=overwrite, program=program)
 
 
 def to_rtf(doc: RtfDocument) -> str:

@@ -160,8 +160,11 @@ def render_tokens(
     band that asks for markup needs), then replace the page tokens.
 
     Recognised tokens: ``{AUTO_PAGE}``, ``{AUTO_TOTAL_PAGES}`` (dynamic viewer
-    fields) and ``{PAGE}`` / ``{TOTAL_PAGES}`` (static, baked in at render
-    time).  ``{SECTION_PAGES}`` was removed (#410) and is an error.
+    fields), ``{PAGE}`` / ``{TOTAL_PAGES}`` (static, baked in at render
+    time), ``{BOOK_PAGE}`` (a slot :func:`~rtfreporter.assemble_rtf` fills) and
+    the run tokens ``{PROGRAM}`` / ``{PROGRAM_NAME}`` / ``{PROGRAM_DIR}`` /
+    ``{DATETIME}`` / ``{DATETIME:<format>}``.  ``{SECTION_PAGES}`` was
+    removed (#410) and is an error.
     """
     if value is None:
         return ""
@@ -179,6 +182,9 @@ def substitute_page_tokens(
     :func:`format_cell_text` themselves, resolve the same tokens with the same
     semantics instead of printing them literally (#398).
     """
+    from ._run_tokens import substitute_run_tokens
+
+    out = substitute_run_tokens(out)
     if r"\{SECTION_PAGES\}" in out:
         raise ValueError(
             "`{SECTION_PAGES}` was removed: the RTF SECTIONPAGES field it wrote "
@@ -188,6 +194,9 @@ def substitute_page_tokens(
             "  per-table total  -> `{TOTAL_PAGES}` (static, survives assembly)\n"
             "  document total   -> `{AUTO_TOTAL_PAGES}`"
         )
+    # The reserved slot for the compiled document's page number (R #413): an
+    # empty ignorable destination unless assemble_rtf(book_page=) fills it.
+    out = out.replace(r"\{BOOK_PAGE\}", C.BOOK_PAGE_SLOT)
     out = out.replace(r"\{AUTO_PAGE\}", C.AUTO_PAGE)
     fallback = str(total_pages) if total_pages is not None else "?"
     out = out.replace(r"\{AUTO_TOTAL_PAGES\}", C.AUTO_TOTAL_PAGES.format(total_pages=fallback))

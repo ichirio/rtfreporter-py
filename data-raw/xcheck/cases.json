@@ -1299,6 +1299,43 @@
           "Stat"
         ]
       }
+    },
+    {
+      "id": "run_tokens",
+      "why": "{PROGRAM} / {PROGRAM_NAME} / {PROGRAM_DIR} / {DATETIME} (default and with a format) in the header, footer, a title and a footnote; {BOOK_PAGE} as its empty slot.",
+      "data": {
+        "A": [
+          "1",
+          "2"
+        ],
+        "B": [
+          "x",
+          "y"
+        ]
+      },
+      "as_rtftables": {},
+      "titles": [
+        "Table 1  {PROGRAM_NAME}"
+      ],
+      "footnotes": [
+        "Program: {PROGRAM}  Generated: {DATETIME:%Y-%m-%dT%H:%M}"
+      ],
+      "header": [
+        {
+          "l": "Study X",
+          "r": "Book page {BOOK_PAGE}"
+        }
+      ],
+      "footer": [
+        {
+          "l": "{PROGRAM_DIR}",
+          "r": "{DATETIME}  {DATETIME:%A %d %B %Y %I:%M %p}"
+        }
+      ],
+      "run": {
+        "program": "C:/study/prog/t_dm.R",
+        "render_time": "2026-09-07 09:05:00"
+      }
     }
   ]
 }
