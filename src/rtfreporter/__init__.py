@@ -118,7 +118,7 @@ from .rtf_table_style import (
     rtf_table_style_with,
 )
 from .stub import StubSpec, stub_cols, stub_spec
-from .style_verbs import style_body, style_cols, style_header, style_zone
+from .style_verbs import set_decimal_split, style_body, style_cols, style_header, style_zone
 from .table import (
     ColSpec,
     HeaderRow,
@@ -233,6 +233,7 @@ __all__ = [
     "fmt_numeric",
     "catx",
     "col_key",
+    "set_decimal_split",
     "stub_spec",
     "StubSpec",
     "header_map",

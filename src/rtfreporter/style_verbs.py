@@ -339,3 +339,74 @@ def style_zone(
               for z in TABLE_BORDER_ZONES}
     out.border = replace(base, **merged)
     return out
+
+
+_COLS_MISSING = object()
+
+
+def set_decimal_split(x, cols=_COLS_MISSING, ratio=None, decimal_mark: str = ".",
+                      pad_chars=(1, 1), min_chars=(4, 6), max_chars=10,
+                      include_compound: bool = False):
+    """Line the decimal points of the given columns up (R ``set_decimal_split()``).
+
+    Each data cell of the columns renders as two cells -- the integer part,
+    right-aligned, and the decimal mark plus the rest, left-aligned -- so the
+    points line up whatever the font; a cell that is not a number (free text,
+    and by default a compound value such as ``"12.3 (4.56)"``) spans the pair
+    as it would without this.  The header keeps the original columns.
+
+    Args:
+        x: An :class:`RtfTable`, or a list of pages.
+        cols: The columns (0-based positions or names).  Required; pass
+            ``cols=None`` explicitly to clear a previous setting.
+        ratio: The integer half's share of the column, strictly between 0
+            and 1; ``None`` measures it from the cells.
+        decimal_mark: The separator (default ``"."``).
+        pad_chars, min_chars: Per half (integer, decimal), in characters: the
+            room added to what was measured, and the floor.
+        max_chars: Past this many measured characters the allowance is
+            dropped and the raw proportions are used (``math.inf``: never).
+        include_compound: Split values with a companion (``"12.3 (4.56)"``)
+            too.
+    """
+    if isinstance(x, (list, tuple)):
+        return [set_decimal_split(p, cols=cols, ratio=ratio, decimal_mark=decimal_mark,
+                                  pad_chars=pad_chars, min_chars=min_chars,
+                                  max_chars=max_chars, include_compound=include_compound)
+                for p in x]
+    if cols is _COLS_MISSING:
+        raise ValueError("`set_decimal_split()`: `cols` is required. To clear a previously "
+                         "set split, pass `cols=None` explicitly.")
+    out = x.copy()
+    if cols is None:
+        out.decimal_split = None
+        return out
+    cols_idx = _col_indices(x, cols)
+    if not isinstance(decimal_mark, str) or not decimal_mark:
+        raise ValueError("`decimal_mark` must be a single non-empty string.")
+    if ratio is not None:
+        try:
+            ratio = float(ratio)
+        except (TypeError, ValueError):
+            ratio = None
+        if ratio is None or not 0 < ratio < 1:
+            raise ValueError("`ratio` must be a single number strictly between 0 and 1.")
+
+    def widths(v, arg):
+        if v is None:
+            return None
+        v = [float(z) for z in v]
+        if len(v) != 2 or any(z < 0 for z in v):
+            raise ValueError(f"`{arg}` must be two non-negative numbers "
+                             "(integer half, decimal half).")
+        return v
+
+    if max_chars is not None and not float(max_chars) > 0:
+        raise ValueError("`max_chars` must be a single positive number (or inf).")
+    out.decimal_split = {
+        "cols": [int(c) for c in cols_idx], "ratio": ratio, "decimal_mark": decimal_mark,
+        "pad_chars": widths(pad_chars, "pad_chars"), "min_chars": widths(min_chars, "min_chars"),
+        "max_chars": None if max_chars is None else float(max_chars),
+        "include_compound": bool(include_compound),
+    }
+    return out

@@ -727,6 +727,9 @@ class RtfTable:
     #: split cut it for, and its ``page_by`` value.
     page_group: str | None = None
     page_by: str | None = None
+    #: set_decimal_split(): the columns whose data cells split at the
+    #: decimal mark, and how (R ``tbl$decimal_split``).
+    decimal_split: dict | None = None
 
     @property
     def ncols(self) -> int:

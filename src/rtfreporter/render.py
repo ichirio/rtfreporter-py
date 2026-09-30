@@ -417,6 +417,8 @@ def _render_data_row(
     color_index_map,
     markup,
     fs_cmd: str = "",
+    dsplit_row=None,
+    dsplit=None,
 ) -> str:
     ncols = len(cellx)
     # A spanned label row (stub_cols(label_span=True), R #312) is ONE cell
@@ -429,6 +431,10 @@ def _render_data_row(
         content = _data_cell_content(col_spec[0], txt, 0, row_cell_styles, pad_l, pad_r,
                                      markup, color_index_map, fs_cmd)
         return build_row([cell_def], [content], row_height, table_align)
+    if dsplit_row is not None:
+        return _render_data_row_split(
+            vals, cellx, border, row_height, pad_l, pad_r, valign_cmd, col_spec,
+            table_align, row_cell_styles, color_index_map, markup, dsplit_row, dsplit)
     cell_borders = row_cell_styles.get("border") if row_cell_styles else None
     # Cell fill, resolved per column the way text colour is.
     shade = row_backgrounds(col_spec, row_cell_styles, ncols)
@@ -454,8 +460,43 @@ def _render_data_row(
     return build_row(cell_defs, cell_contents, row_height, table_align)
 
 
+def _render_data_row_split(vals, cellx, border, row_height, pad_l, pad_r, valign_cmd,
+                           col_spec, table_align, row_cell_styles, color_index_map,
+                           markup, dsplit_row, dsplit) -> str:
+    """One data row on the decimal-split geometry (R
+    ``.render_data_row_split()``).  A pair whose cell was not split-eligible
+    on this row collapses back into one cell carrying the ORIGINAL column's
+    spec.  As in R, the table's own font-size switch is not written here."""
+    _, merge_to, merge_spec = dsplit_row
+    interior, pad_flag = dsplit["interior"], dsplit["pad_flag"]
+    starts = [j for j, t in enumerate(merge_to) if t is not None]
+    # The pair's interior edge carries no padding.
+    pad_l_v = [0 if f == "right" else int(pad_l) for f in pad_flag]
+    pad_r_v = [0 if f == "left" else int(pad_r) for f in pad_flag]
+    cell_borders = row_cell_styles.get("border") if row_cell_styles else None
+    n_cells = len(starts)
+    cell_defs, cell_contents = [], []
+    for ci, j in enumerate(starts):
+        to = merge_to[j]
+        eff = cell_edge_border(border, ci, n_cells)
+        b = cell_borders[j] if isinstance(cell_borders, list) and j < len(cell_borders) else None
+        if b is not None:
+            eff = _effective_row_border(eff, b)
+        if to == j and interior[j] is not None:
+            eff = _effective_row_border(eff, interior[j])
+        cell_defs.append(f"{build_border_commands(eff, color_index_map)}{valign_cmd}"
+                         f"\\cellx{cellx[to]}")
+        merged = to != j
+        is_half = not merged and interior[j] is not None
+        spec = merge_spec[j] if merged and merge_spec[j] is not None else col_spec[j]
+        cell_contents.append(_data_cell_content(
+            spec, vals[j], j, row_cell_styles, pad_l_v[j], pad_r_v[to], markup,
+            color_index_map, "", force_align=spec.align if is_half else None))
+    return build_row(cell_defs, cell_contents, row_height, table_align)
+
+
 def _data_cell_content(spec, raw, j, row_cell_styles, pad_l, pad_r, markup,
-                       color_index_map, fs_cmd) -> str:
+                       color_index_map, fs_cmd, force_align=None) -> str:
     """One body cell's content: the column's spec, overridden per cell by the
     row's ``cell_styles`` (R ``.data_cell_content()``)."""
     text = format_cell_text("" if raw is None else str(raw), markup)
@@ -480,6 +521,8 @@ def _data_cell_content(spec, raw, j, row_cell_styles, pad_l, pad_r, markup,
         underline = _as_bool(pick("underline", underline))
         indent = int(pick("indent_twips", indent))
         color_hex = pick("color", color_hex)
+    if force_align is not None:
+        align = force_align
     color_idx = (
         color_index_map.get(color_hex) if color_hex and color_index_map else None
     )
@@ -541,16 +584,22 @@ def render_rtftable(
         tbl.row_height_exact,
     )
 
+    # set_decimal_split(): the data rows' expanded geometry, or None.
+    from .decimal_split import plan as decimal_split_plan
+
+    dsplit = decimal_split_plan(tbl, cellx, col_spec, eff_markup)
+
     return _render_section(
         tbl, cellx, border, col_spec, hdr_h, data_h, blank_h,
         set(tbl.blank_rows), pad_l, pad_r, valign_cmd, tbl.table_align,
-        color_index_map, eff_markup, fs_cmd,
+        color_index_map, eff_markup, fs_cmd, dsplit=dsplit,
     )
 
 
 def _render_section(
     tbl, cellx, border, col_spec, hdr_h, data_h, blank_h, blank_set,
     pad_l, pad_r, valign_cmd, table_align, color_index_map, markup, fs_cmd="",
+    dsplit=None,
 ) -> list[str]:
     ncols = len(cellx)
     lines: list[str] = []
@@ -639,12 +688,25 @@ def _render_section(
             rcs = None
             if tbl.cell_styles and i < len(tbl.cell_styles):
                 rcs = tbl.cell_styles[i]
-            add_data(
-                _render_data_row(
-                    row, cellx, row_border, data_h, pad_l, pad_r, valign_cmd,
-                    col_spec, table_align, rcs, color_index_map, markup, fs_cmd=fs_cmd,
+            if dsplit is None:
+                add_data(
+                    _render_data_row(
+                        row, cellx, row_border, data_h, pad_l, pad_r, valign_cmd,
+                        col_spec, table_align, rcs, color_index_map, markup, fs_cmd=fs_cmd,
+                    )
                 )
-            )
+            else:
+                from .decimal_split import split_cell_styles, split_row
+
+                drow = split_row(dsplit, row, i)
+                add_data(
+                    _render_data_row(
+                        drow[0], dsplit["cellx"], row_border, data_h, pad_l, pad_r,
+                        valign_cmd, dsplit["col_spec"], table_align,
+                        split_cell_styles(dsplit, rcs), color_index_map, markup,
+                        fs_cmd=fs_cmd, dsplit_row=drow, dsplit=dsplit,
+                    )
+                )
         if (i + 1) in blank_set:
             add_blank()
 
