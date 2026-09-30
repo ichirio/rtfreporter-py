@@ -453,12 +453,24 @@ def _is_character_column(rows, j: int) -> bool:
     return True
 
 
-def apply_cell_format(rows, column_names, fl) -> None:
+def _call_cell_format(f, col, na: str):
+    """Call a cell formatter, handing it ``na`` when it takes one (R
+    ``.call_cell_format()``), so a missing cell's text lines up too."""
+    import inspect
+
+    try:
+        takes_na = "na" in inspect.signature(f).parameters
+    except (TypeError, ValueError):
+        takes_na = False
+    return f(col, na=na) if takes_na else f(col)
+
+
+def apply_cell_format(rows, column_names, fl, na: str = "") -> None:
     """Apply a resolved per-column format list to ``rows`` in place.
 
     Only character columns are reformatted (mirroring R, which skips non-string
     columns).  Each callable must return a sequence the same length as the
-    column.
+    column; one that takes ``na`` is given the call's missing-value text.
     """
     n = len(rows)
     for j, f in enumerate(fl):
@@ -467,7 +479,7 @@ def apply_cell_format(rows, column_names, fl) -> None:
         if j >= len(column_names) or not _is_character_column(rows, j):
             continue
         col = [r[j] for r in rows]
-        formatted = list(f(col))
+        formatted = list(_call_cell_format(f, col, na))
         if len(formatted) != n:
             raise ValueError(
                 "A `cell_format` function must return a vector the same length "
@@ -477,7 +489,7 @@ def apply_cell_format(rows, column_names, fl) -> None:
             rows[i][j] = _as_str_na_empty(formatted[i])
 
 
-def realign_count_pct_df(rows, column_names, nbsp: str = NBSP) -> None:
+def realign_count_pct_df(rows, column_names, nbsp: str = NBSP, na: str = "") -> None:
     """Realign the count-percent cells of every character column except the first.
 
     Mirrors R's ``.realign_count_pct_df`` used by ``align_count_pct=True``.
@@ -486,7 +498,7 @@ def realign_count_pct_df(rows, column_names, nbsp: str = NBSP) -> None:
     if len(column_names) < 2:
         return
     fl = [None] + [
-        (lambda col, _nbsp=nbsp: realign_count_pct(col, nbsp=_nbsp))
+        (lambda col, na="", _nbsp=nbsp: realign_count_pct(col, nbsp=_nbsp, na=na))
         for _ in range(len(column_names) - 1)
     ]
-    apply_cell_format(rows, column_names, fl)
+    apply_cell_format(rows, column_names, fl, na=na)

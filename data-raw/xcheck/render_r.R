@@ -30,7 +30,9 @@ cases <- spec$cases
 pick <- function(v) if (is.list(v) && !is.null(v[["r"]])) v[["r"]] else v
 
 as_df <- function(cols) {
-  cols <- lapply(cols, function(v) unlist(v, use.names = FALSE))
+  # a JSON null is a missing value, not a dropped one
+  cols <- lapply(cols, function(v)
+    unlist(lapply(v, function(z) if (is.null(z)) NA else z), use.names = FALSE))
   as.data.frame(cols, stringsAsFactors = FALSE, check.names = FALSE)
 }
 
@@ -69,7 +71,7 @@ for (case in cases) {
     a$blank_rows <- blank_rows_by_change(unlist(a$blank_rows_by_change))
     a$blank_rows_by_change <- NULL
   }
-  for (nm in c("stub_vars", "sort_by", "drop_cols", "collapse_repeats",
+  for (nm in c("stub_vars", "sort_by", "drop_cols", "collapse_repeats", "page_by",
                "col_rel_width", "col_header")) {
     if (!is.null(a[[nm]])) a[[nm]] <- unlist(a[[nm]], use.names = FALSE)
   }

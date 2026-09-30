@@ -1518,6 +1518,139 @@
         },
         "border": "tfl"
       }
+    },
+    {
+      "id": "page_by_gathers",
+      "why": "page_by: a page per distinct value, its scattered rows gathered in the body's order, named by the value (auto_title shows it); the groups default to the first non-BY column.",
+      "data": {
+        "PARAM": [
+          "Hgb",
+          "Hgb",
+          "ALT",
+          "ALT",
+          "Hgb"
+        ],
+        "Visit": [
+          "W1",
+          "W2",
+          "W1",
+          "W2",
+          "W4"
+        ],
+        "Value": [
+          "13",
+          "12",
+          "30",
+          "31",
+          "14"
+        ]
+      },
+      "as_rtftables": {
+        "page_by": "PARAM",
+        "blank_rows": "between_groups"
+      },
+      "rtf_tables": {
+        "auto_title": true
+      }
+    },
+    {
+      "id": "page_by_inside_by_value",
+      "why": "page_by inside split='by_value': the group is the outer axis and names the pages, the BY values run in order inside it.",
+      "data": {
+        "Arm": [
+          "A",
+          "A",
+          "B",
+          "B",
+          "A"
+        ],
+        "Period": [
+          "P1",
+          "P2",
+          "P1",
+          "P2",
+          "P1"
+        ],
+        "N": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ]
+      },
+      "as_rtftables": {
+        "split": "by_value",
+        "group_col": "Arm",
+        "page_by": "Period"
+      },
+      "rtf_tables": {
+        "auto_title": true
+      }
+    },
+    {
+      "id": "page_by_max_rows",
+      "why": "page_by with group_safe and max_rows: the split works within each page_by partition.",
+      "data": {
+        "P": [
+          "X",
+          "X",
+          "X",
+          "X",
+          "X",
+          "Y",
+          "Y"
+        ],
+        "G": [
+          "a",
+          "a",
+          "b",
+          "b",
+          "c",
+          "d",
+          "d"
+        ],
+        "V": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ]
+      },
+      "as_rtftables": {
+        "page_by": "P",
+        "split": "group_safe",
+        "group_col": "G",
+        "max_rows": 3
+      }
+    },
+    {
+      "id": "na_text",
+      "why": "na: the text for a missing value in every column, before the count-pct aligner pads it.",
+      "data": {
+        "Stat": [
+          "n",
+          "Mean",
+          null
+        ],
+        "A": [
+          "10 (50.0)",
+          null,
+          "3 (15.0)"
+        ],
+        "B": [
+          null,
+          "2.5",
+          "12 (100.0)"
+        ]
+      },
+      "as_rtftables": {
+        "na": "-",
+        "align_count_pct": true
+      }
     }
   ]
 }

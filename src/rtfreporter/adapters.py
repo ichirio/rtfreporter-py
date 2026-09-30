@@ -783,6 +783,56 @@ def _resolve_pagewise_blanks(spec, column_names, rows) -> list[int]:
     return sorted(out)
 
 
+def _page_by_runs(rows, by_idx):
+    """The partitions ``page_by`` implies (R ``.page_by_runs()``): one per
+    DISTINCT key, holding every row that has it, in the body's order.
+    Returns ``[(row indices, label)]``.
+
+    A row with no key of its own (a stub label row) takes the key of the row
+    it introduces (the next real one), and at the foot of the body that of the
+    row it follows.
+    """
+    from .catx import _as_text as r_text
+
+    keys = []
+    for j in by_idx:
+        v = [r_text(r[j]) if j < len(r) else "" for r in rows]
+        miss = [not x.strip() for x in v]
+        nxt, prv = [None] * len(v), [None] * len(v)
+        last = None
+        for i in range(len(v) - 1, -1, -1):
+            if not miss[i]:
+                last = v[i]
+            nxt[i] = last
+        last = None
+        for i in range(len(v)):
+            if not miss[i]:
+                last = v[i]
+            prv[i] = last
+        keys.append([v[i] if not miss[i] else (nxt[i] if nxt[i] is not None else (prv[i] or ""))
+                     for i in range(len(v))])
+    key = [tuple(k[i] for k in keys) for i in range(len(rows))]
+    out: dict = {}
+    for i, k in enumerate(key):
+        out.setdefault(k, []).append(i)
+    return [(idx, ", ".join(k)) for k, idx in out.items()]
+
+
+def _order_and_name_pages(pages, grp, by):
+    """Order and name the pages of a ``page_by`` split (R
+    ``.order_and_name_pages()``): with a named inner split (``by_value``) the
+    group is the outer axis and the name; otherwise the key's value is."""
+    n = len(pages)
+    has_grp = n > 0 and all(g is not None for g in grp)
+    order = list(range(n))
+    if has_grp:
+        g_first = {g: i for i, g in reversed(list(enumerate(grp)))}
+        b_first = {b: i for i, b in reversed(list(enumerate(by)))}
+        order.sort(key=lambda i: (g_first[grp[i]], b_first[by[i]], i))
+    names = grp if has_grp else by
+    return [(pages[i][0], names[i], pages[i][2], pages[i][3]) for i in order]
+
+
 def _split_blank_positions(spec, column_names, rows):
     """Resolve a ``blank_rows`` spec on the whole body into ``(separators,
     explicit)`` internal positions, for :func:`_materialize_blank_markers`.
@@ -853,6 +903,7 @@ def as_rtftables(
     max_rows: int | None = None,
     group_col=None,
     group_by: str = "auto",
+    page_by=None,
     sort_by=None,
     sort_desc=None,
     cont_label: str = " (Cont.)",
@@ -863,6 +914,7 @@ def as_rtftables(
     count_blank_rows: bool = False,
     align_count_pct: bool = False,
     cell_format=None,
+    na: str = "",
     collapse_repeats=None,
     drop_cols=None,
     stub_vars=None,
@@ -904,6 +956,15 @@ def as_rtftables(
             ``"auto"`` (default), ``"indent"``, ``"value"``, ``"filled"``.  Only
             ``"auto"`` (value-change detection) is implemented; the others raise
             ``NotImplementedError``.
+        page_by: Column(s) whose value starts a page and names it (R
+            ``page_by``), the OUTER level: every row of a value is gathered onto
+            its pages, in the body's order, and the split, ``max_rows``, the
+            groups and the blank rows then apply within it.  A row with no
+            value of its own (a stub label row) belongs with the row it
+            introduces.  With no ``group_col`` the groups are read from the
+            first column the key does not occupy.  Under ``split="by_value"``
+            the group is the outer axis and names the pages; otherwise the
+            pages are named by the key's values (joined with ``", "``).
         sort_by, sort_desc: Column(s) to sort rows by, and per-column descending
             flags, applied before pagination.
         count_blank_rows: What ``max_rows`` counts.  ``False`` (default): the
@@ -915,6 +976,10 @@ def as_rtftables(
             uniform width in every column except the first (see
             :func:`~rtfreporter.realign_count_pct`).  Applied before pagination;
             superseded by ``cell_format`` when both are given.
+        na: The text printed for a missing value (``None`` / ``nan``) in any
+            column, e.g. ``"-"``; ``""`` (default) leaves the cell empty.
+            Applied to the whole body before the split and before
+            ``cell_format``, so the aligners pad it like any other value.
         cell_format: An optional per-column re-formatter -- a single callable
             (applied to columns ``1..n-1``) or a list of callables taken
             positionally.  Each takes one column (a list) and returns a list of
@@ -1027,26 +1092,33 @@ def as_rtftables(
               if k not in ("table_width_twips", "style")}
         user_cs = tk.get("cell_styles")
         out_pages: list[RtfTable] = []
+        by_pre = _resolve_indices(page_by, column_names) if page_by is not None else []
         for k, value in enumerate(dict.fromkeys(gval), start=1):
-            idx = [i for i, g in enumerate(gval) if g == value]
-            sub = {name: [rows[i][j] for i in idx] for j, name in enumerate(column_names)}
-            if user_cs is not None and len(user_cs) == len(rows):
-                tk["cell_styles"] = [user_cs[i] for i in idx]
-            pages_k = as_rtftables(
-                sub, read_meta=read_meta, split="none", group_by=group_by,
-                sort_by=sort_by, sort_desc=sort_desc, cont_label=cont_label,
-                min_group_rows=min_group_rows, blank_rows=blank_rows,
-                blank_row_first=blank_row_first, blank_row_end=blank_row_end,
-                count_blank_rows=count_blank_rows, align_count_pct=align_count_pct,
-                cell_format=cell_format, collapse_repeats=collapse_repeats,
-                drop_cols=drop_cols, stub_vars=stub_vars, stub_label=stub_label,
-                stub_indent=stub_indent, stub_group_summary=stub_group_summary,
-                header_sep=header_sep, auto_width=auto_width,
-                table_width_twips=table_width_twips, border=border, style=style, **tk,
-            )
-            for tbl in pages_k:
-                tbl.name = value if value else f"group_{k}"
-            out_pages.extend(pages_k)
+            g_idx = [i for i, g in enumerate(gval) if g == value]
+            # `page_by` stays the inner level: the group's rows are cut by it
+            # first, on the pre-stub columns, and each part is one page.
+            parts = ([[g_idx[i] for i in part] for part, _ in
+                      _page_by_runs([rows[i] for i in g_idx], by_pre)]
+                     if by_pre else [g_idx])
+            for idx in parts:
+                sub = {name: [rows[i][j] for i in idx] for j, name in enumerate(column_names)}
+                if user_cs is not None and len(user_cs) == len(rows):
+                    tk["cell_styles"] = [user_cs[i] for i in idx]
+                pages_k = as_rtftables(
+                    sub, read_meta=read_meta, split="none", group_by=group_by,
+                    sort_by=sort_by, sort_desc=sort_desc, cont_label=cont_label,
+                    min_group_rows=min_group_rows, blank_rows=blank_rows,
+                    blank_row_first=blank_row_first, blank_row_end=blank_row_end,
+                    count_blank_rows=count_blank_rows, align_count_pct=align_count_pct,
+                    cell_format=cell_format, na=na, collapse_repeats=collapse_repeats,
+                    drop_cols=drop_cols, stub_vars=stub_vars, stub_label=stub_label,
+                    stub_indent=stub_indent, stub_group_summary=stub_group_summary,
+                    header_sep=header_sep, auto_width=auto_width,
+                    table_width_twips=table_width_twips, border=border, style=style, **tk,
+                )
+                for tbl in pages_k:
+                    tbl.name = value if value else f"group_{k}"
+                out_pages.extend(pages_k)
         return out_pages
 
     # Stub: reshape BEFORE any index-based resolution below.
@@ -1063,6 +1135,20 @@ def as_rtftables(
     if sort_idx:
         rows = _sort_rows(rows, sort_idx, sort_desc)
 
+    # na: the text for a missing value, in every column, body-wide and before
+    # the cell-format pass -- so the aligners see it as ordinary text -- and
+    # before the split, so the blanks collapse_repeats writes per page stay
+    # blank (R).
+    if not isinstance(na, str):
+        raise ValueError(
+            "`na` must be a single string -- the text printed for a missing value "
+            '(e.g. "-" or "NA").  "" (the default) leaves the cell empty.'
+        )
+    if na:
+        ncol = len(column_names)
+        rows = [[na if j < ncol and (v is None or (isinstance(v, float) and v != v)) else v
+                 for j, v in enumerate(r)] for r in rows]
+
     # Optional cell-format pass BEFORE pagination, column-by-column, so every
     # page inherits the cleaned-up cells.  `cell_format` takes precedence;
     # `align_count_pct=True` is the shorthand for the built-in "n (xx.x)"
@@ -1078,71 +1164,91 @@ def as_rtftables(
         if cell_format is not None:
             fl = resolve_cell_format(cell_format, len(column_names))
             if fl is not None:
-                apply_cell_format(rows, column_names, fl)
+                apply_cell_format(rows, column_names, fl, na=na)
         elif align_count_pct:
-            realign_count_pct_df(rows, column_names)
+            realign_count_pct_df(rows, column_names, na=na)
 
-    # `group_by="auto"` is settled BEFORE any blank marker goes in: a marker's
-    # empty cell would make a value-grouped column read as "filled", every row
-    # its own group, and group_safe free to cut anywhere (R #330).  With no
-    # `group_col` the group splits read column 0, as in R.
-    split_mode = group_by
-    if group_by == "auto":
-        gcol = group_idx if group_idx is not None else 0
-        split_mode = _detect_group_mode([_as_text(r[gcol]) for r in rows]) if rows else "value"
+    def paginate_part(part_rows, g_idx):
+        """Split one body (the whole one, or one page_by partition) into pages:
+        ``(rows, name, materialised, blank spec)`` each."""
+        # `group_by="auto"` is settled BEFORE any blank marker goes in: a
+        # marker's empty cell would make a value-grouped column read as
+        # "filled", every row its own group, and group_safe free to cut
+        # anywhere (R #330).  With no group column the splits read column 0.
+        split_mode = group_by
+        if group_by == "auto":
+            gcol = g_idx if g_idx is not None else 0
+            split_mode = (_detect_group_mode([_as_text(r[gcol]) for r in part_rows])
+                          if part_rows else "value")
 
-    # count_blank_rows: every blank row that will print is materialised as a
-    # marker row BEFORE the split, so it counts toward `max_rows`; each page
-    # turns its markers back into blank positions (R #362).
-    materialised = False
-    if count_blank_rows:
-        spec = _expand_between_groups(blank_rows, group_idx, split_mode)
-        sep_pos, exp_pos = _split_blank_positions(spec, column_names, rows)
-        rows, materialised = _materialize_blank_markers(rows, sep_pos, exp_pos)
+        # count_blank_rows: every blank row that will print is materialised as
+        # a marker row BEFORE the split, so it counts toward `max_rows`; each
+        # page turns its markers back into blank positions (R #362).
+        materialised = False
+        if count_blank_rows:
+            spec = _expand_between_groups(blank_rows, g_idx, split_mode)
+            sep_pos, exp_pos = _split_blank_positions(spec, column_names, part_rows)
+            part_rows, materialised = _materialize_blank_markers(part_rows, sep_pos, exp_pos)
 
-    group_keys = _compute_group_keys(rows, group_idx, split_mode)
-    if materialised and split_mode == "value":
-        # A marker joins the group above it, so it does not break the run.
-        for i in range(1, len(rows)):
-            if isinstance(rows[i], _BlankMarker):
-                group_keys[i] = group_keys[i - 1]
+        group_keys = _compute_group_keys(part_rows, g_idx, split_mode)
+        if materialised and split_mode == "value":
+            # A marker joins the group above it, so it does not break the run.
+            for i in range(1, len(part_rows)):
+                if isinstance(part_rows[i], _BlankMarker):
+                    group_keys[i] = group_keys[i - 1]
 
-    if callable(split):
-        # Custom split hook: build a
-        # Frame, run the split, and normalise the returned frames to the same
-        # ``(rows, page_name)`` shape the string strategies produce.
-        from .pagination import Frame, run_split
+        if callable(split):
+            # Custom split hook: build a Frame, run the split, and normalise the
+            # returned frames to the ``(rows, page_name)`` shape.
+            from .pagination import Frame, run_split
 
-        frames = run_split(
-            split,
-            Frame(column_names, rows),
-            split_rows=split_rows,
-            max_rows=max_rows,
-            group_col=group_col,
-            group_by=group_by,
-            cont_label=cont_label,
-            min_group_rows=min_group_rows,
-        )
-        pages = [(f.rows, f.name) for f in frames]
+            frames = run_split(
+                split,
+                Frame(column_names, part_rows),
+                split_rows=split_rows,
+                max_rows=max_rows,
+                group_col=g_idx if group_col is None else group_col,
+                group_by=group_by,
+                cont_label=cont_label,
+                min_group_rows=min_group_rows,
+            )
+            part_pages = [(f.rows, f.name) for f in frames]
+        else:
+            # Under count_blank_rows the page edges print rows too, so the group
+            # splits count them (R #362).  A row with content only in a column
+            # that is not printed (a drop_cols carrier) is blank on the page.
+            ignore = set(drop_idx or ())
+            if carry_styles:
+                ignore.add(len(column_names))
+            part_pages = _paginate(
+                part_rows, group_keys, split, split_rows, max_rows, min_group_rows,
+                cont_label, g_idx, group_mode=split_mode,
+                edge_first=count_blank_rows and blank_row_first,
+                edge_end=count_blank_rows and blank_row_end,
+                blank_ignore=ignore,
+            )
+        # Per-page blank spec: R inserts NO blank rows unless `blank_rows` asks
+        # for them -- setting `group_col` alone must not add separators.
+        pblank = _expand_between_groups(blank_rows, g_idx, group_by)
+        return [(r, nm, materialised, pblank) for r, nm in part_pages]
+
+    if page_by is None:
+        pages = paginate_part(rows, group_idx)
     else:
-        # Under count_blank_rows the page edges print rows too, so the group
-        # splits count them (R #362).  A row with content only in a column
-        # that is not printed (a drop_cols carrier) is blank on the page.
-        ignore = set(drop_idx or ())
-        if carry_styles:
-            ignore.add(len(column_names))
-        pages = _paginate(
-            rows, group_keys, split, split_rows, max_rows, min_group_rows, cont_label,
-            group_idx, group_mode=split_mode,
-            edge_first=count_blank_rows and blank_row_first,
-            edge_end=count_blank_rows and blank_row_end,
-            blank_ignore=ignore,
-        )
-
-    # Per-page blank spec: explicit blank_rows wins; else derive from group_col.
-    # R inserts NO blank rows unless `blank_rows` asks for them -- setting
-    # `group_col` alone must not add separators.
-    page_blank = _expand_between_groups(blank_rows, group_idx, group_by)
+        # page_by: the OUTER level (R .paginate_by_page()).  Each partition goes
+        # through the same split; the group column defaults to the first column
+        # the key does not occupy (the BY column itself has no structure).
+        by_idx = _resolve_indices(page_by, column_names)
+        g_idx = group_idx
+        if g_idx is None:
+            g_idx = next((j for j in range(len(column_names)) if j not in by_idx), None)
+        collected, grp, by = [], [], []
+        for part_idx, label in _page_by_runs(rows, by_idx):
+            for page in paginate_part([rows[i] for i in part_idx], g_idx):
+                collected.append(page)
+                grp.append(page[1] if page[1] else None)
+                by.append(label)
+        pages = _order_and_name_pages(collected, grp, by)
 
     # auto_width: measure the WHOLE table once (all pages share the widths, so
     # paginated pages line up).  Carrier columns are dropped from the printed
@@ -1190,7 +1296,7 @@ def as_rtftables(
         table_kwargs = dict(table_kwargs, table_width_twips=int(table_width_twips))
 
     out: list[RtfTable] = []
-    for page_rows, page_name in pages:
+    for page_rows, page_name, materialised, page_blank in pages:
         if materialised:
             # The blanks were counted by the split: read them off the markers.
             page_rows, blank_positions = _collapse_blank_markers(
