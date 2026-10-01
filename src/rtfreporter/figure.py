@@ -132,8 +132,12 @@ class Figure:
 
     def display_twips(self) -> dict:
         """Resolve the display size (twips), honouring explicit width/height."""
-        dpi_x = self.dpi_x if self.dpi_x and self.dpi_x > 0 else _DEFAULT_DPI
-        dpi_y = self.dpi_y if self.dpi_y and self.dpi_y > 0 else _DEFAULT_DPI
+        # A missing DPI falls back to the `figure.default_dpi` option (R).
+        from .config import _opt
+
+        fallback = float(_opt("figure.default_dpi") or _DEFAULT_DPI)
+        dpi_x = self.dpi_x if self.dpi_x and self.dpi_x > 0 else fallback
+        dpi_y = self.dpi_y if self.dpi_y and self.dpi_y > 0 else fallback
         native_w = int(round(self.img_width / dpi_x * 1440))
         native_h = int(round(self.img_height / dpi_y * 1440))
         uw, uh = self.width_twips, self.height_twips

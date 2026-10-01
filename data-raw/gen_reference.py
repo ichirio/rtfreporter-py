@@ -186,6 +186,9 @@ package, and follows the R package's name, arguments and defaults.
     `AFTER_LAST` rather than the magic integers `0` and `-1`.
     See [Differences from the R package](r-differences.md).
 
+**Start here:** [four complete recipes](recipes.md) -- DM, AE, PK and LB,
+each a program that ends in a rendered RTF.
+
 ## Contents
 
 """

@@ -571,8 +571,10 @@ def rtf_figures(
 
     Args:
         doc: The :class:`RtfDocument` to add to.
-        figures: An image path (PNG / JPEG) or a :class:`~rtfreporter.Figure`,
-            or a list of them; one page each.
+        figures: An image path (PNG / JPEG), a plot object (anything
+            :func:`~rtfreporter.rtfplot` can draw: a matplotlib figure, a
+            plotnine plot, a function that draws) or a
+            :class:`~rtfreporter.Figure`, or a list of them; one page each.
         width_twips: Display width for the paths; ``None`` = the full writable
             width.
         height_twips: Display height for the paths; ``None`` = from the image's
@@ -592,6 +594,12 @@ def rtf_figures(
     flist = _broadcast_blocks(footnotes, n)
     out = doc
     for i, fig in enumerate(figures):
+        if not isinstance(fig, Figure):
+            # rtfplot() knows what can be drawn; say which item it was.
+            try:
+                fig = rtfplot(fig, **fig_kwargs)
+            except (ValueError, TypeError, OSError) as e:
+                raise type(e)(f"figures[{i}]: {e}") from e
         out = out.add_figure(
             fig,
             title=tlist[i] if tlist is not None else None,

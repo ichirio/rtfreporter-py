@@ -109,3 +109,14 @@ def test_a_failed_draw_leaves_no_file(monkeypatch, tmp_path):
     with pytest.raises(RuntimeError, match="draw failed"):
         rr.rtfplot(boom)
     assert made and not os.path.exists(made[0])
+
+
+def test_rtf_figures_draws_plot_objects_and_names_a_bad_item():
+    fig = _mpl_figure()
+    doc = rr.rtf_figures(rr.rtf_document(), [fig], width_twips=2880)
+    assert doc._pages[0]["content"].display_twips()["w"] == 2880
+    with pytest.raises(ValueError, match=r"figures\[1\]: A figure is one file path"):
+        rr.rtf_figures(rr.rtf_document(), [fig, None])
+    with pytest.raises(FileNotFoundError, match=r"figures\[0\]"):
+        rr.rtf_figures(rr.rtf_document(), ["no-such-file.png"])
+    plt.close(fig)
