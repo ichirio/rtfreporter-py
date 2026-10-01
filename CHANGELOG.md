@@ -6,6 +6,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.1] — 2026-10-01
+
+### Fixed
+
+- **A row split by `set_decimal_split()` lost the table's font size and the
+  cell fill** (#5; the R package's ichirio/rtfreporter#509, fixed there in
+  0.8.2.9003).  The split data rows were written without the table's own font
+  switch (`rtftable(font_size_half_points=, font=)`), so their numbers fell
+  back to the document's size and font, and without the `background` of their
+  column or of `cell_styles`, so a shaded column had unshaded rows wherever a
+  number was split.  0.4.0 reproduced this on purpose, for byte parity with R
+  v0.8.2; it now matches R's fix (the two affected differential golden files
+  are rendered by R `main` at the fix -- see `data-raw/xcheck/README.md`).
+  Tables without `set_decimal_split()` are byte-identical.
+
 ## [0.4.0] — 2026-10-01
 
 ### Following R v0.8.2 (#3)

@@ -39,6 +39,15 @@ def test_styles_and_size_match_r():
     assert _rtf(t) == _golden("styles_size")
 
 
+def test_font_and_fill_on_split_rows_match_r():
+    # R #509 / #510: a split row keeps the table's font and the cell fill.
+    t = rr.rtftable(DF, font="Arial")
+    t = rr.style_cols(t, cols="A", background="#EFEFEF")
+    t = rr.style_body(t, rows=1, cols="A", background="#F8D7DA")
+    t = rr.set_decimal_split(t, cols="A")
+    assert _rtf(t) == _golden("font_fill")
+
+
 def test_arguments_are_checked():
     t = rr.rtftable(DF)
     with pytest.raises(ValueError, match="`cols` is required"):

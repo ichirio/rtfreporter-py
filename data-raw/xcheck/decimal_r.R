@@ -31,4 +31,12 @@ write_doc(rtftable(df, font_size_half_points = 20, cell_styles = list(
             list(color = c(NA, "#FF0000", NA)))) |>
             set_decimal_split(cols = 2L, pad_chars = c(0, 0), min_chars = c(0, 0)),
           "styles_size")
+# A split row keeps the table's font and the cell fill (R #509, fixed in
+# 0.8.2.9003 -- render this script with R main from that fix on; see
+# "Which R the golden files come from" in data-raw/xcheck/README.md).
+write_doc(rtftable(df, font = "Arial") |>
+            style_cols(cols = "A", background = "#EFEFEF") |>
+            style_body(rows = 2L, cols = "A", background = "#F8D7DA") |>
+            set_decimal_split(cols = "A"),
+          "font_fill")
 cat("wrote", out_dir, "\n")
