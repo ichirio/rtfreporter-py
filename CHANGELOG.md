@@ -6,6 +6,101 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Following R v0.8.2 (#3)
+
+The port now matches the R package's **v0.8.2** release, outside the ARD /
+table-plan engine (`normalize_ard()`, `widen_ard()`, `table_plan()`,
+`plan_*()`), which stays out of scope for now.  Every change was checked
+against R v0.8.2 byte for byte: the `data-raw/xcheck/` harness grew from 24
+to 68 cases, plus differential scripts for the formatters, assembly, headers,
+styles, figures, decimal alignment, column pagination, listings, great_tables
+input and the four recipes.  Every R v0.8.2 export outside ARD / plan now
+exists in Python except `rtfreporter_ai_manual()`.
+
+#### Breaking changes
+
+- **`page_split_*()` retired** (R #334): the split strategies are
+  `as_rtftables(split=)` / `paginate(split=)` only.
+- **The footer is drawn by the footnote band** (R #296); output of documents
+  with footers changes accordingly (as R's did).
+- **The border constructors of the old model** (`rtf_border_with()`,
+  `rtf_table_border()`, `rtf_border_tfl()`) are deprecated and warn once per
+  session (R #340-#348); build borders with `rtf_border()` / `style_zone()`.
+- **`rounding="r"` rounds as R >= 4.0's `round()`** (it used Python's
+  `round()`, which differs on values such as 23.445 and 0.05).
+- **`rtfplot()`'s first argument is `x`** (was `path`), a file path or a plot
+  object, as R.
+- **Argument names follow R:** `col_cell(pos=)` (was `cols=`),
+  `generate_rtfreport(report=)` (was `doc=`), `add_cont_label(chunk=)`,
+  `set_blank_rows(df=)`, `paginate(x=)`, `style_body / style_cols /
+  style_header / style_zone(x=)` (were `tbl=`).  Positional calls are
+  unaffected.
+- **`rtf_header_source()`** now writes name-based statements
+  (`tbl = set_col_header(tbl, rtf_col_header(...), align=[...])`,
+  `tbl = style_zone(tbl, ...)`); its arguments are R's
+  `(x, level, snippet, add_span_level, stub)`.
+- **Positional arguments with `drop_cols`** (`col_rel_width`,
+  `column_widths_twips`, `col_spec`, `row_title`, `cell_styles`) address the
+  columns **before** the drop and lose the dropped ones, as R.
+
+#### Added
+
+- **Pagination:** `count_blank_rows` (R #362 / #330), group splits cut as R
+  cuts them, one-group page break (#408), page-edge separators (#332), gather
+  by value (#485), page names as headings and `auto_section` on a name change
+  (#433), `as_rtftables(page_by=, na=)`, `paginate_cols()` (column-wise
+  pagination with `at` / `cols` / `by`, `carry`, `col_header`,
+  `allow_span_break`, `width`, `page_order`).
+- **Formatting:** `fmt_signif()`, `fmt_round()`, `fmt_numeric()`,
+  `fmt_value_paren()`, `catx()`, `round_num()`, named cell formats, `na=` on
+  the formatters (#476 / #350); `set_decimal_split()` (R #304).
+- **Run tokens** `{PROGRAM}`, `{PROGRAM_NAME}`, `{PROGRAM_DIR}`,
+  `{DATETIME[:fmt]}` with `program=`; the `{BOOK_PAGE}` slot and
+  `assemble_rtf(book_page=)`; `{SECTION_PAGES}` error (#410); assembled page
+  counts (#401 / #415).
+- **`rtf_watermark()`** and `watermark=` on `rtf_document()` / `rtf_config()` /
+  `rtf_section()`.
+- **Fonts:** per-element fonts (`rtftable(font=, font_size_half_points=)`,
+  `font=` on titles / footnotes / header / footer) and a variable-length font
+  table (`rtf_document(font_table=)` / `rtf_config(font_table=)`, which raised
+  `NotImplementedError` before).
+- **Column headers:** `col_key()`, `col_cell(<selector>)`,
+  `set_col_header(values=, by=)`, `header_map()`, named label rows (#453), the
+  label-row width check (#435); `rtf_header_source(level=, add_span_level=,
+  stub=)`.
+- **Styling:** cell fill (`background` / `header_background`, `cell_styles`
+  background); `style_body(rows=)` per cell; `style_header(row=, cols=,
+  label=, border=, underline=)`; block styles for titles and footnotes
+  (#291 / #292 / #398); `rtf_tables()` overrides of a pre-built table's
+  formatting, `auto_title=` / `title_label_align=`.
+- **Stub:** `stub_spec()` and `as_rtftables(stub=)` (the flat `stub_vars`
+  family is superseded, R #314); `stub_cols(layout="columns",
+  label_span=True)`.
+- **Listings:** `listing_col()`, `listing_spec()`, `build_listing()`,
+  `as_rtftables(listing=)`, `fit_listing_widths()`, `listing_code()`,
+  `listing_wrap()`, `listing_wrap_code()`, `listing_disp_width()`,
+  `listing_take()`, `listing_split_after()`.
+- **Figures:** `rtfplot()` / `rtf_figures()` draw a plot object (a matplotlib
+  figure, a plotnine plot, or a drawing function) at `render_width` x
+  `render_height` inches and `render_dpi` (R #394);
+  `rtf_figures(width_twips=, height_twips=, align=)`.  New extra
+  `rtfreporter[plot]` (matplotlib).
+- **great_tables input** takes `stub=` and `drop_cols=`: the table's labels,
+  alignment and cell styles follow their columns, as R's gt input does.
+- **Docs:** Listings, Figures and "Four recipes: DM, AE, PK, LB" articles;
+  the reference index follows R's.
+
+#### Fixed
+
+- `as_rtftables(cell_styles=)` of your own follows its rows across pages
+  (R #498); `by_value` + a stub splits on the pre-stub `group_col` and each
+  group's page keeps the source's metadata.
+- great_tables input with `drop_cols` / `stub` raised "Column index out of
+  range"; the gt column names are kept verbatim (R #458).
+- The `figure.default_dpi` option was ignored (a constant 96 was used).
+- A `col_spec` of your own and a great_tables table's now merge per column
+  (yours wins), as R.
+
 ### Added
 
 - **Differential cross-check against the R package.** `data-raw/xcheck/cases.json`
