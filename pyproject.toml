@@ -49,11 +49,13 @@ dependencies = []
 pandas = ["pandas"]
 polars = ["polars"]
 gt = ["great_tables"]
-all = ["pandas", "polars", "great_tables"]
+plot = ["matplotlib"]
+all = ["pandas", "polars", "great_tables", "matplotlib"]
 dev = [
     "pandas",
     "polars",
     "great_tables",
+    "matplotlib",
     "pytest",
     "pytest-cov",
     "ruff",
