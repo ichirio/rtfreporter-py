@@ -51,6 +51,20 @@ data row `i`".  A bare negative integer raises an error pointing at
 So R's `blank_rows = c(0, 2, -1)` (before first; after data row 2; after last)
 becomes Python `blank_rows=[BEFORE_FIRST, 1, AFTER_LAST]`.
 
+## Where the shape of a call differs
+
+A few calls take a Python-shaped argument where R's would not translate. Each
+does the same job as its R counterpart:
+
+| R | Python | why |
+|---|---|---|
+| `rtf_section(doc, page, secinfo = list(header = , footer = ))` | `rtf_section(doc, page, header=, footer=, watermark=)` | keyword arguments instead of a list; `page=None` means "from the next page" |
+| `as_rtftable(gt_obj, ...)` | `as_rtftable(x, ...)` | takes any input `as_rtftables()` takes, not only a GT table |
+| `rtf_header_source()` returns R source (`set_col_header(...) \|> style_zone(...)`) | returns Python statements on a table named `tbl` | the snippet has to run in the language you paste it into |
+| `rtfplot()` draws a ggplot2 / lattice / grid object | draws a matplotlib figure, a plotnine plot, or a drawing function | the plotting libraries of each ecosystem |
+| `listing_code()`, `listing_wrap_code()` write R source | write Python source | as above |
+| `add_col_header_row(.position = )` | `add_col_header_row(position=)` | a leading dot is not a Python name |
+
 ## Everything else matches R
 
 The module-level functions (`rtf_document`, `rtf_tables`, `rtf_header`,

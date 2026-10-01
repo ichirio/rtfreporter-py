@@ -87,13 +87,16 @@ from `tab_style()`, row groups, summary rows and footnotes. See
 
 | Area | Status |
 |---|---|
-| Exported functions | <span class="rtf-badge ok">74 / 74</span> every R export exists in Python |
-| Renderer, pagination, borders, styling, assembly | <span class="rtf-badge ok">ported</span> |
+| Followed R version | <span class="rtf-badge ok">v0.8.2</span> the R release this port matches |
+| Exported functions | <span class="rtf-badge ok">87 / 88</span> every R v0.8.2 export outside the ARD / plan engine, except `rtfreporter_ai_manual()` (the R package's AI-assistant manuals, which describe the R API) |
+| Renderer, pagination, borders, styling, listings, figures, assembly | <span class="rtf-badge ok">ported</span> — checked byte-for-byte against R v0.8.2 |
 | Table-object adapters | <span class="rtf-badge partial">pandas, polars, great_tables</span> — the R-only frameworks have no Python counterpart |
-| `rtf_config(font_table=)` | <span class="rtf-badge partial">partial</span> — a single built-in font table |
+| ARD / table plan (`normalize_ard()`, `widen_ard()`, `table_plan()`, `plan_*()`) | <span class="rtf-badge partial">not ported</span> — out of scope for now; to be reconsidered when the Python package is used in earnest |
 
-`BUILD_REPORT.md` in the repository carries the authoritative, function-by-
-function mapping.
+How the parity is checked: the differential harness in `data-raw/xcheck/`
+renders the same cases with both packages and requires byte-identical RTF
+(see its README); the R side's output is committed, so CI enforces it without
+R installed.
 
 ## Versioning
 
