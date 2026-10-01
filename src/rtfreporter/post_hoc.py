@@ -10,6 +10,7 @@ result.  All column references are 0-based indices or names against the
 
 from __future__ import annotations
 
+import json
 from dataclasses import replace
 
 from .adapters import _collapse_repeats, _resolve_indices
@@ -529,30 +530,164 @@ def combine_sections(**groups) -> list[RtfTable]:
 # -- rtf_header_source() ------------------------------------------------------
 
 
-def rtf_header_source(x, snippet: bool = True) -> str:
-    """Preview a finished table's column header as reusable source.
+def _hs_str(s) -> str:
+    """A string as a Python literal (double-quoted, escaped)."""
+    return json.dumps(str(s), ensure_ascii=False)
 
-    A simplified port of R's ``rtf_header_source()``: introspects the header of
-    a finished table (or the first page of a list) and returns Python source
-    that reproduces it.  With ``snippet=True`` (default) a ready-to-run
-    ``set_col_header(tbl, ...)`` call; with ``snippet=False`` just the row
-    expressions.  Pair with :func:`rtf_columns` to see the exact column names.
-    """
-    tbl = x[0] if isinstance(x, (list, tuple)) and x else x
-    _require_table(tbl, "rtf_header_source")
-    rows = tbl.col_header or [HeaderRow(kind="labels", labels=list(tbl.column_names))]
 
-    parts: list[str] = []
+def _hs_side(sd, level: str) -> str:
+    # A default single rule is just True and a style name stands alone;
+    # anything carrying a weight or a colour needs the full value.
+    plain_w = (sd.width or 15) == 15 and level not in ("default", "all")
+    if sd.color is None and plain_w:
+        return "True" if sd.style == "single" else _hs_str(sd.style)
+    args = [_hs_str(sd.style)]
+    if not plain_w:
+        args.append(str(sd.width or 15))
+    if sd.color is not None:
+        args.append(f"color={_hs_str(sd.color)}")
+    return f"rtf_border_side({', '.join(args)})"
+
+
+def _hs_border(b, level: str) -> str:
+    parts = [f"{s}={_hs_side(getattr(b, s), level)}"
+             for s in ("top", "bottom", "left", "right") if getattr(b, s) is not None]
+    return f"rtf_border({', '.join(parts)})"
+
+
+def _hs_cell(cell: SpanCell, cn: list[str], col_spec, level: str) -> str:
+    pos = (_hs_str(cn[cell.start]) if cell.start == cell.end
+           else f"({_hs_str(cn[cell.start])}, {_hs_str(cn[cell.end])})")
+    args = [pos, _hs_str(cell.label or "")]
+    eff_align = col_spec[cell.start].header_align if col_spec and cell.start < len(col_spec) else None
+    if cell.align is not None:
+        args.append(f"align={_hs_str(cell.align)}")
+    elif level in ("default", "all") and eff_align is not None:
+        args.append(f"align={_hs_str(eff_align)}")
+    for f in ("bold", "italic", "underline"):
+        if getattr(cell, f):
+            args.append(f"{f}=True")
+        elif level == "all":
+            args.append(f"{f}=False")
+    if cell.border is not None:
+        args.append(f"border={_hs_border(cell.border, level)}")
+    return f"col_cell({', '.join(args)})"
+
+
+def _hs_label_row(labels, cn: list[str]) -> str:
+    n = min(len(labels), len(cn))
+    return "{" + ", ".join(f"{_hs_str(cn[i])}: {_hs_str(labels[i])}" for i in range(n)) + "}"
+
+
+def _hs_scaffold_row(ncol: int, stub_idx: list[int]) -> HeaderRow:
+    # The stub columns stay single empty cells; the rest are bundled under one
+    # empty spanning cell whose label the caller fills in.
+    ns = [j for j in range(ncol) if j not in stub_idx]
+    cells = [SpanCell(j, j, "") for j in stub_idx]
+    if ns:
+        cells.append(SpanCell(min(ns), max(ns), ""))
+    return HeaderRow(kind="spanning", spans=sorted(cells, key=lambda c: c.start))
+
+
+def _hs_col_header(rows, cn, col_spec, level: str, ind: str = "") -> str:
+    parts = []
     for r in rows:
         if r.kind == "labels":
-            parts.append(repr(list(r.labels or [])))
+            parts.append(_hs_label_row(r.labels or [], cn))
         else:
-            cells = []
-            for s in r.spans:
-                pos = s.start if s.start == s.end else (s.start, s.end)
-                cells.append(f"col_cell({pos!r}, {s.label!r})")
-            parts.append("[" + ", ".join(cells) + "]")
-    body = ",\n  ".join(parts)
+            parts.append("[" + ", ".join(_hs_cell(c, cn, col_spec, level) for c in r.spans) + "]")
+    inner = ind + "    "
+    return ("rtf_col_header(\n" + inner + f",\n{inner}".join(parts) + ",\n" + ind + ")")
+
+
+def _hs_align_line(col_spec, level: str) -> str | None:
+    ha = [s.header_align or "" for s in col_spec]
+    da = [s.align or "" for s in col_spec]
+    if level == "explicit" and ha == da:
+        return None
+    return "align=[" + ", ".join(_hs_str(a) for a in ha) + "]"
+
+
+def _hs_zone_line(border, level: str) -> str | None:
+    if border is None:
+        return None
+    parts = [f"{z}={_hs_border(getattr(border, z), level)}"
+             for z in ("header", "spanning") if getattr(border, z, None) is not None]
+    if not parts:
+        return None
+    return f"tbl = style_zone(tbl, {', '.join(parts)})"
+
+
+def rtf_header_source(x, level: str = "explicit", snippet: bool = True,
+                      add_span_level: bool = False, stub=0) -> str:
+    """Deparse a table's column header back to editable ``rtf_col_header()`` source.
+
+    Renders the **current** column header of a finished :func:`rtftable` (or
+    the first page of an :func:`as_rtftables` list) as Python source, addressed
+    by **column name**, so you can copy it, edit the labels / spans, and
+    re-apply it with :func:`set_col_header`.  It pairs with
+    :func:`rtf_columns`, which lists the final column names.
+
+    The output is name-based (cell positions are written as column names,
+    which survive reordering), keeps the header's empty gap cells, and
+    reproduces per-cell text decorations and borders.
+
+    ``add_span_level=True`` previews **adding a second hierarchy level**: the
+    ``stub`` column(s) stay as single (empty) cells and every other column is
+    bundled under one empty spanning cell whose label you fill in -- a quick
+    scaffold for turning a one-row header into a grouped, two-row header.
+
+    Args:
+        x: An :class:`RtfTable`, or a list of them (the first page is used).
+        level: Verbosity of the emitted cells: ``"explicit"`` (default -- only
+            fields that differ from the defaults), ``"default"`` (also each
+            cell's effective ``align`` and the default border widths, but not
+            the ``False`` decoration flags), or ``"all"`` (everything).
+        snippet: When ``True`` (default), return statements that re-apply the
+            header to a table named ``tbl``: a ``set_col_header()`` call that
+            also reproduces the header text alignment (from ``col_spec``), and
+            a ``style_zone()`` call for the header-related zone borders
+            (``header`` / ``spanning``).  When ``False``, return the bare
+            ``rtf_col_header(...)`` value.
+        add_span_level: When ``True``, prepend a scaffold spanning row
+            grouping the non-``stub`` columns.
+        stub: Column(s) to keep un-spanned when ``add_span_level=True``:
+            0-based position(s) and/or column name(s).  Default ``0`` (the
+            first column, where ``as_rtftables(stub=)`` places the stub).
+
+    Returns:
+        The source, as one string (``print()`` it to see the line breaks).
+    """
+    if level not in ("explicit", "default", "all"):
+        raise ValueError('`level` must be one of "explicit", "default", "all".')
+    tbl = x[0] if isinstance(x, (list, tuple)) and x else x
+    if not isinstance(tbl, RtfTable):
+        raise TypeError("`rtf_header_source()` expects an RtfTable or a list of RtfTable "
+                        "pages (as returned by as_rtftables()).")
+    cn = list(tbl.column_names)
+    col_spec = tbl.col_spec
+    rows = list(tbl.col_header or []) or [HeaderRow(kind="labels", labels=cn)]
+
+    if add_span_level:
+        refs = stub if isinstance(stub, (list, tuple)) else [stub]
+        stub_idx = []
+        for r in refs:
+            j = cn.index(r) if isinstance(r, str) and r in cn else r
+            if isinstance(j, str) or not isinstance(j, int) or not 0 <= j < len(cn):
+                raise ValueError(f"`stub` must be valid column name(s) or position(s) "
+                                 f"in 0..{len(cn) - 1}.")
+            stub_idx.append(j)
+        rows = [_hs_scaffold_row(len(cn), stub_idx)] + rows
+
     if not snippet:
-        return body
-    return f"set_col_header(\n  tbl,\n  {body},\n)"
+        return _hs_col_header(rows, cn, col_spec, level)
+    hdr = _hs_col_header(rows, cn, col_spec, level, ind="    ")
+    al = _hs_align_line(col_spec, level)
+    out = "tbl = set_col_header(\n    tbl,\n    " + hdr + ",\n"
+    if al is not None:
+        out += "    " + al + ",\n"
+    out += ")"
+    zl = _hs_zone_line(tbl.border, level)
+    if zl is not None:
+        out += "\n" + zl
+    return out
