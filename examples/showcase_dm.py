@@ -133,7 +133,7 @@ def dm_col_header(adsl: pd.DataFrame):
     """Two-row column header: a spanning ``Treatment Group`` over the three arms."""
     labels = arm_labels(adsl)
     return rtf_col_header(
-        [col_cell(cols=(1, 3), label="Treatment Group", align="center")],
+        [col_cell(pos=(1, 3), label="Treatment Group", align="center")],
         ["", *labels],
     )
 
@@ -150,12 +150,11 @@ def _col_spec() -> list[dict[str, object]]:
 
 def build_document(adsl: pd.DataFrame, body: pd.DataFrame):
     """Wrap the body in the shared furniture and return an ``RtfDocument``."""
-    from rtfreporter import as_rtftables
+    from rtfreporter import as_rtftables, stub_spec
 
     pages = as_rtftables(
         body,
-        stub_vars=["Characteristic", "Statistic"],
-        stub_label="",
+        stub=stub_spec(["Characteristic", "Statistic"], label=""),
         col_header=dm_col_header(adsl),
         col_spec=_col_spec(),
         col_rel_width=DM_WIDTHS,
@@ -177,7 +176,7 @@ def build_gt(adsl: pd.DataFrame, body: pd.DataFrame):
 
     flat = body.copy()
     # Merge the two hierarchy columns here: a GT stub is read as a single
-    # column, so the indent is baked into the label instead of via stub_vars.
+    # column, so the indent is baked into the label instead of via stub=.
     indent = chr(0xA0) * 4
     seen: set[str] = set()
     labels = []

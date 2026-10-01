@@ -58,6 +58,7 @@ from .borders import (
     rtf_border_with,
     rtf_table_border,
 )
+from .catx import catx
 from .config import rtfreporter_options, rtfreporter_reset_defaults
 from .document import (
     RtfDocument,
@@ -77,6 +78,7 @@ from .format_count_pct import (
     fmt_count_paren,
     fmt_count_paren_bare,
     fmt_right_align,
+    fmt_value_paren,
     format_count_pct,
     realign_count_pct,
 )
@@ -87,16 +89,27 @@ from .header_footer import (
     update_footer_row,
     update_header_row,
 )
+from .listing import (
+    ListingCol,
+    ListingSpec,
+    build_listing,
+    fit_listing_widths,
+    listing_code,
+    listing_col,
+    listing_disp_width,
+    listing_spec,
+    listing_split_after,
+    listing_take,
+    listing_wrap,
+    listing_wrap_code,
+)
+from .num_format import fmt_numeric, fmt_round, fmt_signif, round_num
 from .page import DefaultFormat, Page, rtf_default_format, rtf_page
+from .paginate_cols import paginate_cols
 from .pagination import (
     Frame,
     PaginationError,
     add_cont_label,
-    page_split_by_value,
-    page_split_group_force,
-    page_split_group_safe,
-    page_split_none,
-    page_split_rows,
     paginate,
     set_blank_rows,
 )
@@ -106,6 +119,7 @@ from .post_hoc import (
     col_header_from_names,
     collapse_repeats,
     combine_sections,
+    header_map,
     rtf_columns,
     rtf_header_source,
     set_col_header,
@@ -118,20 +132,22 @@ from .rtf_table_style import (
     rtf_table_style_tfl,
     rtf_table_style_with,
 )
-from .stub import stub_cols
-from .style_verbs import style_body, style_cols, style_header, style_zone
+from .stub import StubSpec, stub_cols, stub_spec
+from .style_verbs import set_decimal_split, style_body, style_cols, style_header, style_zone
 from .table import (
     ColSpec,
     HeaderRow,
     RtfTable,
     SpanCell,
     col_cell,
+    col_key,
     rtf_col_header,
     rtftable,
 )
 from .text_width import auto_col_widths, text_width_in
+from .watermark import Watermark, rtf_watermark
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 __all__ = [
     "__version__",
@@ -225,6 +241,32 @@ __all__ = [
     "blank_rows_by_rule",
     # count / percent formatters
     "format_count_pct",
+    "fmt_value_paren",
+    "round_num",
+    "fmt_signif",
+    "fmt_round",
+    "fmt_numeric",
+    "catx",
+    "col_key",
+    "set_decimal_split",
+    "paginate_cols",
+    "ListingCol",
+    "ListingSpec",
+    "build_listing",
+    "fit_listing_widths",
+    "listing_code",
+    "listing_col",
+    "listing_disp_width",
+    "listing_spec",
+    "listing_split_after",
+    "listing_take",
+    "listing_wrap",
+    "listing_wrap_code",
+    "stub_spec",
+    "StubSpec",
+    "header_map",
+    "rtf_watermark",
+    "Watermark",
     "realign_count_pct",
     "fmt_count_paren",
     "fmt_count_paren_bare",
@@ -234,11 +276,6 @@ __all__ = [
     "PaginationError",
     "paginate",
     "add_cont_label",
-    "page_split_none",
-    "page_split_rows",
-    "page_split_by_value",
-    "page_split_group_safe",
-    "page_split_group_force",
     # style verbs
     "style_body",
     "style_cols",

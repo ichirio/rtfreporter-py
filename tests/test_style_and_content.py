@@ -28,8 +28,8 @@ def test_style_body_bold_returns_copy():
     tbl = rtftable({"A": [1], "B": [2]})
     styled = style_body(tbl, cols=0, bold=True)
     assert styled is not tbl
-    assert styled.col_spec[0].bold is True
-    assert tbl.col_spec[0].bold is False  # original untouched
+    assert styled.cell_styles[0]["bold"] == [True, None]
+    assert tbl.cell_styles is None  # original untouched
     assert r"\b " in _render(styled)
 
 
@@ -49,7 +49,7 @@ def test_style_header_align_and_bold():
 
 def test_style_zone_sets_body_border():
     tbl = rtftable({"A": [1]}, border="tfl")
-    styled = style_zone(tbl, "last_row", Border(bottom=BorderSide("double", 20)))
+    styled = style_zone(tbl, last_row=Border(bottom=BorderSide("double", 20)))
     assert styled.border.last_row is not None
     assert r"\brdrdb" in _render(styled)
 

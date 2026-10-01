@@ -33,6 +33,12 @@ roughly this order.
     `as_rtftable()` / `as_rtftables()` for pandas, polars and `great_tables`,
     and exactly what metadata is carried across.
 
+- :material-format-list-text: **[Listings](listings.md)**
+
+    From source data to a written listing: `listing_col()` / `listing_spec()`,
+    widths fitted to the page, wrapping, and subjects kept whole across page
+    breaks.
+
 - :material-file-multiple: **[Paginating](pagination.md)**
 
     Split strategies, group-aware breaks, `(Cont.)` continuation markers and
@@ -54,7 +60,8 @@ roughly this order.
 
 - :material-image: **[Figures](figures.md)**
 
-    Embedding PNG and JPEG at native DPI.
+    A plot object (matplotlib, plotnine, a drawing function) or a PNG / JPEG
+    file onto a page: render size versus DPI, fitting the page, formats.
 
 - :material-printer: **[Rendering and post-processing](output.md)**
 
@@ -72,6 +79,11 @@ roughly this order.
 End-to-end recipes whose figures are checked against the R implementation.
 
 <div class="grid cards" markdown>
+
+- :material-chef-hat: **[Four recipes: DM, AE, PK, LB](recipes.md)**
+
+    Copy-and-run programs for the four table shapes a report is mostly made
+    of, and which arguments each one actually uses.  Byte-identical to R.
 
 - :material-account-group: **[Demographics (Table 14.1.1)](showcase-dm.md)**
 

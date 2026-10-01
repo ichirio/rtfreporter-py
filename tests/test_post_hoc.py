@@ -167,8 +167,71 @@ def test_rtf_header_source_spanning_and_no_snippet():
         ["Cat", "Low", "High", "Total"],
     )
     body = rr.rtf_header_source(t, snippet=False)
-    assert "col_cell((1, 2), 'Treatment')" in body
+    assert 'col_cell(("g1", "g2"), "Treatment")' in body
     assert "set_col_header" not in body
+
+
+def _exec_snippet(src, tbl):
+    ns = {"tbl": tbl, **{k: getattr(rr, k) for k in dir(rr) if not k.startswith("_")}}
+    exec(src, ns)
+    return ns["tbl"]
+
+
+def test_rtf_header_source_round_trips_by_name():
+    # The snippet re-applies the header, alignment and zone borders as they were.
+    t = rr.rtftable({"row_label": ["x"], "g1": [1], "g 2": [2], "Total": [3]})
+    t = rr.set_col_header(
+        t,
+        [col_cell(("g1", "Total"), "Arms", bold=True,
+                  border=rr.rtf_border(bottom=rr.rtf_border_side("double", 30, color="#FF0000")))],
+        ["Category", "Low", "High", "Total"],
+        align=["left", "right", "right", "right"],
+    )
+    t = rr.style_zone(t, header=rr.rtf_border(top=True, bottom="double"))
+    for level in ("explicit", "default", "all"):
+        src = rr.rtf_header_source(t, level=level)
+        assert src.startswith("tbl = set_col_header(")
+        back = _exec_snippet(src, rr.rtftable({"row_label": ["x"], "g1": [1], "g 2": [2],
+                                               "Total": [3]}))
+        if level == "explicit":
+            assert back.col_header == t.col_header
+        else:  # the effective alignment is written out explicitly
+            assert [[(c.start, c.end, c.label, c.bold, c.border) for c in r.spans or []]
+                    for r in back.col_header] == [[(c.start, c.end, c.label, c.bold, c.border)
+                                                    for c in r.spans or []]
+                                                   for r in t.col_header]
+            assert back.col_header[0].spans[0].align == "right"
+        assert [c.header_align for c in back.col_spec] == ["left", "right", "right", "right"]
+        assert back.border.header == t.border.header
+    assert '"g 2": "High"' in src  # a non-identifier name is just a dict key
+
+
+def test_rtf_header_source_levels():
+    t = rr.set_col_header(_tbl(), [col_cell((1, 2), "Treatment")], ["Cat", "Low", "High", "Total"])
+    explicit = rr.rtf_header_source(t)
+    assert "align=" not in explicit  # header alignment equals the data alignment
+    assert "style_zone(tbl, header=rtf_border(top=True, bottom=True))" in explicit
+    default = rr.rtf_header_source(t, level="default")
+    assert 'col_cell(("g1", "g2"), "Treatment", align="center")' in default
+    assert 'rtf_border_side("single", 15)' in default
+    assert "bold=False" not in default
+    assert "bold=False, italic=False, underline=False" in rr.rtf_header_source(t, level="all")
+    with pytest.raises(ValueError, match="level"):
+        rr.rtf_header_source(t, level="verbose")
+
+
+def test_rtf_header_source_add_span_level_scaffold():
+    t = rr.set_col_header(_tbl(), ["Cat", "Low", "High", "Total"])
+    src = rr.rtf_header_source(t, snippet=False, add_span_level=True)
+    assert src.splitlines()[1] == '    [col_cell("row_label", ""), col_cell(("g1", "Total"), "")],'
+    src = rr.rtf_header_source(t, snippet=False, add_span_level=True, stub=["row_label", 3])
+    assert ('[col_cell("row_label", ""), col_cell(("g1", "g2"), ""), col_cell("Total", "")]'
+            in src)
+    for bad in ("nope", 9):
+        with pytest.raises(ValueError, match="stub"):
+            rr.rtf_header_source(t, add_span_level=True, stub=bad)
+    with pytest.raises(TypeError, match="expects an RtfTable"):
+        rr.rtf_header_source({"A": [1]})
 
 
 def test_rtf_header_source_on_page_list():
@@ -182,4 +245,4 @@ def test_rtf_header_source_falls_back_to_column_names():
     t = rr.rtftable({"A": [1], "B": [2]})
     t.col_header = []
     src = rr.rtf_header_source(t, snippet=False)
-    assert "['A', 'B']" in src
+    assert '{"A": "A", "B": "B"}' in src

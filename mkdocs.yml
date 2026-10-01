@@ -110,6 +110,7 @@ nav:
           - Adding tables and figures: adding-content.md
           - Borders and rules: borders.md
           - Importing tables: importing-tables.md
+          - Listings: listings.md
           - Paginating: pagination.md
           - Headers and footers: headers-footers.md
           - Splitting a report into sections: section-splitting.md
@@ -118,6 +119,7 @@ nav:
           - Rendering and post-processing: output.md
           - Assembling deliverables: assembling.md
       - Worked clinical examples:
+          - "Four recipes: DM, AE, PK, LB": recipes.md
           - Demographics (Table 14.1.1): showcase-dm.md
           - Adverse events by SOC/PT: showcase-ae.md
   - Relationship to R:

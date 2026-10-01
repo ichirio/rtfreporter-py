@@ -191,7 +191,7 @@ AE_WIDTHS = [46, 18, 18, 18]
 def ae_col_header(adsl: pd.DataFrame):
     """Two-row header: a spanning ``Treatment Group`` over the three arms."""
     return rtf_col_header(
-        [col_cell(cols=(1, 3), label="Treatment Group", align="center")],
+        [col_cell(pos=(1, 3), label="Treatment Group", align="center")],
         ["System Organ Class / Preferred Term", *arm_labels(adsl)],
     )
 

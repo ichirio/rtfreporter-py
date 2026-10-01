@@ -150,6 +150,18 @@ def test_figure_default_dpi_when_absent(tmp_path):
     assert d["native_w"] == pytest.approx(1440, abs=10)
 
 
+def test_figure_default_dpi_follows_the_option(tmp_path):
+    # A file with no DPI is read at the `figure.default_dpi` option, as R.
+    p = tmp_path / "a.png"
+    p.write_bytes(_png_bytes(144, 72))
+    old = rr.rtfreporter_options(**{"figure.default_dpi": 72})
+    try:
+        d = rr.rtfplot(str(p)).display_twips()
+    finally:
+        rr.rtfreporter_options(**old)
+    assert (d["native_w"], d["native_h"]) == (2880, 1440)
+
+
 def test_figure_bad_align_raises(tmp_path):
     p = tmp_path / "a.png"
     p.write_bytes(_png_bytes(10, 10))

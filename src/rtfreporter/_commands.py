@@ -37,7 +37,9 @@ TABLE_END = r"\pard"
 
 #: Manual page break wrapped in tiny empty paragraphs (a bare ``\page`` is
 #: dropped by Word when not flanked by real paragraphs).
-PAGE_BREAK = r"{\pard\fs2\par}\page{\pard\fs2\par}"
+# One group (#408): LibreOffice dropped a break emitted as two separately
+# grouped paragraphs around the \page; Word renders both forms the same.
+PAGE_BREAK = r"{\pard\fs2\par\page\pard\fs2\par}"
 
 SECTION_BREAK = r"\sect"
 HEADER_WRAPPER = r"{{\header {content}}}"
@@ -105,8 +107,10 @@ JPEG_TEMPLATE = (
 # -- Dynamic field templates --------------------------------------------------
 
 AUTO_PAGE = r"\chpgn "
+#: The ``{BOOK_PAGE}`` slot (R #413): an empty ignorable destination, filled by
+#: ``assemble_rtf(book_page=)`` with the compiled document's page number.
+BOOK_PAGE_SLOT = r"{\*\rtfreporterbookpage}"
 AUTO_TOTAL_PAGES = r"{{\field{{\*\fldinst NUMPAGES}}{{\fldrslt {total_pages}}}}}"
-SECTION_PAGES = r"{\field{\*\fldinst SECTIONPAGES}{\fldrslt 1}}"
 
 # ============================================================================
 #  Package defaults (rtfreporter_defaults.R)

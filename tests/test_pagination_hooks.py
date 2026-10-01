@@ -3,7 +3,7 @@
 import pytest
 
 import rtfreporter as rr
-from rtfreporter.pagination import Frame, PaginationError, as_frame
+from rtfreporter.pagination import Frame, PaginationError, as_frame, resolve_split
 
 
 def _df():
@@ -83,48 +83,54 @@ def test_paginate_sort_by():
     assert [r[0] for r in pages[0].rows] == ["a", "b", "c"]
 
 
-# -- factory functions -------------------------------------------------------
+# -- built-in strategies by name (the page_split_*() factories are gone, R #334)
 
 
-def test_page_split_none_factory():
-    f = rr.page_split_none()
+def test_page_split_factories_are_retired():
+    for name in ("page_split_none", "page_split_rows", "page_split_by_value",
+                 "page_split_group_safe", "page_split_group_force"):
+        assert not hasattr(rr, name), name
+
+
+def test_strategy_none():
+    f = resolve_split("none")
     out = f(Frame(["a"], [[1], [2]]))
     assert len(out) == 1
     assert out[0].rows == [[1], [2]]
 
 
-def test_page_split_rows_factory():
-    f = rr.page_split_rows(2)
+def test_strategy_rows():
+    f = resolve_split("rows", split_rows=2)
     out = f(Frame(["a"], [[1], [2], [3], [4]]))
     assert [len(p.rows) for p in out] == [2, 2]
 
 
-def test_page_split_rows_factory_missing_config():
-    f = rr.page_split_rows()
+def test_strategy_rows_missing_config():
+    f = resolve_split("rows")
     with pytest.raises(PaginationError, match="split_rows"):
         f(Frame(["a"], [[1], [2]]))
 
 
-def test_page_split_by_value_factory():
-    f = rr.page_split_by_value(group_col="label")
+def test_strategy_by_value():
+    f = resolve_split("by_value", group_col="label")
     out = f(as_frame(_df()))
     assert [p.name for p in out] == ["A", "B", "C"]
 
 
-def test_page_split_group_safe_factory():
-    f = rr.page_split_group_safe(max_rows=3, group_col="label")
+def test_strategy_group_safe():
+    f = resolve_split("group_safe", max_rows=3, group_col="label")
     out = f(as_frame(_df()))
     assert all(len(p.rows) <= 4 for p in out)  # +cont allowance
 
 
-def test_page_split_group_force_missing_max_rows():
-    f = rr.page_split_group_force()
+def test_strategy_group_force_missing_max_rows():
+    f = resolve_split("group_force")
     with pytest.raises(PaginationError, match="max_rows"):
         f(as_frame(_df()))
 
 
-def test_factory_group_by_indent_groups_by_indentation():
-    """The factories accept all four R group_by modes, not just "auto"."""
+def test_strategy_group_by_indent_groups_by_indentation():
+    """The strategies accept all four R group_by modes, not just "auto"."""
     nbsp = chr(0xA0)
     frame = as_frame(
         {
@@ -132,28 +138,28 @@ def test_factory_group_by_indent_groups_by_indentation():
             "n": [1, 2, 3, 4, 5],
         }
     )
-    pages = rr.page_split_by_value(group_col="label", group_by="indent")(frame)
+    pages = resolve_split("by_value", group_col="label", group_by="indent")(frame)
     assert [p.name for p in pages] == ["SOC1", "SOC2"]
     assert [len(p.rows) for p in pages] == [3, 2]
 
 
-def test_factory_rejects_an_unknown_group_by():
-    f = rr.page_split_by_value(group_col="label", group_by="sideways")
+def test_strategy_rejects_an_unknown_group_by():
+    f = resolve_split("by_value", group_col="label", group_by="sideways")
     with pytest.raises(ValueError, match="group_by"):
         f(as_frame(_df()))
 
 
-# -- as_rtftables with a factory callable ------------------------------------
+# -- as_rtftables with a split callable ---------------------------------------
 
 
-def test_as_rtftables_accepts_factory_callable():
-    tables = rr.as_rtftables(_df(), split=rr.page_split_by_value(group_col="label"))
+def test_as_rtftables_accepts_split_callable():
+    tables = rr.as_rtftables(_df(), split=resolve_split("by_value", group_col="label"))
     assert [t.name for t in tables] == ["A", "B", "C"]
 
 
 def test_as_rtftables_string_and_callable_equivalent():
     a = rr.as_rtftables(_df(), split="by_value", group_col="label")
-    b = rr.as_rtftables(_df(), split=rr.page_split_by_value(group_col="label"))
+    b = rr.as_rtftables(_df(), split=resolve_split("by_value", group_col="label"))
     assert [t.name for t in a] == [t.name for t in b]
 
 

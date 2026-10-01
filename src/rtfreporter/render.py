@@ -14,14 +14,19 @@ from ._escape import (
     format_cell_text,
     render_tokens,
     resolve_markup,
+    substitute_page_tokens,
 )
 from .borders import (
     Border,
     BorderSide,
+    cell_edge_border,
     collect_border_colors,
     collect_table_border_colors,
+    expand_table_border,
     merge_border,
+    zone_row_border,
 )
+from .element_style import f_cmd_for, fs_cmd_for, resolve_block_width, resolve_element_metrics
 from .figure import Figure
 from .header_footer import HeaderFooter, normalize_hf
 from .table import HeaderRow, RtfTable, SpanCell
@@ -143,8 +148,13 @@ def build_cell_content(
     pad_l: int = 0,
     pad_r: int = 0,
     color_idx: int | None = None,
+    fs_cmd: str = "",
 ) -> str:
-    """Build one cell's content string (``\\q..\\li..\\ri.. text\\cell``)."""
+    """Build one cell's content string (``\\q..\\li..\\ri.. text\\cell``).
+
+    ``fs_cmd`` is the element's own ``\\fs`` run command, or ``""`` when it
+    matches the document (see :func:`~rtfreporter.element_style.fs_cmd_for`).
+    """
     align_cmd = _ALIGN_CMD.get(align, r"\ql")
     li = int(pad_l) + int(indent_twips)
     ri = int(pad_r)
@@ -156,7 +166,7 @@ def build_cell_content(
         text = f"\\b {text}\\b0 "
     if color_idx is not None:
         text = f"\\cf{int(color_idx)} {text}\\cf1 "
-    return f"{align_cmd}\\li{li}\\ri{ri} {text}\\cell"
+    return f"{align_cmd}\\li{li}\\ri{ri}{fs_cmd} {text}\\cell"
 
 
 def build_row(cell_defs, cell_contents, row_height_twips=None, table_align="left") -> str:
@@ -170,23 +180,59 @@ def build_row(cell_defs, cell_contents, row_height_twips=None, table_align="left
     )
 
 
-def build_cell_defs(cellx, border, valign_cmd, color_index_map=None) -> list[str]:
-    border_cmds = build_border_commands(border, color_index_map)
-    return [f"{border_cmds}{valign_cmd}\\cellx{cx}" for cx in cellx]
+def cell_shading_cmd(hex_color, color_index_map=None) -> str:
+    """``\\clcbpat<N>``: a colour-table index as the cell's fill (R
+    ``.cell_shading_cmd()``).  It belongs in the cell DEFINITION, next to the
+    borders -- a fill is a property of the cell, not of its text."""
+    if not hex_color or not color_index_map:
+        return ""
+    idx = color_index_map.get(hex_color)
+    return "" if idx is None else f"\\clcbpat{int(idx)}"
+
+
+def row_backgrounds(col_spec, row_cell_styles, ncols: int) -> list:
+    """Each cell's fill: the column's ``background``, overridden by a set
+    ``cell_styles["background"]`` entry -- resolved as text colour is."""
+    cs = row_cell_styles.get("background") if row_cell_styles else None
+    out = []
+    for j in range(ncols):
+        bg = col_spec[j].background if j < len(col_spec) else None
+        if cs is not None and j < len(cs) and cs[j] is not None:
+            bg = str(cs[j])
+        out.append(bg)
+    return out
+
+
+def build_cell_defs(cellx, border, valign_cmd, color_index_map=None, shade=None) -> list[str]:
+    """Cell definition strings (border + fill + valign + ``\\cellx``) for all columns.
+
+    A row's ``left`` / ``right`` are its outer edges and ``inside_v`` the rule
+    between its cells, so the vertical rules are distributed per cell.  Nothing
+    to distribute when the row carries none, the common case.
+    """
+    n = len(cellx)
+    shade_cmds = [cell_shading_cmd(shade[j] if shade and j < len(shade) else None,
+                                   color_index_map) for j in range(n)]
+    if border is None or (border.left is None and border.right is None and border.inside_v is None):
+        border_cmds = build_border_commands(border, color_index_map)
+        return [f"{border_cmds}{shade_cmds[j]}{valign_cmd}\\cellx{cellx[j]}" for j in range(n)]
+    return [
+        f"{build_border_commands(cell_edge_border(border, j, n), color_index_map)}"
+        f"{shade_cmds[j]}{valign_cmd}\\cellx{cellx[j]}"
+        for j in range(n)
+    ]
 
 
 def _header_outer_border(idx: int, n: int, zone: Border | None) -> Border | None:
+    """Outer-frame border for a header row at position ``idx`` of ``n``: the
+    same outer/inside rule as every other zone."""
     if zone is None:
         return None
-    is_first = idx == 0
-    is_last = idx == n - 1
-    top = zone.top if is_first else None
-    bot = zone.bottom if is_last else None
-    lft = zone.left
-    rgt = zone.right
-    if top is None and bot is None and lft is None and rgt is None:
+    b = zone_row_border(zone, idx, n)
+    if b.top is None and b.bottom is None and b.left is None and b.right is None \
+            and b.inside_v is None:
         return None
-    return Border(top=top, bottom=bot, left=lft, right=rgt)
+    return Border(top=b.top, bottom=b.bottom, left=b.left, right=b.right, inside_v=b.inside_v)
 
 
 # -- Header-row coverage (for spanning-cell group underlines) ------------------
@@ -229,6 +275,7 @@ def _render_spanning_row(
     next_boundaries: list[int] | None,
     markup,
     color_index_map,
+    fs_cmd: str = "",
 ) -> str:
     ncols = len(cellx)
     coverage = [0] * ncols
@@ -236,8 +283,18 @@ def _render_spanning_row(
         for j in range(sp.start, sp.end + 1):
             coverage[j] = k
 
-    def cell_border(k: int | None, single_idx: int | None = None) -> Border | None:
-        eff = border
+    # Count the emitted cells first -- a span counts once -- so that inside_v
+    # can be placed on cell boundaries rather than column boundaries.
+    n_cells = 0
+    j = 0
+    while j < ncols:
+        k = coverage[j]
+        n_cells += 1
+        j = spans[k - 1].end + 1 if k > 0 else j + 1
+
+    def cell_border(k: int | None, single_idx: int | None = None,
+                    cell_idx: int = 0) -> Border | None:
+        eff = cell_edge_border(border, cell_idx, n_cells)
         if k is not None and k > 0:
             sp = spans[k - 1]
             multi_col = sp.end > sp.start
@@ -261,17 +318,20 @@ def _render_spanning_row(
 
     cell_defs: list[str] = []
     j = 0
+    ci = 0
     while j < ncols:
         k = coverage[j]
         if k > 0:
             end = spans[k - 1].end
-            bc = build_border_commands(cell_border(k), color_index_map)
+            bc = build_border_commands(cell_border(k, cell_idx=ci), color_index_map)
             cell_defs.append(f"{bc}{valign_cmd}\\cellx{cellx[end]}")
             j = end + 1
         else:
-            bc = build_border_commands(cell_border(None, single_idx=j), color_index_map)
+            bc = build_border_commands(cell_border(None, single_idx=j, cell_idx=ci),
+                                       color_index_map)
             cell_defs.append(f"{bc}{valign_cmd}\\cellx{cellx[j]}")
             j += 1
+        ci += 1
 
     def span_align(sp: SpanCell) -> str:
         if sp.align is not None:
@@ -296,10 +356,10 @@ def _render_spanning_row(
             if sp.bold:
                 label = f"\\b {label}\\b0 "
             align_cmd = _ALIGN_CMD.get(span_align(sp), r"\qc")
-            cell_contents.append(f"{align_cmd}\\li{pad_l}\\ri{pad_r} {label}\\cell")
+            cell_contents.append(f"{align_cmd}\\li{pad_l}\\ri{pad_r}{fs_cmd} {label}\\cell")
             j = sp.end + 1
         else:
-            cell_contents.append(f"\\ql\\li{pad_l}\\ri{pad_r} \\cell")
+            cell_contents.append(f"\\ql\\li{pad_l}\\ri{pad_r}{fs_cmd} \\cell")
             j += 1
 
     return build_row(cell_defs, cell_contents, row_height, table_align)
@@ -317,14 +377,18 @@ def _render_header_row(
     table_align: str,
     markup,
     color_index_map,
+    fs_cmd: str = "",
 ) -> str:
     ncols = len(cellx)
     cell_defs = []
     for j in range(ncols):
+        eff = cell_edge_border(border, j, ncols)
         col_border = col_spec[j].border
-        eff = _effective_row_border(border, col_border) if col_border is not None else border
+        if col_border is not None:
+            eff = _effective_row_border(eff, col_border)
         bc = build_border_commands(eff, color_index_map)
-        cell_defs.append(f"{bc}{valign_cmd}\\cellx{cellx[j]}")
+        shade = cell_shading_cmd(col_spec[j].header_background, color_index_map)
+        cell_defs.append(f"{bc}{shade}{valign_cmd}\\cellx{cellx[j]}")
 
     cell_contents = []
     for j in range(ncols):
@@ -334,7 +398,7 @@ def _render_header_row(
         align = spec.header_align or "center"
         cell_contents.append(
             build_cell_content(text, align, spec.header_bold, spec.header_italic,
-                               False, 0, pad_l, pad_r)
+                               False, 0, pad_l, pad_r, fs_cmd=fs_cmd)
         )
     return build_row(cell_defs, cell_contents, row_height, table_align)
 
@@ -352,54 +416,118 @@ def _render_data_row(
     row_cell_styles: dict | None,
     color_index_map,
     markup,
+    fs_cmd: str = "",
+    dsplit_row=None,
+    dsplit=None,
 ) -> str:
     ncols = len(cellx)
+    # A spanned label row (stub_cols(label_span=True), R #312) is ONE cell
+    # running to the table's right edge: its first non-empty value, styled as
+    # the first column.
+    if row_cell_styles and row_cell_styles.get("span_row"):
+        txt = next((v for v in vals if v is not None and str(v) != ""), "")
+        cell_def = (f"{build_border_commands(border, color_index_map)}"
+                    f"{valign_cmd}\\cellx{cellx[-1]}")
+        content = _data_cell_content(col_spec[0], txt, 0, row_cell_styles, pad_l, pad_r,
+                                     markup, color_index_map, fs_cmd)
+        return build_row([cell_def], [content], row_height, table_align)
+    if dsplit_row is not None:
+        return _render_data_row_split(
+            vals, cellx, border, row_height, pad_l, pad_r, valign_cmd, col_spec,
+            table_align, row_cell_styles, color_index_map, markup, dsplit_row, dsplit)
     cell_borders = row_cell_styles.get("border") if row_cell_styles else None
+    # Cell fill, resolved per column the way text colour is.
+    shade = row_backgrounds(col_spec, row_cell_styles, ncols)
     if isinstance(cell_borders, list) and any(b is not None for b in cell_borders):
         cell_defs = []
         for j in range(ncols):
             b = cell_borders[j] if j < len(cell_borders) else None
-            eff = border if b is None else _effective_row_border(border, b)
+            eff = cell_edge_border(border, j, ncols)
+            if b is not None:
+                eff = _effective_row_border(eff, b)
             cell_defs.append(
-                f"{build_border_commands(eff, color_index_map)}{valign_cmd}\\cellx{cellx[j]}"
+                f"{build_border_commands(eff, color_index_map)}"
+                f"{cell_shading_cmd(shade[j], color_index_map)}{valign_cmd}\\cellx{cellx[j]}"
             )
     else:
-        cell_defs = build_cell_defs(cellx, border, valign_cmd, color_index_map)
+        cell_defs = build_cell_defs(cellx, border, valign_cmd, color_index_map, shade=shade)
 
-    cell_contents = []
-    for j in range(ncols):
-        spec = col_spec[j]
-        raw = vals[j] if j < len(vals) else None
-        text = format_cell_text("" if raw is None else str(raw), markup)
-        align = spec.align or "left"
-        bold = spec.bold
-        italic = spec.italic
-        underline = spec.underline
-        indent = int(spec.indent_twips or 0)
-        color_hex = spec.color
-        if row_cell_styles:
-            cs = row_cell_styles
-
-            def pick(key, cur, j=j, cs=cs):
-                seq = cs.get(key)
-                if seq is not None and j < len(seq) and seq[j] is not None:
-                    return seq[j]
-                return cur
-
-            align = pick("align", align)
-            bold = _as_bool(pick("bold", bold))
-            italic = _as_bool(pick("italic", italic))
-            underline = _as_bool(pick("underline", underline))
-            indent = int(pick("indent_twips", indent))
-            color_hex = pick("color", color_hex)
-        color_idx = (
-            color_index_map.get(color_hex) if color_hex and color_index_map else None
-        )
-        cell_contents.append(
-            build_cell_content(text, align, bold, italic, underline, indent,
-                               pad_l, pad_r, color_idx=color_idx)
-        )
+    cell_contents = [
+        _data_cell_content(col_spec[j], vals[j] if j < len(vals) else None, j,
+                           row_cell_styles, pad_l, pad_r, markup, color_index_map, fs_cmd)
+        for j in range(ncols)
+    ]
     return build_row(cell_defs, cell_contents, row_height, table_align)
+
+
+def _render_data_row_split(vals, cellx, border, row_height, pad_l, pad_r, valign_cmd,
+                           col_spec, table_align, row_cell_styles, color_index_map,
+                           markup, dsplit_row, dsplit) -> str:
+    """One data row on the decimal-split geometry (R
+    ``.render_data_row_split()``).  A pair whose cell was not split-eligible
+    on this row collapses back into one cell carrying the ORIGINAL column's
+    spec.  As in R, the table's own font-size switch is not written here."""
+    _, merge_to, merge_spec = dsplit_row
+    interior, pad_flag = dsplit["interior"], dsplit["pad_flag"]
+    starts = [j for j, t in enumerate(merge_to) if t is not None]
+    # The pair's interior edge carries no padding.
+    pad_l_v = [0 if f == "right" else int(pad_l) for f in pad_flag]
+    pad_r_v = [0 if f == "left" else int(pad_r) for f in pad_flag]
+    cell_borders = row_cell_styles.get("border") if row_cell_styles else None
+    n_cells = len(starts)
+    cell_defs, cell_contents = [], []
+    for ci, j in enumerate(starts):
+        to = merge_to[j]
+        eff = cell_edge_border(border, ci, n_cells)
+        b = cell_borders[j] if isinstance(cell_borders, list) and j < len(cell_borders) else None
+        if b is not None:
+            eff = _effective_row_border(eff, b)
+        if to == j and interior[j] is not None:
+            eff = _effective_row_border(eff, interior[j])
+        cell_defs.append(f"{build_border_commands(eff, color_index_map)}{valign_cmd}"
+                         f"\\cellx{cellx[to]}")
+        merged = to != j
+        is_half = not merged and interior[j] is not None
+        spec = merge_spec[j] if merged and merge_spec[j] is not None else col_spec[j]
+        cell_contents.append(_data_cell_content(
+            spec, vals[j], j, row_cell_styles, pad_l_v[j], pad_r_v[to], markup,
+            color_index_map, "", force_align=spec.align if is_half else None))
+    return build_row(cell_defs, cell_contents, row_height, table_align)
+
+
+def _data_cell_content(spec, raw, j, row_cell_styles, pad_l, pad_r, markup,
+                       color_index_map, fs_cmd, force_align=None) -> str:
+    """One body cell's content: the column's spec, overridden per cell by the
+    row's ``cell_styles`` (R ``.data_cell_content()``)."""
+    text = format_cell_text("" if raw is None else str(raw), markup)
+    align = spec.align or "left"
+    bold = spec.bold
+    italic = spec.italic
+    underline = spec.underline
+    indent = int(spec.indent_twips or 0)
+    color_hex = spec.color
+    if row_cell_styles:
+        cs = row_cell_styles
+
+        def pick(key, cur, j=j, cs=cs):
+            seq = cs.get(key)
+            if seq is not None and j < len(seq) and seq[j] is not None:
+                return seq[j]
+            return cur
+
+        align = pick("align", align)
+        bold = _as_bool(pick("bold", bold))
+        italic = _as_bool(pick("italic", italic))
+        underline = _as_bool(pick("underline", underline))
+        indent = int(pick("indent_twips", indent))
+        color_hex = pick("color", color_hex)
+    if force_align is not None:
+        align = force_align
+    color_idx = (
+        color_index_map.get(color_hex) if color_hex and color_index_map else None
+    )
+    return build_cell_content(text, align, bold, italic, underline, indent,
+                              pad_l, pad_r, color_idx=color_idx, fs_cmd=fs_cmd)
 
 
 def _as_bool(v):
@@ -424,9 +552,10 @@ def render_rtftable(
     doc_pad_l=0,
     doc_pad_r=0,
     doc_markup="script",
+    font_index_map=None,
 ) -> list[str]:
     """Render an :class:`RtfTable` to a list of RTF row strings."""
-    border = tbl.border
+    border = expand_table_border(tbl.border, has_header=bool(tbl.col_header))
     col_spec = tbl.col_spec
     eff_markup = tbl.markup if tbl.markup is not None else resolve_markup(doc_markup)
     pad_l = tbl.cell_padding_left_twips if tbl.cell_padding_left_twips is not None else doc_pad_l
@@ -439,13 +568,11 @@ def render_rtftable(
 
     cellx = compute_cellx(ncols, writable, tbl)
 
-    if tbl.row_height_twips is not None:
-        base_rh = tbl.row_height_twips
-    elif doc_row_height is not None:
-        base_rh = doc_row_height
-    else:
-        base_rh = None
-    effective = C.default_row_height_twips(font_half_points) if base_rh is None else int(base_rh)
+    # Font size and row height resolve together (R #292): a table that sets its
+    # own size gets the height that size implies.
+    fs, effective = resolve_element_metrics(
+        tbl.font_size_half_points, tbl.row_height_twips, font_half_points, doc_row_height)
+    fs_cmd = f_cmd_for(tbl.font, font_index_map) + fs_cmd_for(fs, font_half_points)
 
     hdr_h = _apply_exact(
         tbl.header_row_height_twips if tbl.header_row_height_twips is not None else effective,
@@ -457,16 +584,22 @@ def render_rtftable(
         tbl.row_height_exact,
     )
 
+    # set_decimal_split(): the data rows' expanded geometry, or None.
+    from .decimal_split import plan as decimal_split_plan
+
+    dsplit = decimal_split_plan(tbl, cellx, col_spec, eff_markup)
+
     return _render_section(
         tbl, cellx, border, col_spec, hdr_h, data_h, blank_h,
         set(tbl.blank_rows), pad_l, pad_r, valign_cmd, tbl.table_align,
-        color_index_map, eff_markup,
+        color_index_map, eff_markup, fs_cmd, dsplit=dsplit,
     )
 
 
 def _render_section(
     tbl, cellx, border, col_spec, hdr_h, data_h, blank_h, blank_set,
-    pad_l, pad_r, valign_cmd, table_align, color_index_map, markup,
+    pad_l, pad_r, valign_cmd, table_align, color_index_map, markup, fs_cmd="",
+    dsplit=None,
 ) -> list[str]:
     ncols = len(cellx)
     lines: list[str] = []
@@ -499,13 +632,14 @@ def _render_section(
                 _render_spanning_row(
                     hdr_row.spans, cellx, row_b, hdr_h, pad_l, pad_r, valign_cmd,
                     col_spec, table_align, gbs, nb, markup, color_index_map,
+                    fs_cmd=fs_cmd,
                 )
             )
         else:
             lines.append(
                 _render_header_row(
                     hdr_row.labels, cellx, row_b, hdr_h, pad_l, pad_r, valign_cmd,
-                    col_spec, table_align, markup, color_index_map,
+                    col_spec, table_align, markup, color_index_map, fs_cmd=fs_cmd,
                 )
             )
 
@@ -546,7 +680,7 @@ def _render_section(
         if detect_blank and row_all_empty(row):
             add_blank()
         else:
-            row_border = border.body if border else None
+            row_border = zone_row_border(border.body, i, nrows) if border else None
             if i == 0 and border and border.first_row:
                 row_border = _effective_row_border(row_border, border.first_row)
             if i == nrows - 1 and border and border.last_row:
@@ -554,12 +688,25 @@ def _render_section(
             rcs = None
             if tbl.cell_styles and i < len(tbl.cell_styles):
                 rcs = tbl.cell_styles[i]
-            add_data(
-                _render_data_row(
-                    row, cellx, row_border, data_h, pad_l, pad_r, valign_cmd,
-                    col_spec, table_align, rcs, color_index_map, markup,
+            if dsplit is None:
+                add_data(
+                    _render_data_row(
+                        row, cellx, row_border, data_h, pad_l, pad_r, valign_cmd,
+                        col_spec, table_align, rcs, color_index_map, markup, fs_cmd=fs_cmd,
+                    )
                 )
-            )
+            else:
+                from .decimal_split import split_cell_styles, split_row
+
+                drow = split_row(dsplit, row, i)
+                add_data(
+                    _render_data_row(
+                        drow[0], dsplit["cellx"], row_border, data_h, pad_l, pad_r,
+                        valign_cmd, dsplit["col_spec"], table_align,
+                        split_cell_styles(dsplit, rcs), color_index_map, markup,
+                        fs_cmd=fs_cmd, dsplit_row=drow, dsplit=dsplit,
+                    )
+                )
         if (i + 1) in blank_set:
             add_blank()
 
@@ -601,16 +748,28 @@ def render_header_footer(
     doc_row_height=None,
     doc_pad_l=None,
     doc_pad_r=None,
+    doc_markup=None,
+    font_index_map=None,
 ) -> list[str]:
     """Render a header/footer band to a list of RTF row strings."""
     if hf is None or not hf.rows:
         return []
-    width = hf.width_twips if hf.width_twips is not None else writable
-    rh_full = (
-        hf.row_height_twips
-        if hf.row_height_twips is not None
-        else (doc_row_height if doc_row_height is not None else C.default_row_height_twips(font_half_points))
+    hf_markup = hf.markup if hf.markup is not None else doc_markup
+    # Width: the absolute `width_twips` wins (the legacy form), then the shared
+    # `width` vocabulary, then the writable width.  A header/footer band has no
+    # table body above it, so "content" resolves to the writable width too.
+    if hf.width_twips is not None:
+        width = int(hf.width_twips)
+    elif hf.width is not None:
+        width = resolve_block_width(hf.width, writable, writable, default="page")
+    else:
+        width = writable
+    # Font size and row height resolve together (#292): a band that sets its
+    # own size gets the height that size implies.
+    hf_fs_pt, rh_full = resolve_element_metrics(
+        hf.font_size_half_points, hf.row_height_twips, font_half_points, doc_row_height
     )
+    hf_fs = f_cmd_for(hf.font, font_index_map) + fs_cmd_for(hf_fs_pt, font_half_points)
     rh_str = C.ROW_HEIGHT_TEMPLATE.format(row_height_twips=rh_full)
 
     pad_l = _first_not_none(hf.cell_padding_left_twips, doc_pad_l, C.DEFAULT_CELL_PADDING_LEFT_TWIPS, 0)
@@ -633,8 +792,9 @@ def render_header_footer(
                 parts.append(f"\\cellx{cx}")
         for i in range(n_cols):
             at = _ALIGN_CMD.get(aligns[i], r"\ql")
-            txt = render_tokens(cols_display[i], current_page=current_page, total_pages=total_pages)
-            parts.append(f"{at}\\li{int(pad_l)}\\ri{int(pad_r)} {txt}\\cell")
+            txt = render_tokens(cols_display[i], current_page=current_page,
+                                total_pages=total_pages, markup=hf_markup)
+            parts.append(f"{at}\\li{int(pad_l)}\\ri{int(pad_r)}{hf_fs} {txt}\\cell")
         parts.append(C.ROW_END)
         out_rows.append("".join(parts))
     return out_rows
@@ -669,8 +829,8 @@ def _first_not_none(*values):
 # -- Title / footnote blocks --------------------------------------------------
 
 
-def _normalize_text_block(block, is_footer: bool) -> list[dict]:
-    def_align = "left" if is_footer else "center"
+def _normalize_text_block(block, is_footer: bool, align: str | None = None) -> list[dict]:
+    def_align = align if align is not None else ("left" if is_footer else "center")
     def_bold = not is_footer
     if block is None:
         if is_footer:
@@ -725,40 +885,62 @@ def render_text_block_table(
     block, total_width: int, is_footer: bool, font_half_points: int,
     pad_l: int, pad_r: int, valign_cmd: str, table_align: str,
     color_index_map=None, doc_row_height=None, markup="script",
+    style: dict | None = None, current_page=None, total_pages=None,
+    font_index_map=None,
 ) -> list[str]:
-    rows = _normalize_text_block(block, is_footer)
+    style = style or {}
+    rows = _normalize_text_block(block, is_footer, style.get("align"))
     if not rows:
         return []
-    full_h = doc_row_height if doc_row_height is not None else C.default_row_height_twips(font_half_points)
+    # Title / footnote rows inherit the document default row height, else the
+    # font-aware baseline; a block-level size recomputes the height (#292).
+    fs, full_h = resolve_element_metrics(
+        style.get("font_size_half_points"), style.get("row_height_twips"),
+        font_half_points, doc_row_height,
+    )
+    fs_cmd = f_cmd_for(style.get("font"), font_index_map) + fs_cmd_for(fs, font_half_points)
+    if style.get("markup") is not None:
+        markup = style["markup"]
     cellx = int(total_width)
     out = []
     for rec in rows:
         cell_def = f"{build_border_commands(rec['border'], color_index_map)}{valign_cmd}\\cellx{cellx}"
         if rec["blank"]:
-            content = build_cell_content("", rec["align"], False, False, False, 0, pad_l, pad_r)
+            content = build_cell_content("", rec["align"], False, False, False, 0, pad_l, pad_r,
+                                         fs_cmd=fs_cmd)
         else:
             color_idx = color_index_map.get(rec["color"]) if rec["color"] and color_index_map else None
-            txt = format_cell_text(rec["text"], markup)
+            txt = substitute_page_tokens(format_cell_text(rec["text"], markup),
+                                         current_page, total_pages)
             content = build_cell_content(txt, rec["align"], rec["bold"], rec["italic"],
-                                         rec["underline"], 0, pad_l, pad_r, color_idx)
+                                         rec["underline"], 0, pad_l, pad_r, color_idx,
+                                         fs_cmd=fs_cmd)
         out.append(build_row([cell_def], [content], full_h, table_align))
     return out
 
 
 def render_text_block_text(
     block, is_footer: bool, color_index_map=None, markup="script", pad_l=0, pad_r=0,
+    style: dict | None = None, font_half_points: int = 18,
+    current_page=None, total_pages=None, font_index_map=None,
 ) -> list[str]:
-    rows = _normalize_text_block(block, is_footer)
+    style = style or {}
+    rows = _normalize_text_block(block, is_footer, style.get("align"))
     if not rows:
         return []
-    indent = f"\\li{int(pad_l)}\\ri{int(pad_r)}"
+    if style.get("markup") is not None:
+        markup = style["markup"]
+    fs_cmd = (f_cmd_for(style.get("font"), font_index_map)
+              + fs_cmd_for(style.get("font_size_half_points", font_half_points), font_half_points))
+    indent = f"\\li{int(pad_l)}\\ri{int(pad_r)}{fs_cmd}"
     out = []
     for rec in rows:
         align_cmd = _ALIGN_CMD.get(rec["align"], r"\ql")
         if rec["blank"]:
             out.append(f"\\pard{align_cmd}{indent}\\par")
             continue
-        txt = format_cell_text(rec["text"], markup)
+        txt = substitute_page_tokens(format_cell_text(rec["text"], markup),
+                                     current_page, total_pages)
         if rec["underline"]:
             txt = f"\\ul {txt}\\ulnone "
         if rec["italic"]:
@@ -805,7 +987,9 @@ def collect_report_colors(report) -> list[str]:
         if isinstance(ct, RtfTable):
             cols.extend(_table_colors(ct))
         cols.extend(text_block_colors(page.get("title"), is_footer=False))
-        cols.extend(text_block_colors(page.get("footnote"), is_footer=True))
+    fn_border = (getattr(report, "footnote_style", None) or {}).get("border")
+    if fn_border is not None:
+        cols.extend(collect_border_colors(fn_border))
     seen = []
     for c in cols:
         if not c:
@@ -819,20 +1003,21 @@ def collect_report_colors(report) -> list[str]:
 
 def _table_colors(tbl: RtfTable) -> list[str]:
     out = collect_table_border_colors(tbl.border)
+    out.extend(s.color for s in tbl.col_spec if s.color)
+    out.extend(s.background for s in tbl.col_spec if s.background)
+    out.extend(s.header_background for s in tbl.col_spec if s.header_background)
     for s in tbl.col_spec:
-        if s.color:
-            out.append(s.color)
         out.extend(collect_border_colors(s.border))
     for hdr in tbl.col_header:
         if hdr.kind == "spanning":
             for sp in hdr.spans:
                 out.extend(collect_border_colors(sp.border))
     if tbl.cell_styles:
-        for cs in tbl.cell_styles:
-            if isinstance(cs, dict):
-                for c in cs.get("color", []) or []:
-                    if c:
-                        out.append(c)
-                for b in cs.get("border", []) or []:
-                    out.extend(collect_border_colors(b))
+        dicts = [cs for cs in tbl.cell_styles if isinstance(cs, dict)]
+        for key in ("color", "background"):
+            for cs in dicts:
+                out.extend(c for c in (cs.get(key) or []) if c)
+        for cs in dicts:
+            for b in cs.get("border", []) or []:
+                out.extend(collect_border_colors(b))
     return [c for c in out if c]

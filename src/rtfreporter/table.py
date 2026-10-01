@@ -20,7 +20,14 @@ from dataclasses import dataclass, field, replace
 from typing import Any
 
 from ._escape import resolve_markup
-from .borders import Border, TableBorder, normalize_table_border, rtf_border_tfl
+from .borders import (
+    Border,
+    TableBorder,
+    expand_table_border,
+    normalize_table_border,
+    warn_old_edge_reading,
+)
+from .element_style import check_font, check_font_size
 
 _ALIGN = ("left", "center", "right")
 
@@ -37,6 +44,9 @@ class ColSpec:
         border: Per-column :class:`~rtfreporter.borders.Border` override.
         header_align: Column-header alignment (defaults to ``align`` or center).
         header_bold, header_italic: Column-header decoration flags.
+        background: Body-cell fill colour (hex string) or ``None``.
+        header_background: The column's header-cell fill colour, kept apart
+            from ``background`` so a shaded header needs no shaded body.
     """
 
     align: str | None = None
@@ -49,6 +59,8 @@ class ColSpec:
     header_align: str | None = None
     header_bold: bool = False
     header_italic: bool = False
+    background: str | None = None
+    header_background: str | None = None
 
 
 @dataclass
@@ -79,7 +91,7 @@ class _ColCellSpec:
 
 
 def col_cell(
-    cols,
+    pos,
     label: str = "",
     align: str | None = None,
     bold: bool = False,
@@ -90,8 +102,12 @@ def col_cell(
     """Define one spanning column-header cell.
 
     Args:
-        cols: A single 0-based column index, a ``(start, end)`` inclusive range,
-            a column name, or a ``(name, name)`` pair.
+        pos: A single 0-based column index, a ``(start, end)`` inclusive range,
+            a column name, a ``(name, name)`` pair -- or a **selector
+            function** of the data column names (see :func:`col_key`),
+            answering which columns the cell covers: a list of bools, of
+            0-based positions, or of column names.  It must match at least
+            one column, and the matched columns must be adjacent.
         label: Cell text.
         align: ``"left"`` / ``"center"`` / ``"right"`` (defaults from the
             leftmost covered column's header alignment, then center).
@@ -103,7 +119,7 @@ def col_cell(
     if border is not None and not isinstance(border, Border):
         raise TypeError("`border` must be None or a Border object.")
     return _ColCellSpec(
-        pos=cols,
+        pos=pos,
         label="" if label is None else str(label),
         align=align,
         bold=bold,
@@ -150,9 +166,101 @@ def _resolve_col(ref, names: list[str]) -> int:
     return idx
 
 
+def col_key(key, sep: str | None = None, part: int = 0):
+    """Select header columns by a column-name segment (R ``col_key()``).
+
+    Returns a selector for :func:`col_cell`: data columns produced by a wide
+    pivot are usually named ``<group><sep><sub-group>`` (``"Placebo____Day 1"``);
+    the selector splits each name on ``sep`` and keeps the columns whose
+    ``part``-th segment is one of ``key``, so a spanning cell is written in
+    terms of the value it labels rather than of column numbers::
+
+        col_cell(col_key("Placebo"), "Placebo\n(N=60)")
+        col_cell(col_key("Day 1", part=1), "Day 1")
+
+    Args:
+        key: One segment value, or several.
+        sep: The separator; ``None`` detects the one the names use (``"____"``,
+            then tfrmt's delimiter), as ``as_rtftables(header_sep=)`` does.
+        part: Which segment, **0-based** (0 = before the first separator);
+            negative counts from the right (-1 = the last).
+    """
+    keys = [key] if isinstance(key, str) else list(key)
+    if not keys or not all(isinstance(k, str) and k for k in keys):
+        raise ValueError("`key` must be one or more non-empty strings.")
+    if sep is not None and (not isinstance(sep, str) or not sep):
+        raise ValueError("`sep` must be None or a single non-empty string.")
+    if isinstance(part, bool) or not isinstance(part, int):
+        raise ValueError("`part` must be an integer.")
+
+    def segment(names):
+        use = sep
+        if use is None:
+            from .adapters import _DEFAULT_HEADER_SEPS
+
+            use = next((c for c in _DEFAULT_HEADER_SEPS if any(c in n for n in names)),
+                       _DEFAULT_HEADER_SEPS[0])
+        out = []
+        for n in names:
+            bits = str(n).split(use)
+            out.append(bits[part] if -len(bits) <= part < len(bits) else None)
+        return out
+
+    def select(names):
+        return [s is not None and s in keys for s in segment(names)]
+
+    select.rtf_sel_label = "col_key(" + ", ".join(f'"{k}"' for k in keys) + ")"
+    select.rtf_sel_choices = lambda names: list(dict.fromkeys(
+        s for s in segment(names) if s is not None))
+    return select
+
+
+def _resolve_col_sel(sel, names: list[str]) -> tuple[int, int]:
+    """Resolve a selector ``pos`` to a contiguous ``(start, end)`` range (R
+    ``.resolve_col_sel()``)."""
+    lab = getattr(sel, "rtf_sel_label", "The `cols` selector")
+    hit = list(sel(list(names)))
+    if hit and all(isinstance(h, bool) for h in hit):
+        if len(hit) != len(names):
+            raise ValueError(f"{lab} returned {len(hit)} logical values for "
+                             f"{len(names)} data columns.")
+        j = [i for i, h in enumerate(hit) if h]
+    elif all(isinstance(h, str) for h in hit):
+        unknown = [h for h in hit if h not in names]
+        if unknown:
+            raise ValueError(f"{lab} returned unknown column name(s): "
+                             + ", ".join(f'"{h}"' for h in unknown) + ".")
+        j = [names.index(h) for h in hit]
+    elif all(isinstance(h, int) and not isinstance(h, bool) for h in hit):
+        j = [int(h) for h in hit]
+    else:
+        raise ValueError(f"{lab} must return bools, integer positions or column names.")
+    j = sorted(set(j))
+    if not j:
+        ch = getattr(sel, "rtf_sel_choices", None)
+        avail = ch(list(names)) if callable(ch) else list(names)
+        raise ValueError(f"{lab} matched no data columns. Available "
+                         f"{'keys' if callable(ch) else 'columns'}: "
+                         + ", ".join(f'"{a}"' for a in avail) + ".")
+    if j[0] < 0 or j[-1] >= len(names):
+        raise ValueError(f"{lab} matched positions outside the data column range "
+                         f"0..{len(names) - 1}.")
+    if j != list(range(j[0], j[-1] + 1)):
+        runs, start = [], j[0]
+        for a, b in zip(j, j[1:] + [None], strict=True):
+            if b is None or b != a + 1:
+                runs.append(str(start) if start == a else f"{start}-{a}")
+                start = b
+        raise ValueError(f"{lab} matched non-adjacent data columns ({', '.join(runs)}); "
+                         "a header cell can only span a contiguous range.")
+    return j[0], j[-1]
+
+
 def _resolve_span_cell(spec: _ColCellSpec, names: list[str]) -> SpanCell:
     pos = spec.pos
-    if isinstance(pos, (list, tuple)):
+    if callable(pos):
+        start, end = _resolve_col_sel(pos, names)
+    elif isinstance(pos, (list, tuple)):
         if len(pos) == 1:
             start = end = _resolve_col(pos[0], names)
         elif len(pos) == 2:
@@ -193,6 +301,10 @@ def _normalize_col_header(col_header, ncols: int, names: list[str]) -> list[Head
     ):
         return [HeaderRow(kind="labels", labels=_pad_labels(list(col_header), ncols))]
 
+    # A single named label row (R #453).
+    if isinstance(col_header, dict):
+        return [_named_label_row(col_header, names)]
+
     # A single spanning row given directly.
     if _is_span_row(col_header):
         return [_span_header_row(col_header, names)]
@@ -204,10 +316,56 @@ def _normalize_col_header(col_header, ncols: int, names: list[str]) -> list[Head
             rows.append(_span_header_row(row, names))
         elif isinstance(row, HeaderRow):
             rows.append(row)
+        elif isinstance(row, dict):
+            rows.append(_named_label_row(row, names))
         else:
             labels = [("" if x is None else str(x)) for x in row]
             rows.append(HeaderRow(kind="labels", labels=_pad_labels(labels, ncols)))
     return rows
+
+
+def _named_label_row(row: dict, names: list[str]) -> HeaderRow:
+    """A label row that says which column each label belongs to (R #453): it
+    may be shorter than the table, and the columns it does not mention keep
+    their own name.  An unknown column is an error."""
+    unknown = [k for k in row if k not in names]
+    if unknown:
+        raise ValueError(
+            "A named column-header row names unknown column(s): "
+            + ", ".join(f'"{k}"' for k in unknown)
+            + ". Available: " + ", ".join(f'"{n}"' for n in names) + "."
+        )
+    return HeaderRow(kind="labels", labels=[
+        ("" if row[n] is None else str(row[n])) if n in row else n for n in names])
+
+
+def check_col_header_width(header, ncols: int, arg: str = "col_header") -> None:
+    """An UNNAMED label row carries one label per printed column (R #435):
+    a header written for the whole table and applied after the column split
+    no longer fits, and printing the first labels would say nothing.  A named
+    row (a dict) and a row of :func:`col_cell` cells carry their own
+    coordinates and are not checked."""
+    if header is None:
+        return
+    if isinstance(header, (list, tuple)) and header and all(isinstance(c, str) for c in header):
+        rows = [header]
+    elif isinstance(header, (list, tuple)):
+        rows = list(header)
+    else:
+        rows = [header]
+    for row in rows:
+        if not (isinstance(row, (list, tuple)) and row and all(isinstance(c, str) for c in row)):
+            continue
+        if len(row) <= 1 or len(row) == ncols:
+            continue
+        raise ValueError(
+            f"`{arg}`: the label row has {len(row)} labels but the table has "
+            f"{ncols} printed column{'' if ncols == 1 else 's'}.\n  A header row "
+            "carries one label per column.  After the column split each page "
+            "keeps only its own columns, so a header written for the whole table "
+            "no longer fits: set it BEFORE the split, or give each page its own "
+            "header (a named row -- a dict -- may be shorter)."
+        )
 
 
 def _spanning_header_row(spanning_header, ncols: int, names: list[str]) -> HeaderRow:
@@ -435,6 +593,8 @@ def _validate_spec_fields(entry: dict) -> dict:
         "header_align",
         "header_bold",
         "header_italic",
+        "background",
+        "header_background",
     }
     unknown = set(entry) - allowed
     if unknown:
@@ -542,6 +702,9 @@ class RtfTable:
     table_width_pct_of_writable: float | None = None
     table_align: str = "left"
     row_height_twips: int | None = None
+    #: Per-table typography (R #299); None inherits the document's.
+    font_size_half_points: int | None = None
+    font: str | None = None
     row_height_exact: bool = False
     header_row_height_twips: int | None = None
     blank_row_height_twips: int | None = None
@@ -554,6 +717,19 @@ class RtfTable:
     titles: list[str] | None = None
     footnotes: list[str] | None = None
     name: str | None = None
+    #: What rtf_tables() overrides need to know about how the table was built:
+    #: the row-heading columns, how many leading header rows came from
+    #: ``spanning_header``, and whether a column header was given at all.
+    row_title: list[int] | None = None
+    spanning_rows: int = 0
+    col_header_given: bool = False
+    #: The page's keys (R ``rtf_paginate_meta``): the value a ``by_value``
+    #: split cut it for, and its ``page_by`` value.
+    page_group: str | None = None
+    page_by: str | None = None
+    #: set_decimal_split(): the columns whose data cells split at the
+    #: decimal mark, and how (R ``tbl$decimal_split``).
+    decimal_split: dict | None = None
 
     @property
     def ncols(self) -> int:
@@ -593,6 +769,8 @@ def rtftable(
     table_width_pct=None,
     table_align="left",
     row_height_twips=None,
+    font_size_half_points=None,
+    font=None,
     row_height_exact=False,
     header_row_height_twips=None,
     blank_row_height_twips=None,
@@ -688,6 +866,15 @@ def rtftable(
 
     if blank_rows is None and read_attributes:
         blank_rows = _read_attr_blank_rows(data)
+    # A spanned label row (stub_cols(label_span=True), R #312) is carried as a
+    # per-row cell style, so it rides the machinery that already slices styles
+    # per page.
+    label_rows = getattr(data, "label_rows", None) if read_attributes else None
+    if label_rows and not hasattr(data, "columns"):
+        cell_styles = list(cell_styles) if cell_styles is not None else [None] * len(rows)
+        for r in label_rows:
+            if 0 <= r < len(cell_styles):
+                cell_styles[r] = {**(cell_styles[r] or {}), "span_row": True}
 
     row_title_idx = _normalize_row_title(row_title, ncols, column_names)
     default_aligns = _default_aligns_from_row_title(row_title_idx, ncols)
@@ -709,7 +896,18 @@ def rtftable(
         col_spec, ncols, column_names, col_header_align, default_aligns,
         default_spec=_style_default_spec,
     )
-    border_resolved = normalize_table_border(border) if border != "tfl" else rtf_border_tfl()
+    # Border: normalise to a TableBorder (or None for no borders), then expand
+    # the whole-table shortcuts (outer / inside_h / inside_v) into the five
+    # zones.  Whether a column header was GIVEN decides where the table's top
+    # edge lands (as in R: the default header drawn from the column names does
+    # not count).
+    border_resolved = expand_table_border(
+        normalize_table_border(border),
+        has_header=spanning_header is not None or col_header is not None,
+    )
+    # Raised here because it needs the shape of the table to know whether the
+    # pre-0.5 reading would have produced anything different.
+    warn_old_edge_reading(normalize_table_border(border), ncols=ncols, nrows=len(rows))
 
     if _blank_positions is not None:
         blank_positions = sorted(p for p in set(_blank_positions) if 0 <= p <= len(rows))
@@ -762,6 +960,8 @@ def rtftable(
         table_width_pct_of_writable=twpw,
         table_align=table_align,
         row_height_twips=int(row_height_twips) if row_height_twips is not None else None,
+        font_size_half_points=check_font_size(font_size_half_points, "font_size_half_points"),
+        font=check_font(font, "font"),
         row_height_exact=bool(row_height_exact),
         header_row_height_twips=(
             int(header_row_height_twips) if header_row_height_twips is not None else None
@@ -779,7 +979,165 @@ def rtftable(
         cell_styles=cell_styles,
         blank_row_normalize=frozenset(blank_row_normalize or ()),
         markup=resolve_markup(markup) if markup is not None else None,
+        row_title=row_title_idx,
+        spanning_rows=1 if spanning_header is not None else 0,
+        col_header_given=spanning_header is not None or col_header is not None,
     )
+
+# -- rtf_tables() overrides of a pre-built table -----------------------------
+
+#: The table-formatting arguments rtf_tables() applies to a pre-built table
+#: when they are passed explicitly (R ``.fmt_args``).  ``style`` is a
+#: construction-time seed and is not re-applied, as in R.
+OVERRIDE_ARGS = (
+    "col_header", "col_header_align", "spanning_header", "col_spec", "row_title",
+    "border", "blank_rows", "style", "col_rel_width", "column_widths_twips",
+    "table_width_twips", "table_width_pct_of_writable", "table_width_pct",
+    "table_align", "row_height_twips", "row_height_exact",
+    "header_row_height_twips", "blank_row_height_twips",
+    "cell_padding_left_twips", "cell_padding_right_twips", "cell_valign",
+    "font_size_half_points", "font",
+)
+
+
+def override_rtftable_fields(tbl: RtfTable, ov: dict) -> RtfTable:
+    """Apply explicitly passed ``rtf_tables()`` formatting arguments onto a
+    pre-built table (R ``.override_rtftable_fields()``).
+
+    ``ov`` holds only the arguments the caller passed; every other field keeps
+    the table's own value.  Each value is normalised as :func:`rtftable`
+    would normalise it.
+    """
+    ov = {k: v for k, v in ov.items() if k in OVERRIDE_ARGS}
+    if not ov:
+        return tbl
+    t = tbl.copy()
+    names, ncols = t.column_names, t.ncols
+
+    def has(k):
+        return k in ov
+
+    def opt_int(v):
+        return None if v is None else int(v)
+
+    # -- column / table widths and placement
+    if has("col_rel_width"):
+        t.col_rel_width = None if ov["col_rel_width"] is None else [float(w) for w in ov["col_rel_width"]]
+    if has("column_widths_twips"):
+        v = ov["column_widths_twips"]
+        t.column_widths_twips = None if v is None else [int(w) for w in v]
+    if has("table_width_twips"):
+        t.table_width_twips = opt_int(ov["table_width_twips"])
+    if has("table_width_pct_of_writable"):
+        v = ov["table_width_pct_of_writable"]
+        t.table_width_pct_of_writable = None if v is None else float(v)
+    if has("table_width_pct") and ov["table_width_pct"] is not None:
+        pct = float(ov["table_width_pct"])
+        if not (0 < pct <= 100):
+            raise ValueError("`table_width_pct` must be a number in (0, 100].")
+        t.table_width_pct_of_writable = pct / 100.0
+    if has("table_align"):
+        if ov["table_align"] not in _ALIGN:
+            raise ValueError("`table_align` must be 'left', 'center', or 'right'.")
+        t.table_align = ov["table_align"]
+
+    # -- row heights
+    if has("row_height_twips"):
+        t.row_height_twips = opt_int(ov["row_height_twips"])
+    if has("row_height_exact"):
+        if not isinstance(ov["row_height_exact"], bool):
+            raise ValueError("`row_height_exact` must be True or False.")
+        t.row_height_exact = ov["row_height_exact"]
+    if has("header_row_height_twips"):
+        t.header_row_height_twips = opt_int(ov["header_row_height_twips"])
+    if has("blank_row_height_twips"):
+        t.blank_row_height_twips = opt_int(ov["blank_row_height_twips"])
+
+    # -- cell padding / valign
+    if has("cell_padding_left_twips"):
+        t.cell_padding_left_twips = opt_int(ov["cell_padding_left_twips"])
+    if has("cell_padding_right_twips"):
+        t.cell_padding_right_twips = opt_int(ov["cell_padding_right_twips"])
+    if has("cell_valign"):
+        if ov["cell_valign"] not in ("top", "center", "bottom"):
+            raise ValueError("`cell_valign` must be 'top', 'center', or 'bottom'.")
+        t.cell_valign = ov["cell_valign"]
+
+    # -- typography (R #299): settable on the table and overridable here
+    if has("font_size_half_points"):
+        t.font_size_half_points = check_font_size(ov["font_size_half_points"],
+                                                  "font_size_half_points")
+    if has("font"):
+        t.font = check_font(ov["font"], "font")
+
+    # -- border: a header given in the same call counts, so read `ov` first
+    if has("border"):
+        hdr_now = ov["spanning_header"] is not None if has("spanning_header") else t.spanning_rows > 0
+        col_now = ov["col_header"] is not None if has("col_header") else t.col_header_given
+        t.border = expand_table_border(normalize_table_border(ov["border"]),
+                                       has_header=hdr_now or col_now)
+
+    # -- spanning header / column header
+    if has("spanning_header"):
+        sp = ov["spanning_header"]
+        rows = [] if sp is None else [_spanning_header_row(sp, ncols, names)]
+        t.col_header = rows + list(t.col_header[t.spanning_rows:])
+        t.spanning_rows = len(rows)
+    if has("col_header"):
+        check_col_header_width(ov["col_header"], ncols, "rtf_tables(col_header)")
+        rows = _normalize_col_header(ov["col_header"], ncols, names)
+        t.col_header = list(t.col_header[:t.spanning_rows]) + rows
+        t.col_header_given = ov["col_header"] is not None
+
+    # -- blank rows, resolved against the table's data
+    if has("blank_rows"):
+        t.blank_rows = ([] if ov["blank_rows"] is None
+                        else _resolve_blank_rows(ov["blank_rows"], names, t.rows))
+
+    # -- row-title columns: re-seed the DEFAULT alignments only
+    if has("row_title"):
+        new_rt = _normalize_row_title(ov["row_title"], ncols, names)
+        old_rt = t.row_title if t.row_title is not None else [0]
+
+        def old_def(j):
+            return "left" if j in old_rt else "center"
+
+        def new_def(j):
+            return "left" if j in new_rt else "center"
+
+        for j, spec in enumerate(t.col_spec):
+            if spec.align == old_def(j):
+                header_align = new_def(j) if spec.header_align == old_def(j) else spec.header_align
+                t.col_spec[j] = replace(spec, align=new_def(j), header_align=header_align)
+        t.row_title = new_rt
+
+    # -- per-column spec: user fields merged over the existing spec
+    if has("col_spec") and ov["col_spec"] is not None:
+        for entry in ov["col_spec"]:
+            if not isinstance(entry, dict) or entry.get("col") is None:
+                raise ValueError("Each element of `col_spec` must be a dict with a `col` key.")
+            entry = dict(entry)
+            col = entry.pop("col")
+            try:
+                idx = _resolve_col(col, names)
+            except (KeyError, ValueError, IndexError):
+                continue
+            if not 0 <= idx < ncols:
+                continue
+            fields = _validate_spec_fields(entry)
+            # the header follows a changed `align` unless its own is set too
+            if "align" in fields and "header_align" not in fields:
+                fields["header_align"] = fields["align"]
+            t.col_spec[idx] = replace(t.col_spec[idx], **fields)
+
+    # -- column-header alignment: the top of the cascade
+    if has("col_header_align") and ov["col_header_align"] is not None:
+        cha = ov["col_header_align"]
+        for j, spec in enumerate(t.col_spec):
+            a = cha if isinstance(cha, str) else cha[j]
+            t.col_spec[j] = replace(spec, header_align=a)
+    return t
+
 
 
 def _coerce_data(data) -> tuple[list[str], list[list[Any]]]:

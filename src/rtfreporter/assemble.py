@@ -128,9 +128,48 @@ def _insert_bookmark(content: list[str], bookmark_name: str,
     return content[: insert_after + 1] + inserts + content[insert_after + 1 :]
 
 
+_PAGE_BREAK_RE = re.compile(r"\\page(?![a-zA-Z])")
+
+
 def _count_rtf_pages(lines: list[str]) -> int:
-    """Count rendered pages (one ``\\sbkpage`` section break per page)."""
-    return "\n".join(lines).count("\\sbkpage")
+    """Count the rendered pages of an RTF file's lines.
+
+    Two things start a new page, and a file mixes them: ``\\sbkpage`` (a
+    section break; one per ``rtf_section``, NOT one per rendered page) and
+    ``\\page`` (a plain break between the sub-pages inside one section).  So
+    the count is one page for the first section, plus one per further section
+    start, plus one per in-section break.  Counting ``\\sbkpage`` alone
+    reported 1 for any single-section file however long (#401).
+
+    ``\\page`` is matched only when the control word ends there, so
+    ``\\pagebb`` and friends cannot be mistaken for a break.
+    """
+    txt = "\n".join(lines)
+    sections = txt.count("\\sbkpage")
+    breaks = len(_PAGE_BREAK_RE.findall(txt))
+    if sections == 0 and breaks == 0:
+        return 0
+    return max(sections, 1) + breaks
+
+
+_NUMPAGES_CACHE_RE = re.compile(r"(\{\\field\{\\\*\\fldinst NUMPAGES\}\{\\fldrslt )[^{}]*(\}\})")
+
+
+def _retotal_numpages(lines: list[str], total_pages: int | None) -> list[str]:
+    """Point every NUMPAGES cache at the assembled document's page count (#415).
+
+    ``{AUTO_TOTAL_PAGES}`` bakes the count of the document being written, so
+    each input arrives claiming its own old total while sitting in a book of a
+    different length.  Word recalculates header/footer fields during layout
+    and so shows the right number anyway; what this fixes is the file as
+    written -- for readers that display the cached result, for anything that
+    parses rather than renders, and for a body-placed total.  Only the cached
+    RESULT is rewritten; the field instruction is untouched.
+    """
+    if total_pages is None:
+        return lines
+    repl = r"\g<1>" + str(int(total_pages)) + r"\g<2>"
+    return [_NUMPAGES_CACHE_RE.sub(repl, ln) for ln in lines]
 
 
 def _insert_pgnrestart(content: list[str]) -> list[str]:
@@ -206,8 +245,14 @@ def _extract_first_title(lines: list[str]) -> str | None:
 
 
 def _read_lines(path: str) -> list[str]:
+    """The file's lines as R's ``readLines()`` gives them: the newline that
+    ends the last line does not start another, empty one."""
     with open(path, encoding="utf-8") as fh:
-        return fh.read().split("\n")
+        text = fh.read()
+    lines = text.split("\n")
+    if text.endswith("\n"):
+        lines.pop()
+    return lines
 
 
 def _normalize_toc(toc, input_files: list[str]) -> list[dict] | None:
@@ -346,11 +391,32 @@ def _build_toc_section(toc_entries, bookmarks, toc_title, toc_leader="dot",
 # -- assemble_rtf() -----------------------------------------------------------
 
 
+def _fill_book_page_slots(lines, book_page, total_pages):
+    """Fill every ``{BOOK_PAGE}`` slot with the compiled document's page number
+    (R ``.fill_book_page_slots()``, #413)."""
+    import re
+
+    from . import _commands as C
+    from ._escape import render_tokens
+
+    book_page = str(book_page)
+    if re.search(r"(?:^|[^A-Z_])\{(PAGE|TOTAL_PAGES)\}", book_page):
+        raise ValueError(
+            "`book_page` cannot use the static `{PAGE}` / `{TOTAL_PAGES}` tokens: "
+            "the slot sits in one band shared by every page of a section, so a "
+            "single substitution cannot give each page its own number.\n"
+            "  Use `{AUTO_PAGE}` / `{AUTO_TOTAL_PAGES}`, which the reader "
+            "resolves per page."
+        )
+    filled = render_tokens(book_page, current_page=None, total_pages=total_pages)
+    return [line.replace(C.BOOK_PAGE_SLOT, filled) for line in lines]
+
+
 def assemble_rtf(input_files, output_file, overwrite: bool = False,
                  cover: dict | None = None, toc=None,
                  toc_title: str = "Table of Contents", toc_leader: str = "dot",
                  toc_page_numbering: str = "none",
-                 bookmark_prefix: str = "tfl_") -> str:
+                 bookmark_prefix: str = "tfl_", book_page: str | None = None) -> str:
     """Assemble several rendered RTF files into one deliverable.
 
     Args:
@@ -367,6 +433,14 @@ def assemble_rtf(input_files, output_file, overwrite: bool = False,
         toc_leader: ``"dot"`` (dotted leader) or ``"none"``.
         toc_page_numbering: ``"none"`` (default) / ``"roman"`` / ``"decimal"``.
         bookmark_prefix: Prefix for auto-generated bookmark names.
+        book_page: Text for the compiled document's page number, put into every
+            ``{BOOK_PAGE}`` slot the inputs reserved (R #413); ``None`` leaves
+            the slots empty.  A deliverable bound into a book needs two page
+            numbers, its own and the book's; it reserves the position with
+            ``{BOOK_PAGE}`` in any band and renders it empty, and this fills it
+            -- e.g. ``"Page {AUTO_PAGE} of {AUTO_TOTAL_PAGES}"``, where the
+            total is the book's.  The static ``{PAGE}`` / ``{TOTAL_PAGES}``
+            cannot be used: one band serves every page of a section.
 
     Returns:
         ``output_file``.
@@ -458,9 +532,20 @@ def assemble_rtf(input_files, output_file, overwrite: bool = False,
                                        outline_label=file_outline_labels[i])
         body = body + ["\\sect"] + content
 
+    # The assembled document's own page count, known only here.  Front matter
+    # counts: a cover is one page, the TOC one more.  Then make every NUMPAGES
+    # cache -- the inputs' own included -- agree with the book it now sits in.
+    body_pages = sum(_count_rtf_pages(_read_lines(f)) for f in input_files)
+    front_pages = (1 if use_cover else 0) + (1 if use_toc else 0)
+    book_pages = body_pages + front_pages
+    if book_page is not None:
+        body = _fill_book_page_slots(body, book_page, book_pages)
+    body = _retotal_numpages(body, book_pages)
+
     body = body + ["}"]
     with open(output_file, "w", encoding="utf-8") as fh:
-        fh.write("\n".join(body))
+        # As R's writeLines(): every line, the last included, ends in a newline.
+        fh.write("\n".join(body) + "\n")
     return output_file
 
 

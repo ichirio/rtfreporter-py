@@ -137,10 +137,11 @@ def test_stub_indent_width():
     assert not leaf.startswith("  "), "a plain space would collapse in Word"
 
 
-def test_stub_single_level_no_indent():
+def test_stub_needs_two_levels():
+    # As R's stub_cols(): a stub merges a parent and a leaf.
     df = pd.DataFrame({"Group": ["A", "B"], "Val": [1, 2]})
-    t = rr.as_rtftable(df, stub_vars=["Group"], stub_label="")
-    assert [r[0] for r in t.rows] == ["A", "B"]
+    with pytest.raises(ValueError, match="at least two columns"):
+        rr.as_rtftable(df, stub_vars=["Group"], stub_label="")
 
 
 # -- col-header-from-names ----------------------------------------------------

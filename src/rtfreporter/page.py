@@ -149,6 +149,10 @@ class DefaultFormat:
         footnote_format: How the footnote renders -- ``"table"`` (default) or
             ``"text"``.
         font: Font family name (default ``"Courier"``).
+        title_width, footnote_width: How wide the title / footnote block is
+            (#291): ``"content"`` (the default -- the width of the table body),
+            ``"page"`` (the writable width), a fraction of the writable width,
+            or twips.
     """
 
     font_size_half_points: int = 18
@@ -159,10 +163,16 @@ class DefaultFormat:
     title_format: str = "text"
     footnote_format: str = "table"
     font: str = "Courier"
+    title_width: object = None
+    footnote_width: object = None
 
     def __post_init__(self) -> None:
+        from .element_style import check_block_width
+
         if self.font_size_half_points <= 0:
             raise ValueError("`font_size_half_points` must be positive.")
+        self.title_width = check_block_width(self.title_width, "title_width")
+        self.footnote_width = check_block_width(self.footnote_width, "footnote_width")
         # Validate markup tokens eagerly.
         resolve_markup(self.markup)
         for name, val in (
@@ -181,6 +191,8 @@ def rtf_default_format(
     markup=_UNSET,
     title_format=_UNSET,
     footnote_format=_UNSET,
+    title_width=None,
+    footnote_width=None,
 ) -> DefaultFormat:
     """Build a :class:`DefaultFormat` (mirrors R's ``rtf_default_format()``).
 
@@ -195,6 +207,8 @@ def rtf_default_format(
         cell_padding_left_twips, cell_padding_right_twips: Default cell padding.
         markup: ``"script"`` / ``"relational"`` / ``"all"`` / ``"none"``.
         title_format, footnote_format: ``"text"`` or ``"table"``.
+        title_width, footnote_width: ``"content"`` (default), ``"page"``, a
+            fraction of the writable width, or twips.
     """
     for name, val in (
         ("row_height_twips", row_height_twips),
@@ -204,6 +218,8 @@ def rtf_default_format(
         if val is not None and (not isinstance(val, int) or val < 0):
             raise ValueError(f"`{name}` must be a non-negative integer (twips) or None.")
     return DefaultFormat(
+        title_width=title_width,
+        footnote_width=footnote_width,
         font_size_half_points=_resolve(font_size_half_points, "font_size_half_points"),
         row_height_twips=row_height_twips,
         cell_padding_left_twips=cell_padding_left_twips,

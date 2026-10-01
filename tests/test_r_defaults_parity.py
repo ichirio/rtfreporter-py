@@ -77,9 +77,18 @@ def test_by_change_fences_the_block_by_default():
     assert sig.parameters["include_before_first"].default is True
     assert sig.parameters["include_after_last"].default is True
 
+    # Standalone the spec fences the block ([0, 2, 4]); inside a page it is a
+    # SEPARATOR, and a separator may only sit between rows -- the page edges
+    # belong to blank_row_first / blank_row_end alone (R #332, checked
+    # byte-for-byte in tests/xcheck_golden/blank_by_change.rtf).
     pages = rr.as_rtftables(
         {"g": ["A", "A", "B", "B"], "v": [1, 2, 3, 4]},
         blank_rows=rr.blank_rows_by_change("g"),
+    )
+    assert pages[0].blank_rows == [2]
+    pages = rr.as_rtftables(
+        {"g": ["A", "A", "B", "B"], "v": [1, 2, 3, 4]},
+        blank_rows=rr.blank_rows_by_change("g"), blank_row_first=True, blank_row_end=True,
     )
     assert pages[0].blank_rows == [0, 2, 4]
 
@@ -146,7 +155,7 @@ def test_between_groups_via_as_rtftables_matches_r():
         ("as_rtftables", "border", "tfl"),
         ("as_rtftables", "read_meta", True),
         ("as_rtftables", "split", "none"),
-        ("as_rtftables", "stub_group_summary", "empty"),
+        ("as_rtftables", "stub_group_summary", ("empty", "parent")),
         ("rtftable", "table_align", "left"),
         ("rtftable", "border", "tfl"),
         ("rtftable", "row_height_exact", False),

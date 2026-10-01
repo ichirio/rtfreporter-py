@@ -50,7 +50,7 @@ from rtfreporter import rtftable, rtf_col_header, col_cell, style_header
 table = rtftable(
     df,
     col_header=rtf_col_header(
-        [col_cell(cols=(1, 2), label="Treatment Group", align="center")],
+        [col_cell(pos=(1, 2), label="Treatment Group", align="center")],
         ["Characteristic", "Placebo", "Active"],
     ),
     col_rel_width=[50, 25, 25],

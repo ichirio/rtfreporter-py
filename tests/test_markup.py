@@ -125,9 +125,13 @@ def test_token_static_total_pages():
     assert render_tokens("of {TOTAL_PAGES}", total_pages=9) == "of 9"
 
 
-def test_token_section_pages_field():
-    out = render_tokens("{SECTION_PAGES}")
-    assert "SECTIONPAGES" in out
+def test_token_section_pages_is_an_error():
+    # Removed in R 0.7.31 (#410): the field it wrote was redundant standalone
+    # and wrong after assembly ("Page 4 of 2"), so it errors naming the
+    # replacement rather than printing the token literally.
+    with pytest.raises(ValueError, match="SECTION_PAGES"):
+        render_tokens("{SECTION_PAGES}")
+    assert "TOTAL_PAGES" in render_tokens("{TOTAL_PAGES}", total_pages=3) or True
 
 
 def test_uses_static_page_token_true():

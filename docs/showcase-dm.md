@@ -73,7 +73,7 @@ labels carrying their N.
 
 ```python
 col_header = rtf_col_header(
-    [col_cell(cols=(1, 3), label="Treatment Group", align="center")],
+    [col_cell(pos=(1, 3), label="Treatment Group", align="center")],
     ["", *arm_labels(adsl)],
 )
 ```
@@ -101,16 +101,16 @@ adverse-events table wants zeros written out as `0 (0.0%)` instead — see
 ## Building the table
 
 The body is a tidy frame: one row per (characteristic, statistic), one column
-per arm. `stub_vars` folds the two hierarchy columns into a single indented
+per arm. `stub=stub_spec(...)` folds the two hierarchy columns into a single indented
 clinical stub.
 
 ```python
-from rtfreporter import as_rtftables, rtf_document, rtf_tables, rtf_section, generate_rtfreport
+from rtfreporter import (as_rtftables, generate_rtfreport, rtf_document, rtf_section,
+                         rtf_tables, stub_spec)
 
 pages = as_rtftables(
     body,
-    stub_vars=["Characteristic", "Statistic"],
-    stub_label="",
+    stub=stub_spec(["Characteristic", "Statistic"], label=""),
     col_header=col_header,
     col_spec=[{"col": 0, "align": "left"},
               {"col": 1, "align": "center"},

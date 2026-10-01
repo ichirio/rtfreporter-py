@@ -20,6 +20,7 @@ from rtfreporter import (
     as_rtftable,
     rtf_footer,
     rtf_header,
+    stub_spec,
     style_body,
     style_header,
 )
@@ -57,8 +58,7 @@ def build() -> RtfDocument:
     # Merge the two hierarchy columns into a single indented clinical *stub*.
     table = as_rtftable(
         DEMOG,
-        stub_vars=["Characteristic", "Statistic"],
-        stub_label="",
+        stub=stub_spec(["Characteristic", "Statistic"], label=""),
         # Right-align the numeric summary columns; center their headers.
         col_spec=[
             {"col": 1, "align": "center"},

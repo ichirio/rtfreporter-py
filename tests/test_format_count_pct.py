@@ -39,8 +39,21 @@ def test_format_count_pct_zero_and_na_branch():
     out0 = format_count_pct(0, 0.0)
     out_na = format_count_pct(None, None)
     assert len(out0[0]) == 10
-    assert len(out_na[0]) == 10
+    # A missing count prints the `na` token; "" (the default) is an EMPTY cell
+    # (R #350), not a literal "NA".
+    assert out_na[0] == ""
+    assert format_count_pct(None, None, na="-", nbsp=" ") == ["  -       "]
     assert "(" not in out0[0]
+
+
+def test_format_count_pct_rounds_with_the_package_rule():
+    # R #476: the percent is rounded ONCE, with the package rule, before any
+    # branch reads it -- 9.96 no longer takes the "< 10" width, 99.96 prints
+    # (100), and 6.25 follows "r" (half to even) or "sas" (half away).
+    assert format_count_pct(1, 9.96, pct_unit="percent", nbsp=" ") == ["  1 (10.0)"]
+    assert format_count_pct(1, 99.96, pct_unit="percent", nbsp=" ") == ["  1  (100)"]
+    assert format_count_pct(1, 6.25, pct_unit="percent", nbsp=" ") == ["  1  (6.2)"]
+    assert format_count_pct(1, 6.25, pct_unit="percent", nbsp=" ", rounding="sas") == ["  1  (6.3)"]
 
 
 def test_format_count_pct_small_vs_big_branch():

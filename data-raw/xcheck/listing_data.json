@@ -1,0 +1,74 @@
+{
+ "USUBJID": [
+  "01-001",
+  "01-001",
+  "01-001",
+  "01-002",
+  "01-003",
+  "01-003",
+  "01-004"
+ ],
+ "AGE": [
+  "54",
+  "54",
+  "54",
+  "61",
+  "47",
+  "47",
+  "70"
+ ],
+ "SEX": [
+  "F",
+  "F",
+  "F",
+  "M",
+  "F",
+  "F",
+  "M"
+ ],
+ "AETERM": [
+  "Headache",
+  "Nausea and vomiting after the second infusion of study drug",
+  "Rash on both forearms",
+  "Dizziness",
+  "頭痛",
+  "Fatigue",
+  ""
+ ],
+ "AEDECOD": [
+  "Headache",
+  "Nausea",
+  "Rash maculo-papular",
+  "Dizziness",
+  "頭痛",
+  "Fatigue",
+  "Hypertension"
+ ],
+ "ASTDT": [
+  "2024-01-03",
+  "2024-01-10",
+  "2024-02-01",
+  "2024-01-20",
+  "2024-03-05",
+  "2024-03-06",
+  "2024-04-01"
+ ],
+ "AENDT": [
+  "2024-01-04",
+  "",
+  "2024-02-15",
+  "2024-01-21",
+  "2024-03-07",
+  "",
+  "2024-04-30"
+ ],
+ "AESEV": [
+  "MILD",
+  "MODERATE",
+  "MILD",
+  "SEVERE",
+  "MILD",
+  "MILD",
+  "MODERATE"
+ ]
+}

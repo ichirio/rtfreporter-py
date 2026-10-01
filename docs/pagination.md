@@ -98,17 +98,11 @@ when a grouping column is later removed with `drop_cols`.
 
 ## Custom split hooks
 
-The built-in strategies are exposed as **factory functions** that return a
-callable, on the same footing as a hand-written splitter. Pass either the
-string name or the callable to `split=`:
-
-```python
-from rtfreporter import as_rtftables, page_split_group_safe
-
-# These two calls are equivalent:
-pages = as_rtftables(df, split="group_safe", max_rows=20, group_col="visit")
-pages = as_rtftables(df, split=page_split_group_safe(max_rows=20, group_col="visit"))
-```
+A built-in strategy is **named** and its settings are ordinary arguments
+alongside it -- `split="group_safe", max_rows=20, group_col="visit"`.  (The
+`page_split_*()` factories the R package once exported are gone, in both
+packages: a factory carried its own `group_col`, so it could disagree with the
+top-level one.)
 
 A **custom split function** takes a single
 [`Frame`][rtfreporter.pagination.Frame] and returns a list of `Frame` — one per

@@ -46,6 +46,12 @@ class Frame:
     rows: list[list] = field(default_factory=list)
     name: str | None = None
     blank_rows: list | None = None
+    #: From :func:`~rtfreporter.stub_cols`: each row's source row (``None`` for
+    #: an inserted label row), and the rows to render as one spanning cell.
+    stub_src: list | None = None
+    label_rows: list | None = None
+    #: From :func:`~rtfreporter.build_listing`: the resolved listing spec.
+    listing: object = None
 
 
 def as_frame(x) -> Frame:
@@ -78,8 +84,8 @@ def _frames_from_pages(frame: Frame, pages) -> list[Frame]:
 # -- Pagination strategy factories -------------------------------------------
 
 
-def page_split_none() -> Callable[[Frame], list[Frame]]:
-    """Return a split function that keeps the whole frame on one page."""
+def _split_none() -> Callable[[Frame], list[Frame]]:
+    """The ``"none"`` strategy: the whole frame on one page."""
 
     def f(frame: Frame) -> list[Frame]:
         return [Frame(frame.column_names, list(frame.rows), frame.name)]
@@ -87,8 +93,8 @@ def page_split_none() -> Callable[[Frame], list[Frame]]:
     return f
 
 
-def page_split_rows(split_rows=None, max_rows: int | None = None) -> Callable[[Frame], list[Frame]]:
-    """Return a split function cutting at explicit positions or a page size.
+def _split_rows(split_rows=None, max_rows: int | None = None) -> Callable[[Frame], list[Frame]]:
+    """The ``"rows"`` strategy: cut at explicit positions or a page size.
 
     Args:
         split_rows: 0-based **cut positions** -- a single position or a list.
@@ -114,50 +120,50 @@ def page_split_rows(split_rows=None, max_rows: int | None = None) -> Callable[[F
     return f
 
 
-def page_split_by_value(
+def _split_by_value(
     group_col=None,
     max_rows: int | None = None,
     min_group_rows: int = 2,
     cont_label: str = " (Cont.)",
     group_by: str = "auto",
 ) -> Callable[[Frame], list[Frame]]:
-    """Return a split function that puts each distinct ``group_col`` value on its own page."""
+    """The ``"by_value"`` strategy: each distinct ``group_col`` value on its own page."""
 
     def f(frame: Frame) -> list[Frame]:
         gidx = _resolve_group(group_col, frame.column_names)
-        from .adapters import _compute_group_keys, _paginate
+        from .adapters import _compute_group_keys, _paginate, _resolve_group_mode
 
         gkeys = _compute_group_keys(frame.rows, gidx, group_by)
 
         pages = _paginate(
             frame.rows, gkeys, "by_value", None, max_rows, min_group_rows,
-            cont_label, gidx,
+            cont_label, gidx, group_mode=_resolve_group_mode(frame.rows, gidx, group_by),
         )
         return _frames_from_pages(frame, pages)
 
     return f
 
 
-def page_split_group_safe(
+def _split_group_safe(
     max_rows: int | None = None,
     group_col=None,
     min_group_rows: int = 2,
     cont_label: str = " (Cont.)",
     group_by: str = "auto",
 ) -> Callable[[Frame], list[Frame]]:
-    """Return a split function that packs whole groups per page without splitting one."""
+    """The ``"group_safe"`` strategy: whole groups per page, never splitting one."""
     return _group_factory(max_rows, group_col, min_group_rows, cont_label, group_by,
                           "group_safe")
 
 
-def page_split_group_force(
+def _split_group_force(
     max_rows: int | None = None,
     group_col=None,
     min_group_rows: int = 2,
     cont_label: str = " (Cont.)",
     group_by: str = "auto",
 ) -> Callable[[Frame], list[Frame]]:
-    """Return a split function that packs groups per page, force-splitting an oversized one."""
+    """The ``"group_force"`` strategy: cut every ``max_rows`` rows wherever that falls."""
     return _group_factory(max_rows, group_col, min_group_rows, cont_label, group_by,
                           "group_force")
 
@@ -173,26 +179,32 @@ def _group_factory(max_rows, group_col, min_group_rows, cont_label, group_by, sp
 
         pages = _paginate(
             frame.rows, gkeys, split, None, max_rows, min_group_rows, cont_label, gidx,
+            group_mode=None if group_by == "auto" else group_by,
         )
         return _frames_from_pages(frame, pages)
 
     return f
 
 
+# The built-in strategies, by name.  They used to be exported as
+# ``page_split_*()`` factories; R retired those (#334) because a factory carried
+# its own ``group_col`` and could disagree with the top-level one.  A strategy
+# is named and its settings are ordinary arguments alongside it; the
+# custom-function escape hatch (``split=<callable>``) is unchanged.
 _STRING_FACTORIES = {
-    "none": lambda **kw: page_split_none(),
-    "rows": lambda split_rows=None, max_rows=None, **kw: page_split_rows(
+    "none": lambda **kw: _split_none(),
+    "rows": lambda split_rows=None, max_rows=None, **kw: _split_rows(
         split_rows=split_rows, max_rows=max_rows),
     "by_value": lambda group_col=None, max_rows=None, min_group_rows=2,
-    cont_label=" (Cont.)", group_by="auto", **kw: page_split_by_value(
+    cont_label=" (Cont.)", group_by="auto", **kw: _split_by_value(
         group_col=group_col, max_rows=max_rows, min_group_rows=min_group_rows,
         cont_label=cont_label, group_by=group_by),
     "group_safe": lambda max_rows=None, group_col=None, min_group_rows=2,
-    cont_label=" (Cont.)", group_by="auto", **kw: page_split_group_safe(
+    cont_label=" (Cont.)", group_by="auto", **kw: _split_group_safe(
         max_rows=max_rows, group_col=group_col, min_group_rows=min_group_rows,
         cont_label=cont_label, group_by=group_by),
     "group_force": lambda max_rows=None, group_col=None, min_group_rows=2,
-    cont_label=" (Cont.)", group_by="auto", **kw: page_split_group_force(
+    cont_label=" (Cont.)", group_by="auto", **kw: _split_group_force(
         max_rows=max_rows, group_col=group_col, min_group_rows=min_group_rows,
         cont_label=cont_label, group_by=group_by),
 }
@@ -239,27 +251,27 @@ def run_split(split, frame: Frame, **ctx) -> list[Frame]:
 # -- Continuation-label helper -----------------------------------------------
 
 
-def add_cont_label(frame: Frame, label: str, cont_label: str = " (Cont.)", col=0) -> Frame:
-    """Prepend a continuation-label row to ``frame`` (mirrors R ``add_cont_label()``).
+def add_cont_label(chunk: Frame, label: str, cont_label: str = " (Cont.)", col=0) -> Frame:
+    """Prepend a continuation-label row to ``chunk`` (mirrors R ``add_cont_label()``).
 
     Args:
-        frame: The :class:`Frame` (or any :func:`as_frame` input) to prepend to.
+        chunk: The :class:`Frame` (or any :func:`as_frame` input) to prepend to.
         label: The group label; the inserted cell reads ``label + cont_label``.
         cont_label: The continuation suffix (default ``" (Cont.)"``).
         col: The 0-based column (or name) that carries the label (default 0).
     """
-    frame = as_frame(frame)
+    chunk = as_frame(chunk)
     if not isinstance(label, str):
         raise TypeError("`label` must be a single string.")
     from .table import _resolve_col
 
-    j = _resolve_col(col, frame.column_names)
-    cont_row: list[Any] = ["" for _ in frame.column_names]
+    j = _resolve_col(col, chunk.column_names)
+    cont_row: list[Any] = ["" for _ in chunk.column_names]
     cont_row[j] = f"{label}{cont_label}"
     return Frame(
-        frame.column_names,
-        [cont_row] + [list(r) for r in frame.rows],
-        frame.name,
+        chunk.column_names,
+        [cont_row] + [list(r) for r in chunk.rows],
+        chunk.name,
     )
 
 
@@ -267,7 +279,7 @@ def add_cont_label(frame: Frame, label: str, cont_label: str = " (Cont.)", col=0
 
 
 def set_blank_rows(
-    data,
+    df,
     blank_rows=None,
     blank_row_first: bool = False,
     blank_row_end: bool = False,
@@ -283,7 +295,7 @@ def set_blank_rows(
     ``rtftable(set_blank_rows(df, ...))`` picks them up automatically.
 
     Args:
-        data: A ``(column_names, rows)`` pair, dict, list of row dicts, DataFrame,
+        df: A ``(column_names, rows)`` pair, dict, list of row dicts, DataFrame,
             or :class:`Frame`.
         blank_rows: ``None``; a 0-based ``int`` / sentinel / list of them;
             ``"between_groups"`` (a blank at every group-value change); or a
@@ -299,10 +311,10 @@ def set_blank_rows(
         A :class:`Frame` with :attr:`~Frame.blank_rows` set (``None`` when the
         resolved position set is empty).
     """
-    from .blank_rows import AFTER_LAST, BEFORE_FIRST, BlankRowsByChange, BlankRowsByRule
+    from .blank_rows import BEFORE_FIRST, BlankRowsByChange, BlankRowsByRule
     from .table import _resolve_blank_rows
 
-    frame = as_frame(data)
+    frame = as_frame(df)
     names, rows = frame.column_names, frame.rows
     nrows = len(rows)
 
@@ -329,8 +341,13 @@ def set_blank_rows(
                     include_before_first=False, include_after_last=False,
                 ).positions(names, rows)
             )
-        elif is_spec_obj(it) or isinstance(it, (int,)) or it is BEFORE_FIRST or it is AFTER_LAST:
-            internal.update(_resolve_blank_rows(it, names, rows))
+        elif is_spec_obj(it):
+            # A separator, so the page-edge rule applies: it may only sit
+            # BETWEEN rows (R #332).  "between_groups" above gets this by
+            # construction; here it has to be said.
+            from .adapters import _trim_page_edges
+
+            internal.update(_trim_page_edges(_resolve_blank_rows(it, names, rows), nrows))
         else:
             internal.update(_resolve_blank_rows(it, names, rows))
     if blank_row_first:
@@ -350,7 +367,7 @@ def set_blank_rows(
 
 
 def paginate(
-    data,
+    x,
     split="none",
     split_rows=None,
     max_rows: int | None = None,
@@ -363,7 +380,7 @@ def paginate(
     align_count_pct: bool = False,
     cell_format=None,
 ) -> list[Frame]:
-    """Paginate ``data`` into a list of per-page :class:`Frame` objects.
+    """Paginate ``x`` into a list of per-page :class:`Frame` objects.
 
     Mirrors R's ``paginate()``: applies an optional sort and cell-format pass,
     then the ``split`` strategy (a built-in name or a custom callable).  Returns
@@ -371,14 +388,14 @@ def paginate(
     :class:`~rtfreporter.RtfTable` pages).
 
     Args:
-        data: A ``(column_names, rows)`` pair, dict of columns, list of row
+        x: A ``(column_names, rows)`` pair, dict of columns, list of row
             dicts, DataFrame, or :class:`Frame`.
         split: A strategy name or a custom split callable (see module docs).
         split_rows, max_rows, group_col, group_by, sort_by, sort_desc,
         cont_label, min_group_rows: As in :func:`~rtfreporter.as_rtftables`.
         align_count_pct, cell_format: Optional pre-split cell-format pass.
     """
-    frame = as_frame(data)
+    frame = as_frame(x)
     names = frame.column_names
     rows = [list(r) for r in frame.rows]
 
