@@ -48,7 +48,8 @@ port.
 
 The Python package deliberately mirrors the R one:
 
-- **All 74 exported R functions exist in Python** under the same names —
+- **Every exported R function outside the ARD / plan layer exists in Python**
+  (R v0.8.2; see *Current parity* below) under the same names —
   `rtf_border_side()`, `rtf_document()`, `generate_rtfreport()`,
   `as_rtftables()`, `assemble_rtf()`, and so on.
 - **Argument names, order and defaults follow R**, so R documentation and
@@ -60,6 +61,16 @@ The Python package deliberately mirrors the R one:
 
 There are two deliberate departures, both for Pythonic ergonomics; they are
 described on [Differences from the R package](r-differences.md).
+
+!!! note "Scope: the R package's ARD / plan layer is not ported"
+
+    The R package is gaining a table-planning layer — `table_plan()`, the
+    `plan_*()` verbs, `plan_apply()`, `plan_template()` — and an ARD family
+    — `normalize_ard()`, `widen_ard()`, `pull_ard()`, `list_ard_keys()`,
+    `cell_rows()`, `overall_row()`. These are **intentionally not ported**:
+    they consume `cards` / `cardx` analysis results data, which exist only
+    in R. The "every R export exists in Python" statement above refers to
+    the rendering toolkit and does not include this layer.
 
 ## Where the two packages necessarily differ
 
@@ -91,7 +102,7 @@ from `tab_style()`, row groups, summary rows and footnotes. See
 | Exported functions | <span class="rtf-badge ok">87 / 88</span> every R v0.8.2 export outside the ARD / plan engine, except `rtfreporter_ai_manual()` (the R package's AI-assistant manuals, which describe the R API) |
 | Renderer, pagination, borders, styling, listings, figures, assembly | <span class="rtf-badge ok">ported</span> — checked byte-for-byte against R v0.8.2 |
 | Table-object adapters | <span class="rtf-badge partial">pandas, polars, great_tables</span> — the R-only frameworks have no Python counterpart |
-| ARD / table plan (`normalize_ard()`, `widen_ard()`, `table_plan()`, `plan_*()`) | <span class="rtf-badge partial">not ported</span> — out of scope for now; to be reconsidered when the Python package is used in earnest |
+| ARD / plan layer (`table_plan()`, `plan_*()`, `normalize_ard()`, …) | <span class="rtf-badge partial">not ported</span> — by design; it consumes `cards` / `cardx` data that exist only in R (to be reconsidered when the Python package is used in earnest) |
 
 How the parity is checked: the differential harness in `data-raw/xcheck/`
 renders the same cases with both packages and requires byte-identical RTF
