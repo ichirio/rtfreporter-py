@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-10-01
+
 ### Following R v0.8.2 (#3)
 
 The port now matches the R package's **v0.8.2** release, outside the ARD /

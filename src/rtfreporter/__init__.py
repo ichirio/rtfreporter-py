@@ -147,7 +147,7 @@ from .table import (
 from .text_width import auto_col_widths, text_width_in
 from .watermark import Watermark, rtf_watermark
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 __all__ = [
     "__version__",
