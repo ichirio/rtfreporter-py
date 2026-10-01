@@ -14,22 +14,26 @@ package, and follows the R package's name, arguments and defaults.
 
 | Group | Symbols |
 |---|---|
-| [Document and rendering](#document-and-rendering) | `RtfDocument`, `rtf_document`, `rtf_config`, `rtf_page`, `DefaultFormat`, `rtf_default_format`, `Page`, `generate_rtfreport`, `to_rtf`, `save` |
+| [Document and rendering](#document-and-rendering) | `RtfDocument`, `rtf_document`, `rtf_config`, `rtf_page`, `DefaultFormat`, `rtf_default_format`, `Page`, `rtf_watermark`, `Watermark`, `generate_rtfreport`, `to_rtf`, `save` |
 | [Package defaults](#package-defaults) | `rtfreporter_options`, `rtfreporter_reset_defaults` |
 | [Sections: headers and footers](#sections-headers-and-footers) | `rtf_section`, `rtf_header`, `rtf_footer`, `HeaderFooter`, `update_header_row`, `update_footer_row` |
 | [Page content: tables and figures](#page-content-tables-and-figures) | `rtf_tables`, `rtf_figures`, `rtf_titles`, `rtf_footnotes`, `rtftable`, `RtfTable`, `ColSpec`, `rtfplot`, `Figure` |
-| [Importing tables](#importing-tables) | `as_rtftables`, `as_rtftable`, `combine_sections`, `stub_cols` |
-| [Column headers](#column-headers) | `rtf_col_header`, `col_cell`, `SpanCell`, `HeaderRow`, `col_header_from_names`, `add_col_header_row`, `set_col_header`, `set_header_cell`, `rtf_columns`, `rtf_header_source` |
-| [Post-hoc styling verbs](#post-hoc-styling-verbs) | `style_header`, `style_body`, `style_cols`, `style_zone`, `add_header_row`, `collapse_repeats` |
-| [Cell-format functions](#cell-format-functions) | `format_count_pct`, `realign_count_pct`, `fmt_count_paren`, `fmt_count_paren_bare`, `fmt_right_align` |
+| [Importing tables](#importing-tables) | `as_rtftables`, `as_rtftable`, `combine_sections`, `stub_cols`, `stub_spec`, `StubSpec` |
+| [Listings](#listings) | `listing_col`, `ListingCol`, `listing_spec`, `ListingSpec`, `build_listing`, `fit_listing_widths`, `listing_code`, `listing_wrap`, `listing_wrap_code`, `listing_disp_width`, `listing_take`, `listing_split_after`, `catx` |
+| [Column headers](#column-headers) | `rtf_col_header`, `col_cell`, `col_key`, `header_map`, `SpanCell`, `HeaderRow`, `col_header_from_names`, `add_col_header_row`, `set_col_header`, `set_header_cell`, `rtf_columns`, `rtf_header_source` |
+| [Post-hoc styling verbs](#post-hoc-styling-verbs) | `style_header`, `style_body`, `style_cols`, `style_zone`, `add_header_row`, `collapse_repeats`, `set_decimal_split` |
+| [Cell-format functions](#cell-format-functions) | `format_count_pct`, `realign_count_pct`, `fmt_count_paren`, `fmt_count_paren_bare`, `fmt_value_paren`, `fmt_right_align` |
+| [Numeric display formatters](#numeric-display-formatters) | `fmt_signif`, `fmt_round`, `fmt_numeric` |
+| [Utilities](#utilities) | `round_num` |
 | [Blank rows](#blank-rows) | `set_blank_rows`, `blank_rows_by_change`, `blank_rows_by_rule`, `BlankRowsByChange`, `BlankRowsByRule`, `BEFORE_FIRST`, `AFTER_LAST` |
-| [Pagination strategies and helpers](#pagination-strategies-and-helpers) | `paginate`, `Frame`, `PaginationError`, `add_cont_label` |
-| [Borders](#borders) | `rtf_border_side`, `rtf_border`, `rtf_border_with`, `rtf_border_none`, `rtf_border_top`, `rtf_border_bottom`, `rtf_border_box`, `rtf_table_border`, `rtf_border_tfl`, `Border`, `BorderSide`, `TableBorder` |
+| [Pagination strategies and helpers](#pagination-strategies-and-helpers) | `paginate_cols`, `paginate`, `Frame`, `PaginationError`, `add_cont_label` |
+| [Borders](#borders) | `rtf_border_side`, `rtf_border`, `rtf_border_none`, `rtf_border_top`, `rtf_border_bottom`, `rtf_border_box`, `Border`, `BorderSide`, `TableBorder` |
 | [Shared table styles](#shared-table-styles) | `rtf_table_style`, `rtf_table_style_with`, `rtf_table_style_tfl`, `TableStyle` |
 | [Column-width utilities](#column-width-utilities) | `text_width_in`, `auto_col_widths` |
 | [Assembling multiple RTF files](#assembling-multiple-rtf-files) | `assemble_rtf`, `assemble_files`, `assemble_folder`, `assemble_spec`, `assemble_from_spec`, `assemble_toc`, `toc_heading`, `toc_entry` |
 | [Post-processing](#post-processing) | `rtf_replace_text` |
 | [Markup](#markup) | `resolve_markup` |
+| [Deprecated -- scheduled for removal](#deprecated----scheduled-for-removal) | `rtf_border_with`, `rtf_table_border`, `rtf_border_tfl` |
 
 
 ## Document and rendering
@@ -49,6 +53,10 @@ The entry point and the final render call.  Build a document by passing `rtf_doc
 ::: rtfreporter.page.rtf_default_format
 
 ::: rtfreporter.page.Page
+
+::: rtfreporter.watermark.rtf_watermark
+
+::: rtfreporter.watermark.Watermark
 
 ::: rtfreporter.document.generate_rtfreport
 
@@ -108,7 +116,7 @@ Add one content item per page with `rtf_tables()` / `rtf_figures()`, and attach 
 
 ## Importing tables
 
-Convert a pandas or polars DataFrame, a `great_tables` GT object, or a plain dict/records structure into `RtfTable` pages, reading the source's metadata and paginating in one call.  `as_rtftables()` returns one table **per page**; `as_rtftable()` is the single-page form.  `stub_cols()` finishes a tidy frame beforehand by merging hierarchy columns into one indented stub.
+Convert a pandas or polars DataFrame, a `great_tables` GT object, or a plain dict/records structure into `RtfTable` pages, reading the source's metadata and paginating in one call.  `as_rtftables()` returns one table **per page**; `as_rtftable()` is the single-page form.  `stub_cols()` merges hierarchy columns into one indented stub; `stub_spec()` asks `as_rtftables(stub=)` to do it inside the pipeline.
 
 ::: rtfreporter.adapters.as_rtftables
 
@@ -118,14 +126,53 @@ Convert a pandas or polars DataFrame, a `great_tables` GT object, or a plain dic
 
 ::: rtfreporter.stub.stub_cols
 
+::: rtfreporter.stub.stub_spec
+
+::: rtfreporter.stub.StubSpec
+
+
+## Listings
+
+Turn source data into a listing body: declare the columns with `listing_col()` / `listing_spec()`, build the body with `build_listing()` (or pass the spec to `as_rtftables(listing=)`), and fit the widths to the page.  The wrapping rule is exposed so you can reproduce it.
+
+::: rtfreporter.listing.listing_col
+
+::: rtfreporter.listing.ListingCol
+
+::: rtfreporter.listing.listing_spec
+
+::: rtfreporter.listing.ListingSpec
+
+::: rtfreporter.listing.build_listing
+
+::: rtfreporter.listing.fit_listing_widths
+
+::: rtfreporter.listing.listing_code
+
+::: rtfreporter.listing.listing_wrap
+
+::: rtfreporter.listing.listing_wrap_code
+
+::: rtfreporter.listing.listing_disp_width
+
+::: rtfreporter.listing.listing_take
+
+::: rtfreporter.listing.listing_split_after
+
+::: rtfreporter.catx.catx
+
 
 ## Column headers
 
-Multi-row column headers with optional spanning cells, addressed by position (`cols=1`, `cols=(1, 3)`) or by column name.  Ranges are **inclusive and 0-based**.  `set_col_header()` configures the header of a finished table against its final printed columns; `rtf_columns()` lists those columns; `rtf_header_source()` deparses the current header back to editable source.
+Multi-row column headers with optional spanning cells, addressed by position (`pos=1`, `pos=(1, 3)`) or by column name.  Ranges are **inclusive and 0-based**.  `set_col_header()` configures the header of a finished table against its final printed columns; `rtf_columns()` lists those columns; `rtf_header_source()` deparses the current header back to editable source.
 
 ::: rtfreporter.table.rtf_col_header
 
 ::: rtfreporter.table.col_cell
+
+::: rtfreporter.table.col_key
+
+::: rtfreporter.post_hoc.header_map
 
 ::: rtfreporter.table.SpanCell
 
@@ -146,7 +193,7 @@ Multi-row column headers with optional spanning cells, addressed by position (`c
 
 ## Post-hoc styling verbs
 
-Restyle an already-built table -- or every page of an `as_rtftables()` list at once -- addressing header rows, body rows and columns by position. Each verb returns a modified copy; last writer wins, per side and per field.  `collapse_repeats()` blanks repeated group values.
+Restyle an already-built table -- or every page of an `as_rtftables()` list at once -- addressing header rows, body rows and columns by position. Each verb returns a modified copy; last writer wins, per side and per field.  `collapse_repeats()` blanks repeated group values; `set_decimal_split()` aligns numbers on the decimal mark.
 
 ::: rtfreporter.style_verbs.style_header
 
@@ -159,6 +206,8 @@ Restyle an already-built table -- or every page of an `as_rtftables()` list at o
 ::: rtfreporter.post_hoc.add_header_row
 
 ::: rtfreporter.post_hoc.collapse_repeats
+
+::: rtfreporter.style_verbs.set_decimal_split
 
 
 ## Cell-format functions
@@ -173,7 +222,27 @@ Ready-made cell re-formatters for the `cell_format` argument of `rtftable()` / `
 
 ::: rtfreporter.format_count_pct.fmt_count_paren_bare
 
+::: rtfreporter.format_count_pct.fmt_value_paren
+
 ::: rtfreporter.format_count_pct.fmt_right_align
+
+
+## Numeric display formatters
+
+Format numbers for display -- significant digits, fixed decimals, or a per-value rule -- with the package's one rounding rule.
+
+::: rtfreporter.num_format.fmt_signif
+
+::: rtfreporter.num_format.fmt_round
+
+::: rtfreporter.num_format.fmt_numeric
+
+
+## Utilities
+
+The rounding rule itself (`rtfreporter_options(rounding=)`).
+
+::: rtfreporter.num_format.round_num
 
 
 ## Blank rows
@@ -197,7 +266,9 @@ Insert blank separator rows by position, by value change, or by rule.  Positions
 
 ## Pagination strategies and helpers
 
-The standalone paginator and the helpers for writing your own split function (the `split=<callable>` hook of `as_rtftables()`).  The built-in strategies are named by string: `group_force` cuts on every `max_rows` and repeats the group header with a continuation label; `group_safe` never splits a group.
+The standalone paginator and the helpers for writing your own split function (the `split=<callable>` hook of `as_rtftables()`).  The built-in strategies are named by string: `group_force` cuts on every `max_rows` and repeats the group header with a continuation label; `group_safe` never splits a group.  `paginate_cols()` splits a wide table across pages by columns.
+
+::: rtfreporter.paginate_cols.paginate_cols
 
 ::: rtfreporter.pagination.paginate
 
@@ -216,8 +287,6 @@ Border specifications.  Borders apply to content-table zones, to header and foot
 
 ::: rtfreporter.borders.rtf_border
 
-::: rtfreporter.borders.rtf_border_with
-
 ::: rtfreporter.borders.rtf_border_none
 
 ::: rtfreporter.borders.rtf_border_top
@@ -225,10 +294,6 @@ Border specifications.  Borders apply to content-table zones, to header and foot
 ::: rtfreporter.borders.rtf_border_bottom
 
 ::: rtfreporter.borders.rtf_border_box
-
-::: rtfreporter.borders.rtf_table_border
-
-::: rtfreporter.borders.rtf_border_tfl
 
 ::: rtfreporter.borders.Border
 
@@ -292,4 +357,15 @@ Last-mile edits to an already-rendered RTF file, such as a one-off find-and-repl
 Inline text markup: superscripts, subscripts and relational operators, resolved into RTF control words at render time.
 
 ::: rtfreporter._escape.resolve_markup
+
+
+## Deprecated -- scheduled for removal
+
+The constructors of the old border model.  Each warns once per session and names its replacement; build borders with `rtf_border()` and apply them with `style_zone()` or the `border=` arguments instead.
+
+::: rtfreporter.borders.rtf_border_with
+
+::: rtfreporter.borders.rtf_table_border
+
+::: rtfreporter.borders.rtf_border_tfl
 

@@ -17,7 +17,8 @@ GROUPS: list[tuple[str, str, list[str]]] = [
         "it with `generate_rtfreport()`.  Every builder returns a **new** document; "
         "the one passed in is left unchanged, as in R.",
         ["RtfDocument", "rtf_document", "rtf_config", "rtf_page", "DefaultFormat",
-         "rtf_default_format", "Page", "generate_rtfreport", "to_rtf", "save"],
+         "rtf_default_format", "Page", "rtf_watermark", "Watermark",
+         "generate_rtfreport", "to_rtf", "save"],
     ),
     (
         "Package defaults",
@@ -48,19 +49,30 @@ GROUPS: list[tuple[str, str, list[str]]] = [
         "plain dict/records structure into `RtfTable` pages, reading the source's "
         "metadata and paginating in one call.  `as_rtftables()` returns one table "
         "**per page**; `as_rtftable()` is the single-page form.  `stub_cols()` "
-        "finishes a tidy frame beforehand by merging hierarchy columns into one "
-        "indented stub.",
-        ["as_rtftables", "as_rtftable", "combine_sections", "stub_cols"],
+        "merges hierarchy columns into one indented stub; `stub_spec()` asks "
+        "`as_rtftables(stub=)` to do it inside the pipeline.",
+        ["as_rtftables", "as_rtftable", "combine_sections", "stub_cols", "stub_spec",
+         "StubSpec"],
+    ),
+    (
+        "Listings",
+        "Turn source data into a listing body: declare the columns with "
+        "`listing_col()` / `listing_spec()`, build the body with `build_listing()` "
+        "(or pass the spec to `as_rtftables(listing=)`), and fit the widths to the "
+        "page.  The wrapping rule is exposed so you can reproduce it.",
+        ["listing_col", "ListingCol", "listing_spec", "ListingSpec", "build_listing",
+         "fit_listing_widths", "listing_code", "listing_wrap", "listing_wrap_code",
+         "listing_disp_width", "listing_take", "listing_split_after", "catx"],
     ),
     (
         "Column headers",
         "Multi-row column headers with optional spanning cells, addressed by "
-        "position (`cols=1`, `cols=(1, 3)`) or by column name.  Ranges are "
+        "position (`pos=1`, `pos=(1, 3)`) or by column name.  Ranges are "
         "**inclusive and 0-based**.  `set_col_header()` configures the header of a "
         "finished table against its final printed columns; `rtf_columns()` lists "
         "those columns; `rtf_header_source()` deparses the current header back to "
         "editable source.",
-        ["rtf_col_header", "col_cell", "SpanCell", "HeaderRow",
+        ["rtf_col_header", "col_cell", "col_key", "header_map", "SpanCell", "HeaderRow",
          "col_header_from_names", "add_col_header_row", "set_col_header",
          "set_header_cell", "rtf_columns", "rtf_header_source"],
     ),
@@ -69,9 +81,10 @@ GROUPS: list[tuple[str, str, list[str]]] = [
         "Restyle an already-built table -- or every page of an `as_rtftables()` "
         "list at once -- addressing header rows, body rows and columns by position. "
         "Each verb returns a modified copy; last writer wins, per side and per "
-        "field.  `collapse_repeats()` blanks repeated group values.",
+        "field.  `collapse_repeats()` blanks repeated group values; "
+        "`set_decimal_split()` aligns numbers on the decimal mark.",
         ["style_header", "style_body", "style_cols", "style_zone",
-         "add_header_row", "collapse_repeats"],
+         "add_header_row", "collapse_repeats", "set_decimal_split"],
     ),
     (
         "Cell-format functions",
@@ -80,7 +93,18 @@ GROUPS: list[tuple[str, str, list[str]]] = [
         "alignment.  You can also write your own, following the same "
         "one-column-in / one-column-out contract.",
         ["format_count_pct", "realign_count_pct", "fmt_count_paren",
-         "fmt_count_paren_bare", "fmt_right_align"],
+         "fmt_count_paren_bare", "fmt_value_paren", "fmt_right_align"],
+    ),
+    (
+        "Numeric display formatters",
+        "Format numbers for display -- significant digits, fixed decimals, or a "
+        "per-value rule -- with the package's one rounding rule.",
+        ["fmt_signif", "fmt_round", "fmt_numeric"],
+    ),
+    (
+        "Utilities",
+        "The rounding rule itself (`rtfreporter_options(rounding=)`).",
+        ["round_num"],
     ),
     (
         "Blank rows",
@@ -96,18 +120,18 @@ GROUPS: list[tuple[str, str, list[str]]] = [
         "function (the `split=<callable>` hook of `as_rtftables()`).  The "
         "built-in strategies are named by string: `group_force` cuts on every "
         "`max_rows` and repeats the group header with a continuation label; "
-        "`group_safe` never splits a group.",
-        ["paginate", "Frame", "PaginationError", "add_cont_label"],
+        "`group_safe` never splits a group.  `paginate_cols()` splits a wide "
+        "table across pages by columns.",
+        ["paginate_cols", "paginate", "Frame", "PaginationError", "add_cont_label"],
     ),
     (
         "Borders",
         "Border specifications.  Borders apply to content-table zones, to header "
         "and footer rows, and to individual columns and cells, so the same builders "
         "are reused throughout a report.",
-        ["rtf_border_side", "rtf_border", "rtf_border_with", "rtf_border_none",
+        ["rtf_border_side", "rtf_border", "rtf_border_none",
          "rtf_border_top", "rtf_border_bottom", "rtf_border_box",
-         "rtf_table_border", "rtf_border_tfl", "Border", "BorderSide",
-         "TableBorder"],
+         "Border", "BorderSide", "TableBorder"],
     ),
     (
         "Shared table styles",
@@ -140,6 +164,13 @@ GROUPS: list[tuple[str, str, list[str]]] = [
         "Inline text markup: superscripts, subscripts and relational operators, "
         "resolved into RTF control words at render time.",
         ["resolve_markup"],
+    ),
+    (
+        "Deprecated -- scheduled for removal",
+        "The constructors of the old border model.  Each warns once per session "
+        "and names its replacement; build borders with `rtf_border()` and apply "
+        "them with `style_zone()` or the `border=` arguments instead.",
+        ["rtf_border_with", "rtf_table_border", "rtf_border_tfl"],
     ),
 ]
 

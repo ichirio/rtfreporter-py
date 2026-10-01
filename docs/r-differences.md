@@ -13,7 +13,7 @@ Discussions forum, and the adapter differences forced by the ecosystem — see
 Every index-taking argument is **0-based** (R is 1-based).  A column *name* may
 be used anywhere an index is accepted.  This applies to, among others:
 
-- `drop_cols`, `sort_by`, `group_col`, `collapse_repeats`, `stub_vars`
+- `drop_cols`, `sort_by`, `group_col`, `collapse_repeats`, `stub_spec(vars=)`
 - `col_cell(pos=...)` — the R **inclusive** two-element range semantics are
   kept, just 0-based: `col_cell((1, 3), "Treatment")` spans columns 1, 2, and 3.
   Validation requires `start >= 0` and `start <= end`.

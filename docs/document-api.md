@@ -112,7 +112,7 @@ yourself. See [Rendering and post-processing](output.md).
 import pandas as pd
 from rtfreporter import (
     as_rtftables, generate_rtfreport, rtf_document, rtf_footer,
-    rtf_header, rtf_page, rtf_section, rtf_tables,
+    rtf_header, rtf_page, rtf_section, rtf_tables, stub_spec,
 )
 
 df = pd.DataFrame({
@@ -124,8 +124,7 @@ df = pd.DataFrame({
 
 pages = as_rtftables(
     df,
-    stub_vars=["Characteristic", "Statistic"],
-    stub_label="",
+    stub=stub_spec(["Characteristic", "Statistic"], label=""),
     col_rel_width=[40, 30, 30],
     blank_rows="between_groups",
 )
