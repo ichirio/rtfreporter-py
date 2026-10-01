@@ -715,12 +715,12 @@ def rtf_section(
                            watermark=watermark)
 
 
-def generate_rtfreport(doc: RtfDocument, file_path: str, overwrite: bool = False,
+def generate_rtfreport(report: RtfDocument, file_path: str, overwrite: bool = False,
                        program: str | None = None) -> str:
-    """Render ``doc`` and write it to ``file_path`` (mirrors R ``generate_rtfreport()``).
+    """Render ``report`` and write it to ``file_path`` (mirrors R ``generate_rtfreport()``).
 
     Args:
-        doc: The :class:`RtfDocument` to render.
+        report: The :class:`RtfDocument` to render.
         file_path: Destination ``.rtf`` path (required, as in R).
         overwrite: When ``False`` (the R default), raise if ``file_path`` exists.
         program: The program the run tokens name (``{PROGRAM}``,
@@ -732,9 +732,9 @@ def generate_rtfreport(doc: RtfDocument, file_path: str, overwrite: bool = False
     Returns:
         The path written.
     """
-    if not isinstance(doc, RtfDocument):
-        raise TypeError("`doc` must be an RtfDocument.")
-    return doc.save(file_path, overwrite=overwrite, program=program)
+    if not isinstance(report, RtfDocument):
+        raise TypeError("`report` must be an RtfDocument.")
+    return report.save(file_path, overwrite=overwrite, program=program)
 
 
 def to_rtf(doc: RtfDocument) -> str:

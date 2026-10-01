@@ -53,11 +53,11 @@ def _check_border(b, verb: str) -> None:
         raise TypeError(f"`{verb}(border=)` must be None or an rtf_border() object.")
 
 
-def style_cols(tbl: RtfTable, cols=None, **fields) -> RtfTable:
+def style_cols(x: RtfTable, cols=None, **fields) -> RtfTable:
     """Return a copy with per-column *body* and/or *header* fields updated.
 
     Args:
-        tbl: The source table.
+        x: The source table.
         cols: Column index/name, a list of them, or ``None`` for every column.
         **fields: Any of the body fields (``align``, ``bold``, ``italic``,
             ``underline``, ``indent_twips``, ``color``, ``background`` -- the
@@ -69,8 +69,8 @@ def style_cols(tbl: RtfTable, cols=None, **fields) -> RtfTable:
     if unknown:
         raise ValueError(f"Unknown style field(s): {sorted(unknown)}.")
     _check_border(fields.get("border"), "style_cols")
-    out = tbl.copy()
-    for idx in _col_indices(tbl, cols):
+    out = x.copy()
+    for idx in _col_indices(x, cols):
         new = {k: v for k, v in fields.items() if v is not None}
         if "border" in new:
             new["border"] = merge_border(out.col_spec[idx].border, new["border"])
@@ -121,7 +121,7 @@ def _resolve_rows(tbl: RtfTable, rows, verb: str) -> list[int]:
                      "bools, or a predicate function(row).")
 
 
-def style_body(tbl, rows=None, cols=None, bold=None, italic=None, underline=None,
+def style_body(x, rows=None, cols=None, bold=None, italic=None, underline=None,
                indent_twips=None, color=None, background=None, align=None, border=None):
     """Style body cells, by row and column (R ``style_body()``).
 
@@ -130,7 +130,7 @@ def style_body(tbl, rows=None, cols=None, bold=None, italic=None, underline=None
     the rest of its column.
 
     Args:
-        tbl: An :class:`RtfTable`, or a list of pages.
+        x: An :class:`RtfTable`, or a list of pages.
         rows: ``None`` (every body row), 0-based row positions, a list of bools
             over the rows, or a predicate called with each row as a dict
             ``{column: value}``, e.g. ``lambda r: r["Statistic"] == "Mean"``.
@@ -147,25 +147,25 @@ def style_body(tbl, rows=None, cols=None, bold=None, italic=None, underline=None
     """
     kw = dict(bold=bold, italic=italic, underline=underline, indent_twips=indent_twips,
               color=color, background=background, align=align, border=border)
-    if isinstance(tbl, (list, tuple)):
+    if isinstance(x, (list, tuple)):
         if rows is not None and not callable(rows):
             raise ValueError(
                 "`style_body()` on a page list cannot take row positions or bools -- "
                 "page-local row numbers are ambiguous across pages.  Use a predicate "
                 "function (evaluated per page), or style a single page directly.")
-        return [style_body(p, rows=rows, cols=cols, **kw) for p in tbl]
+        return [style_body(p, rows=rows, cols=cols, **kw) for p in x]
     for arg in ("bold", "italic", "underline"):
         if kw[arg] is not None:
             _check_flag(kw[arg], arg, "style_body")
     if align is not None:
         _check_align(align, "style_body")
     _check_border(border, "style_body")
-    rows_idx = _resolve_rows(tbl, rows, "style_body")
-    cols_idx = _col_indices(tbl, cols)
+    rows_idx = _resolve_rows(x, rows, "style_body")
+    cols_idx = _col_indices(x, cols)
     if not rows_idx:
-        return tbl
+        return x
 
-    out = tbl.copy()
+    out = x.copy()
     nc = out.ncols
     cs_all = list(out.cell_styles) if out.cell_styles else [None] * out.nrows
     for r in rows_idx:
@@ -230,12 +230,12 @@ def _patch_header_cells(row: HeaderRow, cols_idx, label, border, align, bold,
     return HeaderRow(kind="spanning", spans=spans)
 
 
-def style_header(tbl, row=None, cols=None, label=None, border=None, align=None,
+def style_header(x, row=None, cols=None, label=None, border=None, align=None,
                  bold=None, italic=None, underline=None):
     """Style column-header cells, by header row and column (R ``style_header()``).
 
     Args:
-        tbl: An :class:`RtfTable`, or a list of pages.
+        x: An :class:`RtfTable`, or a list of pages.
         row: 0-based header row(s), top first; ``None`` for every header row.
         cols: Column index / name, a list of them, or ``None`` for every column.
         label: New text for the selected cells (recycled across them).
@@ -251,9 +251,9 @@ def style_header(tbl, row=None, cols=None, label=None, border=None, align=None,
     """
     kw = dict(row=row, cols=cols, label=label, border=border, align=align, bold=bold,
               italic=italic, underline=underline)
-    if isinstance(tbl, (list, tuple)):
-        return [style_header(p, **kw) for p in tbl]
-    if not tbl.col_header:
+    if isinstance(x, (list, tuple)):
+        return [style_header(p, **kw) for p in x]
+    if not x.col_header:
         raise ValueError("`style_header()`: this rtftable has no column header.")
     _check_border(border, "style_header")
     if align is not None:
@@ -261,14 +261,14 @@ def style_header(tbl, row=None, cols=None, label=None, border=None, align=None,
     for arg, v in (("bold", bold), ("italic", italic), ("underline", underline)):
         if v is not None:
             _check_flag(v, arg, "style_header")
-    hdrs = list(tbl.col_header)
+    hdrs = list(x.col_header)
     idx = list(range(len(hdrs))) if row is None else (
         [row] if isinstance(row, int) else list(row))
     if any(not isinstance(i, int) or i < 0 or i >= len(hdrs) for i in idx):
         raise ValueError(f"`style_header(row=)` must be in 0..{len(hdrs) - 1} "
                          "(the header rows, top first).")
-    cols_idx = _col_indices(tbl, cols)
-    out = tbl.copy()
+    cols_idx = _col_indices(x, cols)
+    out = x.copy()
     n_label_rows = sum(1 for h in hdrs if h.kind == "labels")
     for ri in idx:
         r = hdrs[ri]
@@ -307,7 +307,7 @@ def style_header(tbl, row=None, cols=None, label=None, border=None, align=None,
 
 
 def style_zone(
-    tbl: RtfTable,
+    x: RtfTable,
     header: Border | None = None,
     spanning: Border | None = None,
     body: Border | None = None,
@@ -329,11 +329,11 @@ def style_zone(
     }
     zones = {z: b for z, b in zones.items() if b is not None}
     if not zones:
-        return tbl
+        return x
     for b in zones.values():
         _check_border(b, "style_zone")
-    warn_old_edge_reading(TableBorder(**zones), ncols=tbl.ncols, nrows=tbl.nrows)
-    out = tbl.copy()
+    warn_old_edge_reading(TableBorder(**zones), ncols=x.ncols, nrows=x.nrows)
+    out = x.copy()
     base = out.border or TableBorder()
     merged = {z: merge_border(getattr(base, z), zones[z]) if z in zones else getattr(base, z)
               for z in TABLE_BORDER_ZONES}

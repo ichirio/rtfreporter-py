@@ -91,7 +91,7 @@ class _ColCellSpec:
 
 
 def col_cell(
-    cols,
+    pos,
     label: str = "",
     align: str | None = None,
     bold: bool = False,
@@ -102,7 +102,7 @@ def col_cell(
     """Define one spanning column-header cell.
 
     Args:
-        cols: A single 0-based column index, a ``(start, end)`` inclusive range,
+        pos: A single 0-based column index, a ``(start, end)`` inclusive range,
             a column name, a ``(name, name)`` pair -- or a **selector
             function** of the data column names (see :func:`col_key`),
             answering which columns the cell covers: a list of bools, of
@@ -119,7 +119,7 @@ def col_cell(
     if border is not None and not isinstance(border, Border):
         raise TypeError("`border` must be None or a Border object.")
     return _ColCellSpec(
-        pos=cols,
+        pos=pos,
         label="" if label is None else str(label),
         align=align,
         bold=bold,

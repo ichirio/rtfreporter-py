@@ -251,27 +251,27 @@ def run_split(split, frame: Frame, **ctx) -> list[Frame]:
 # -- Continuation-label helper -----------------------------------------------
 
 
-def add_cont_label(frame: Frame, label: str, cont_label: str = " (Cont.)", col=0) -> Frame:
-    """Prepend a continuation-label row to ``frame`` (mirrors R ``add_cont_label()``).
+def add_cont_label(chunk: Frame, label: str, cont_label: str = " (Cont.)", col=0) -> Frame:
+    """Prepend a continuation-label row to ``chunk`` (mirrors R ``add_cont_label()``).
 
     Args:
-        frame: The :class:`Frame` (or any :func:`as_frame` input) to prepend to.
+        chunk: The :class:`Frame` (or any :func:`as_frame` input) to prepend to.
         label: The group label; the inserted cell reads ``label + cont_label``.
         cont_label: The continuation suffix (default ``" (Cont.)"``).
         col: The 0-based column (or name) that carries the label (default 0).
     """
-    frame = as_frame(frame)
+    chunk = as_frame(chunk)
     if not isinstance(label, str):
         raise TypeError("`label` must be a single string.")
     from .table import _resolve_col
 
-    j = _resolve_col(col, frame.column_names)
-    cont_row: list[Any] = ["" for _ in frame.column_names]
+    j = _resolve_col(col, chunk.column_names)
+    cont_row: list[Any] = ["" for _ in chunk.column_names]
     cont_row[j] = f"{label}{cont_label}"
     return Frame(
-        frame.column_names,
-        [cont_row] + [list(r) for r in frame.rows],
-        frame.name,
+        chunk.column_names,
+        [cont_row] + [list(r) for r in chunk.rows],
+        chunk.name,
     )
 
 
@@ -279,7 +279,7 @@ def add_cont_label(frame: Frame, label: str, cont_label: str = " (Cont.)", col=0
 
 
 def set_blank_rows(
-    data,
+    df,
     blank_rows=None,
     blank_row_first: bool = False,
     blank_row_end: bool = False,
@@ -295,7 +295,7 @@ def set_blank_rows(
     ``rtftable(set_blank_rows(df, ...))`` picks them up automatically.
 
     Args:
-        data: A ``(column_names, rows)`` pair, dict, list of row dicts, DataFrame,
+        df: A ``(column_names, rows)`` pair, dict, list of row dicts, DataFrame,
             or :class:`Frame`.
         blank_rows: ``None``; a 0-based ``int`` / sentinel / list of them;
             ``"between_groups"`` (a blank at every group-value change); or a
@@ -314,7 +314,7 @@ def set_blank_rows(
     from .blank_rows import BEFORE_FIRST, BlankRowsByChange, BlankRowsByRule
     from .table import _resolve_blank_rows
 
-    frame = as_frame(data)
+    frame = as_frame(df)
     names, rows = frame.column_names, frame.rows
     nrows = len(rows)
 
@@ -367,7 +367,7 @@ def set_blank_rows(
 
 
 def paginate(
-    data,
+    x,
     split="none",
     split_rows=None,
     max_rows: int | None = None,
@@ -380,7 +380,7 @@ def paginate(
     align_count_pct: bool = False,
     cell_format=None,
 ) -> list[Frame]:
-    """Paginate ``data`` into a list of per-page :class:`Frame` objects.
+    """Paginate ``x`` into a list of per-page :class:`Frame` objects.
 
     Mirrors R's ``paginate()``: applies an optional sort and cell-format pass,
     then the ``split`` strategy (a built-in name or a custom callable).  Returns
@@ -388,14 +388,14 @@ def paginate(
     :class:`~rtfreporter.RtfTable` pages).
 
     Args:
-        data: A ``(column_names, rows)`` pair, dict of columns, list of row
+        x: A ``(column_names, rows)`` pair, dict of columns, list of row
             dicts, DataFrame, or :class:`Frame`.
         split: A strategy name or a custom split callable (see module docs).
         split_rows, max_rows, group_col, group_by, sort_by, sort_desc,
         cont_label, min_group_rows: As in :func:`~rtfreporter.as_rtftables`.
         align_count_pct, cell_format: Optional pre-split cell-format pass.
     """
-    frame = as_frame(data)
+    frame = as_frame(x)
     names = frame.column_names
     rows = [list(r) for r in frame.rows]
 

@@ -73,7 +73,7 @@ labels carrying their N.
 
 ```python
 col_header = rtf_col_header(
-    [col_cell(cols=(1, 3), label="Treatment Group", align="center")],
+    [col_cell(pos=(1, 3), label="Treatment Group", align="center")],
     ["", *arm_labels(adsl)],
 )
 ```

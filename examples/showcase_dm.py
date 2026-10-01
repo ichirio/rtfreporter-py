@@ -133,7 +133,7 @@ def dm_col_header(adsl: pd.DataFrame):
     """Two-row column header: a spanning ``Treatment Group`` over the three arms."""
     labels = arm_labels(adsl)
     return rtf_col_header(
-        [col_cell(cols=(1, 3), label="Treatment Group", align="center")],
+        [col_cell(pos=(1, 3), label="Treatment Group", align="center")],
         ["", *labels],
     )
 
