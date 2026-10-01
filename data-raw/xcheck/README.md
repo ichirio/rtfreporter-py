@@ -83,3 +83,17 @@ cell, borders, blank rows, continuation markers and titles/footnotes.
 
 Only the line-ending style is normalised (R writes CRLF, Python writes LF).
 Everything else must match exactly.
+
+## Which R the golden files come from
+
+The golden files are rendered by the **R v0.8.2 release** (the tag), which this
+package follows.  One exception, for a bug fixed in R after that release and
+ported here as a bug fix (0.4.1):
+
+| Golden files | Rendered by | Why |
+|---|---|---|
+| `decimal/styles_size.rtf`, `decimal/font_fill.rtf` | R `main` at the fix (0e05ce5, 0.8.2.9003) | ichirio/rtfreporter#509: a row split by `set_decimal_split()` lost the table's font switch and the cell fill.  Re-rendering the other `decimal/`, `paginate_cols/` and `recipes/` files from that commit leaves them unchanged. |
+| everything else | R v0.8.2 | |
+
+So regenerate `decimal_r.R` from R `main` at or after that commit, and every
+other script from the v0.8.2 tag, until this package next follows an R release.

@@ -434,7 +434,8 @@ def _render_data_row(
     if dsplit_row is not None:
         return _render_data_row_split(
             vals, cellx, border, row_height, pad_l, pad_r, valign_cmd, col_spec,
-            table_align, row_cell_styles, color_index_map, markup, dsplit_row, dsplit)
+            table_align, row_cell_styles, color_index_map, markup, dsplit_row, dsplit,
+            fs_cmd=fs_cmd)
     cell_borders = row_cell_styles.get("border") if row_cell_styles else None
     # Cell fill, resolved per column the way text colour is.
     shade = row_backgrounds(col_spec, row_cell_styles, ncols)
@@ -462,11 +463,12 @@ def _render_data_row(
 
 def _render_data_row_split(vals, cellx, border, row_height, pad_l, pad_r, valign_cmd,
                            col_spec, table_align, row_cell_styles, color_index_map,
-                           markup, dsplit_row, dsplit) -> str:
+                           markup, dsplit_row, dsplit, fs_cmd: str = "") -> str:
     """One data row on the decimal-split geometry (R
     ``.render_data_row_split()``).  A pair whose cell was not split-eligible
     on this row collapses back into one cell carrying the ORIGINAL column's
-    spec.  As in R, the table's own font-size switch is not written here."""
+    spec.  Every cell carries the table's own font switch and its fill, as an
+    ordinary row does (R #509 / #510)."""
     _, merge_to, merge_spec = dsplit_row
     interior, pad_flag = dsplit["interior"], dsplit["pad_flag"]
     starts = [j for j, t in enumerate(merge_to) if t is not None]
@@ -474,24 +476,31 @@ def _render_data_row_split(vals, cellx, border, row_height, pad_l, pad_r, valign
     pad_l_v = [0 if f == "right" else int(pad_l) for f in pad_flag]
     pad_r_v = [0 if f == "left" else int(pad_r) for f in pad_flag]
     cell_borders = row_cell_styles.get("border") if row_cell_styles else None
+    cs_bg = row_cell_styles.get("background") if row_cell_styles else None
     n_cells = len(starts)
     cell_defs, cell_contents = [], []
     for ci, j in enumerate(starts):
         to = merge_to[j]
+        merged = to != j
+        # A pair merged back into one cell is styled by the ORIGINAL column.
+        spec = merge_spec[j] if merged and merge_spec[j] is not None else col_spec[j]
+        # Fill: the column's background, overridden by cell_styles.
+        bg = spec.background
+        if cs_bg is not None and j < len(cs_bg) and cs_bg[j] is not None:
+            bg = str(cs_bg[j])
         eff = cell_edge_border(border, ci, n_cells)
         b = cell_borders[j] if isinstance(cell_borders, list) and j < len(cell_borders) else None
         if b is not None:
             eff = _effective_row_border(eff, b)
         if to == j and interior[j] is not None:
             eff = _effective_row_border(eff, interior[j])
-        cell_defs.append(f"{build_border_commands(eff, color_index_map)}{valign_cmd}"
+        cell_defs.append(f"{build_border_commands(eff, color_index_map)}"
+                         f"{cell_shading_cmd(bg, color_index_map)}{valign_cmd}"
                          f"\\cellx{cellx[to]}")
-        merged = to != j
         is_half = not merged and interior[j] is not None
-        spec = merge_spec[j] if merged and merge_spec[j] is not None else col_spec[j]
         cell_contents.append(_data_cell_content(
             spec, vals[j], j, row_cell_styles, pad_l_v[j], pad_r_v[to], markup,
-            color_index_map, "", force_align=spec.align if is_half else None))
+            color_index_map, fs_cmd, force_align=spec.align if is_half else None))
     return build_row(cell_defs, cell_contents, row_height, table_align)
 
 
