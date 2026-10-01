@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://ichirio.github.io/rtfreporter-py/pagination/">
       
       
-        <link rel="prev" href="../importing-tables/">
+        <link rel="prev" href="../listings/">
       
       
         <link rel="next" href="../headers-footers/">
@@ -551,6 +551,8 @@
       
         
       
+        
+      
     
     
     
@@ -726,6 +728,34 @@
     
   
     Importing tables
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../listings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Listings
   
 
     
@@ -1097,6 +1127,8 @@
       
         
       
+        
+      
     
     
     
@@ -1144,6 +1176,34 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../recipes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Four recipes: DM, AE, PK, LB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -1597,15 +1657,11 @@ changes. You can also request blanks explicitly:</p>
 <p>Blank positions are resolved on the <em>full</em> page body — so they stay correct even
 when a grouping column is later removed with <code>drop_cols</code>.</p>
 <h2 id="custom-split-hooks">Custom split hooks<a class="headerlink" href="#custom-split-hooks" title="Permanent link">&para;</a></h2>
-<p>The built-in strategies are exposed as <strong>factory functions</strong> that return a
-callable, on the same footing as a hand-written splitter. Pass either the
-string name or the callable to <code>split=</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="n">as_rtftables</span><span class="p">,</span> <span class="n">page_split_group_safe</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="c1"># These two calls are equivalent:</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">pages</span> <span class="o">=</span> <span class="n">as_rtftables</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="s2">"group_safe"</span><span class="p">,</span> <span class="n">max_rows</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">group_col</span><span class="o">=</span><span class="s2">"visit"</span><span class="p">)</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="n">pages</span> <span class="o">=</span> <span class="n">as_rtftables</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="n">page_split_group_safe</span><span class="p">(</span><span class="n">max_rows</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">group_col</span><span class="o">=</span><span class="s2">"visit"</span><span class="p">))</span>
-</code></pre></div>
+<p>A built-in strategy is <strong>named</strong> and its settings are ordinary arguments
+alongside it -- <code>split="group_safe", max_rows=20, group_col="visit"</code>.  (The
+<code>page_split_*()</code> factories the R package once exported are gone, in both
+packages: a factory carried its own <code>group_col</code>, so it could disagree with the
+top-level one.)</p>
 <p>A <strong>custom split function</strong> takes a single
 <a class="autorefs autorefs-internal" title="&lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;rtfreporter.pagination.Frame&lt;/span&gt;
 
@@ -1615,15 +1671,15 @@ string name or the callable to <code>split=</code>:</p>
   &lt;/span&gt;" href="../reference/#rtfreporter.pagination.Frame"><code>Frame</code></a> and returns a list of <code>Frame</code> — one per
 page. A page's <code>name</code> becomes the page/section name. This is the R
 <code>split=&lt;function&gt;</code> hook:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="n">Frame</span><span class="p">,</span> <span class="n">as_rtftables</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">first_row_alone</span><span class="p">(</span><span class="n">frame</span><span class="p">:</span> <span class="n">Frame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Frame</span><span class="p">]:</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">    </span><span class="sd">"""Put the first row on its own page, the rest on a second page."""</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    <span class="n">head</span> <span class="o">=</span> <span class="n">Frame</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">column_names</span><span class="p">,</span> <span class="n">frame</span><span class="o">.</span><span class="n">rows</span><span class="p">[:</span><span class="mi">1</span><span class="p">])</span>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    <span class="n">tail</span> <span class="o">=</span> <span class="n">Frame</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">column_names</span><span class="p">,</span> <span class="n">frame</span><span class="o">.</span><span class="n">rows</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    <span class="k">return</span> <span class="p">[</span><span class="n">head</span><span class="p">,</span> <span class="n">tail</span><span class="p">]</span>
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="n">pages</span> <span class="o">=</span> <span class="n">as_rtftables</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="n">first_row_alone</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="n">Frame</span><span class="p">,</span> <span class="n">as_rtftables</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">first_row_alone</span><span class="p">(</span><span class="n">frame</span><span class="p">:</span> <span class="n">Frame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Frame</span><span class="p">]:</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="sd">"""Put the first row on its own page, the rest on a second page."""</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="n">head</span> <span class="o">=</span> <span class="n">Frame</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">column_names</span><span class="p">,</span> <span class="n">frame</span><span class="o">.</span><span class="n">rows</span><span class="p">[:</span><span class="mi">1</span><span class="p">])</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="n">tail</span> <span class="o">=</span> <span class="n">Frame</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">column_names</span><span class="p">,</span> <span class="n">frame</span><span class="o">.</span><span class="n">rows</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    <span class="k">return</span> <span class="p">[</span><span class="n">head</span><span class="p">,</span> <span class="n">tail</span><span class="p">]</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="n">pages</span> <span class="o">=</span> <span class="n">as_rtftables</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="n">first_row_alone</span><span class="p">)</span>
 </code></pre></div>
 <p>A split function that returns anything other than a list of <code>Frame</code> raises
 <a class="autorefs autorefs-internal" title="&lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;rtfreporter.pagination.PaginationError&lt;/span&gt;" href="../reference/#rtfreporter.pagination.PaginationError"><code>PaginationError</code></a>.
@@ -1634,14 +1690,14 @@ machinery and returns the per-page <code>Frame</code> objects directly (use
 <code>as_rtftables()</code> to also build the <code>RtfTable</code> pages).</p>
 <h2 id="assembling-the-document">Assembling the document<a class="headerlink" href="#assembling-the-document" title="Permanent link">&para;</a></h2>
 <p>Each page is an ordinary <code>RtfTable</code>; feed them to a document in order:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="n">RtfDocument</span><span class="p">,</span> <span class="n">header</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="n">doc</span> <span class="o">=</span> <span class="n">RtfDocument</span><span class="p">()</span><span class="o">.</span><span class="n">add_section</span><span class="p">(</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>    <span class="n">header</span><span class="o">=</span><span class="n">rtf_header</span><span class="p">([{</span><span class="s2">"r"</span><span class="p">:</span> <span class="s2">"Page </span><span class="si">{AUTO_PAGE}</span><span class="s2"> of </span><span class="si">{AUTO_TOTAL_PAGES}</span><span class="s2">"</span><span class="p">}])</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="p">)</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="k">for</span> <span class="n">page</span> <span class="ow">in</span> <span class="n">pages</span><span class="p">:</span>
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>    <span class="n">doc</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">add_table</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="p">[</span><span class="s2">"Listing 16.2.1"</span><span class="p">])</span>
-<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="n">doc</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">"listing.rtf"</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="n">RtfDocument</span><span class="p">,</span> <span class="n">header</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">doc</span> <span class="o">=</span> <span class="n">RtfDocument</span><span class="p">()</span><span class="o">.</span><span class="n">add_section</span><span class="p">(</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>    <span class="n">header</span><span class="o">=</span><span class="n">rtf_header</span><span class="p">([{</span><span class="s2">"r"</span><span class="p">:</span> <span class="s2">"Page </span><span class="si">{AUTO_PAGE}</span><span class="s2"> of </span><span class="si">{AUTO_TOTAL_PAGES}</span><span class="s2">"</span><span class="p">}])</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="p">)</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="k">for</span> <span class="n">page</span> <span class="ow">in</span> <span class="n">pages</span><span class="p">:</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    <span class="n">doc</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">add_table</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="p">[</span><span class="s2">"Listing 16.2.1"</span><span class="p">])</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="n">doc</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">"listing.rtf"</span><span class="p">)</span>
 </code></pre></div>
 <p>See the runnable <a href="https://github.com/ichirio/rtfreporter-py/blob/main/examples/pagination.py"><code>examples/pagination.py</code></a>.</p>
 

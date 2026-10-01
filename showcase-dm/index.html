@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://ichirio.github.io/rtfreporter-py/showcase-dm/">
       
       
-        <link rel="prev" href="../assembling/">
+        <link rel="prev" href="../recipes/">
       
       
         <link rel="next" href="../showcase-ae/">
@@ -549,6 +549,8 @@
       
         
       
+        
+      
     
     
     
@@ -724,6 +726,34 @@
     
   
     Importing tables
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../listings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Listings
   
 
     
@@ -956,6 +986,8 @@
       
         
       
+        
+      
     
     
     
@@ -1003,6 +1035,34 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../recipes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Four recipes: DM, AE, PK, LB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -1506,7 +1566,7 @@ renumbers them itself.</p>
 <p>The column header is two rows: a spanner over the three arms, then the arm
 labels carrying their N.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">col_header</span> <span class="o">=</span> <span class="n">rtf_col_header</span><span class="p">(</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="p">[</span><span class="n">col_cell</span><span class="p">(</span><span class="n">cols</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="s2">"Treatment Group"</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="s2">"center"</span><span class="p">)],</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="p">[</span><span class="n">col_cell</span><span class="p">(</span><span class="n">pos</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="s2">"Treatment Group"</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="s2">"center"</span><span class="p">)],</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="p">[</span><span class="s2">""</span><span class="p">,</span> <span class="o">*</span><span class="n">arm_labels</span><span class="p">(</span><span class="n">adsl</span><span class="p">)],</span>
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="p">)</span>
 </code></pre></div>
@@ -1526,14 +1586,14 @@ adverse-events table wants zeros written out as <code>0 (0.0%)</code> instead â€
 <a href="../showcase-ae/#zeros-that-align">that page</a> for why, and how.</p>
 <h2 id="building-the-table">Building the table<a class="headerlink" href="#building-the-table" title="Permanent link">&para;</a></h2>
 <p>The body is a tidy frame: one row per (characteristic, statistic), one column
-per arm. <code>stub_vars</code> folds the two hierarchy columns into a single indented
+per arm. <code>stub=stub_spec(...)</code> folds the two hierarchy columns into a single indented
 clinical stub.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="n">as_rtftables</span><span class="p">,</span> <span class="n">rtf_document</span><span class="p">,</span> <span class="n">rtf_tables</span><span class="p">,</span> <span class="n">rtf_section</span><span class="p">,</span> <span class="n">generate_rtfreport</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">pages</span> <span class="o">=</span> <span class="n">as_rtftables</span><span class="p">(</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="n">body</span><span class="p">,</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="n">stub_vars</span><span class="o">=</span><span class="p">[</span><span class="s2">"Characteristic"</span><span class="p">,</span> <span class="s2">"Statistic"</span><span class="p">],</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="n">stub_label</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">as_rtftables</span><span class="p">,</span> <span class="n">generate_rtfreport</span><span class="p">,</span> <span class="n">rtf_document</span><span class="p">,</span> <span class="n">rtf_section</span><span class="p">,</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>                         <span class="n">rtf_tables</span><span class="p">,</span> <span class="n">stub_spec</span><span class="p">)</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="n">pages</span> <span class="o">=</span> <span class="n">as_rtftables</span><span class="p">(</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="n">body</span><span class="p">,</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="n">stub</span><span class="o">=</span><span class="n">stub_spec</span><span class="p">([</span><span class="s2">"Characteristic"</span><span class="p">,</span> <span class="s2">"Statistic"</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">""</span><span class="p">),</span>
 <a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>    <span class="n">col_header</span><span class="o">=</span><span class="n">col_header</span><span class="p">,</span>
 <a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>    <span class="n">col_spec</span><span class="o">=</span><span class="p">[{</span><span class="s2">"col"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"align"</span><span class="p">:</span> <span class="s2">"left"</span><span class="p">},</span>
 <a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>              <span class="p">{</span><span class="s2">"col"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"align"</span><span class="p">:</span> <span class="s2">"center"</span><span class="p">},</span>

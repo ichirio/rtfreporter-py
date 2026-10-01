@@ -16,7 +16,7 @@
         <link rel="prev" href="../borders/">
       
       
-        <link rel="next" href="../pagination/">
+        <link rel="next" href="../listings/">
       
       
         
@@ -551,6 +551,8 @@
       
         
       
+        
+      
     
     
     
@@ -898,6 +900,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../listings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Listings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../pagination/" class="md-nav__link">
         
   
@@ -1108,6 +1138,8 @@
       
         
       
+        
+      
     
     
     
@@ -1155,6 +1187,34 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../recipes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Four recipes: DM, AE, PK, LB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -1548,7 +1608,7 @@ sources here are the ones that actually exist: <strong>pandas</strong>, <strong>
 <code>tab_style()</code> cell styling, row groups, summary rows and footnotes).</p>
 <p>The consequence is that the DataFrame route carries more weight in Python
 than in R: rather than handing over a finished framework object, you shape
-a tidy frame and let <code>as_rtftables()</code> finish it with <code>stub_vars</code>,
+a tidy frame and let <code>as_rtftables()</code> finish it with <code>stub=stub_spec(...)</code>,
 <code>col_header</code>, <code>cell_format</code> and the pagination arguments. See
 <a href="../relationship-to-r/">Relationship to R</a>.</p>
 </div>
@@ -1603,7 +1663,7 @@ leaf level becomes the indented stub of each data row.</p>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="s2">"Stat"</span><span class="p">:</span>  <span class="p">[</span><span class="s2">"n"</span><span class="p">,</span> <span class="s2">"Mean"</span><span class="p">,</span> <span class="s2">"Male"</span><span class="p">],</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="s2">"Value"</span><span class="p">:</span> <span class="p">[</span><span class="mi">86</span><span class="p">,</span> <span class="mf">75.1</span><span class="p">,</span> <span class="mi">40</span><span class="p">],</span>
 <a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="p">})</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">tbl</span> <span class="o">=</span> <span class="n">as_rtftable</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">stub_vars</span><span class="o">=</span><span class="p">[</span><span class="s2">"Group"</span><span class="p">,</span> <span class="s2">"Stat"</span><span class="p">],</span> <span class="n">stub_label</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span> <span class="n">stub_indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">tbl</span> <span class="o">=</span> <span class="n">as_rtftable</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">stub</span><span class="o">=</span><span class="n">stub_spec</span><span class="p">([</span><span class="s2">"Group"</span><span class="p">,</span> <span class="s2">"Stat"</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">))</span>
 <a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># stub column -&gt; "Age", "    n", "    Mean", "Sex", "    Male"</span>
 </code></pre></div>
 <h2 id="reshaping-knobs">Reshaping knobs<a class="headerlink" href="#reshaping-knobs" title="Permanent link">&para;</a></h2>

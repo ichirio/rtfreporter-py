@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://ichirio.github.io/rtfreporter-py/showcase-ae/">
+        <link rel="canonical" href="https://ichirio.github.io/rtfreporter-py/recipes/">
       
       
-        <link rel="prev" href="../showcase-dm/">
+        <link rel="prev" href="../assembling/">
       
       
-        <link rel="next" href="../relationship-to-r/">
+        <link rel="next" href="../showcase-dm/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Adverse events by SOC/PT - rtfreporter</title>
+        <title>Four recipes: DM, AE, PK, LB - rtfreporter</title>
       
     
     
@@ -82,7 +82,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#showcase-adverse-events-by-soc-and-preferred-term" class="md-skip">
+        <a href="#four-complete-recipes-dm-ae-pk-and-lb" class="md-skip">
           Skip to content
         </a>
       
@@ -115,7 +115,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Adverse events by SOC/PT
+              Four recipes: DM, AE, PK, LB
             
           </span>
         </div>
@@ -1040,10 +1040,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../recipes/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Four recipes: DM, AE, PK, LB
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1059,6 +1086,92 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#which-arguments-each-shape-actually-uses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which arguments each shape actually uses
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-dm-demographics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. DM -- demographics
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-ae-adverse-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. AE -- adverse events
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-pk-concentrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. PK -- concentrations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-lb-laboratory-shift" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. LB -- laboratory shift
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-next" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where next
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1096,37 +1209,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Adverse events by SOC/PT
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../showcase-ae/" class="md-nav__link">
         
   
   
@@ -1142,98 +1228,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#the-tables-rules" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The table's rules
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="The table&#39;s rules">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#why-a-soc-row-is-not-a-column-sum" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Why a SOC row is not a column sum
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#zeros-that-align" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Zeros that align
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#indentation-is-the-group-structure" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Indentation is the group structure
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pagination-and-continuation" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Pagination and continuation
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#validation-against-r" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Validation against R
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1429,38 +1423,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#the-tables-rules" class="md-nav__link">
+  <a href="#which-arguments-each-shape-actually-uses" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The table's rules
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="The table&#39;s rules">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#why-a-soc-row-is-not-a-column-sum" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Why a SOC row is not a column sum
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#zeros-that-align" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Zeros that align
+        Which arguments each shape actually uses
       
     </span>
   </a>
@@ -1468,10 +1434,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#indentation-is-the-group-structure" class="md-nav__link">
+  <a href="#1-dm-demographics" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Indentation is the group structure
+        1. DM -- demographics
       
     </span>
   </a>
@@ -1479,10 +1445,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pagination-and-continuation" class="md-nav__link">
+  <a href="#2-ae-adverse-events" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Pagination and continuation
+        2. AE -- adverse events
       
     </span>
   </a>
@@ -1490,10 +1456,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#validation-against-r" class="md-nav__link">
+  <a href="#3-pk-concentrations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Validation against R
+        3. PK -- concentrations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-lb-laboratory-shift" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. LB -- laboratory shift
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-next" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where next
       
     </span>
   </a>
@@ -1520,162 +1508,205 @@
   
 
 
-<h1 id="showcase-adverse-events-by-soc-and-preferred-term">Showcase: adverse events by SOC and preferred term<a class="headerlink" href="#showcase-adverse-events-by-soc-and-preferred-term" title="Permanent link">&para;</a></h1>
-<p>A multi-page adverse-events table with group-aware pagination, built from real
-ADaM data. It is the companion to the <a href="../showcase-dm/">demographics
-showcase</a>; the data loading and shared furniture are explained
-there.</p>
-<p>Run it:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python<span class="w"> </span>examples/showcase_ae.py
+<h1 id="four-complete-recipes-dm-ae-pk-and-lb">Four complete recipes: DM, AE, PK and LB<a class="headerlink" href="#four-complete-recipes-dm-ae-pk-and-lb" title="Permanent link">&para;</a></h1>
+<p>Copy-and-run programs for the four table shapes a clinical report is mostly
+made of. Each builds its data, its table and its document, and ends in a
+rendered RTF. They are deliberately shown together because <strong>their arguments
+barely overlap</strong> -- what a demographics table needs, an adverse events table
+does not, and vice versa.</p>
+<div class="admonition success">
+<p class="admonition-title">Checked against R</p>
+<p>These are the R package's recipes (<code>?`rtfreporter-recipes`</code>), and each
+program below writes <strong>byte-for-byte the same RTF</strong> as the R version
+(<code>tests/test_recipes_vs_r.py</code>).</p>
+</div>
+<h2 id="which-arguments-each-shape-actually-uses">Which arguments each shape actually uses<a class="headerlink" href="#which-arguments-each-shape-actually-uses" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th style="text-align: center;">DM</th>
+<th style="text-align: center;">AE</th>
+<th style="text-align: center;">PK</th>
+<th style="text-align: center;">LB</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>stub=stub_spec(...)</code> (hierarchy)</td>
+<td style="text-align: center;">--</td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">--</td>
+</tr>
+<tr>
+<td><code>group_col</code> / <code>group_by</code></td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">yes</td>
+</tr>
+<tr>
+<td><code>blank_rows</code></td>
+<td style="text-align: center;">--</td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">yes</td>
+</tr>
+<tr>
+<td><code>split</code> / <code>max_rows</code></td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">--</td>
+</tr>
+<tr>
+<td><code>drop_cols</code> (hidden carrier)</td>
+<td style="text-align: center;">--</td>
+<td style="text-align: center;">--</td>
+<td style="text-align: center;">--</td>
+<td style="text-align: center;">yes</td>
+</tr>
+<tr>
+<td><code>set_decimal_split()</code></td>
+<td style="text-align: center;">--</td>
+<td style="text-align: center;">--</td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">--</td>
+</tr>
+<tr>
+<td><code>paginate_cols()</code> (too wide)</td>
+<td style="text-align: center;">--</td>
+<td style="text-align: center;">--</td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">--</td>
+</tr>
+<tr>
+<td><code>fmt_*()</code> before building</td>
+<td style="text-align: center;">--</td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">yes</td>
+</tr>
+</tbody>
+</table>
+<p>The single most common mistake is reaching for a stub on a table that has no
+hierarchy (DM), or omitting it on one that does (AE, PK).</p>
+<p>All four start from:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">as_rtftables</span><span class="p">,</span> <span class="n">generate_rtfreport</span><span class="p">,</span> <span class="n">paginate_cols</span><span class="p">,</span> <span class="n">rtf_document</span><span class="p">,</span> <span class="n">rtf_page</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">rtf_tables</span><span class="p">,</span> <span class="n">set_decimal_split</span><span class="p">,</span> <span class="n">stub_spec</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="p">)</span>
 </code></pre></div>
-<h2 id="the-tables-rules">The table's rules<a class="headerlink" href="#the-tables-rules" title="Permanent link">&para;</a></h2>
-<p>These are clinical reporting conventions, not rtfreporter details, but they
-drive every design decision below:</p>
+<h2 id="1-dm-demographics">1. DM -- demographics<a class="headerlink" href="#1-dm-demographics" title="Permanent link">&para;</a></h2>
+<p>A flat table, grouped by characteristic so a characteristic is never split
+across pages.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">dm</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="s2">"Characteristic"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Age (years)"</span><span class="p">,</span> <span class="s2">"Age (years)"</span><span class="p">,</span> <span class="s2">"Age (years)"</span><span class="p">,</span> <span class="s2">"Sex"</span><span class="p">,</span> <span class="s2">"Sex"</span><span class="p">],</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="s2">"Statistic"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"n"</span><span class="p">,</span> <span class="s2">"Mean (SD)"</span><span class="p">,</span> <span class="s2">"Median"</span><span class="p">,</span> <span class="s2">"Male, n (%)"</span><span class="p">,</span> <span class="s2">"Female, n (%)"</span><span class="p">],</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="s2">"Drug A"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"60"</span><span class="p">,</span> <span class="s2">"54.2 (11.3)"</span><span class="p">,</span> <span class="s2">"55.0"</span><span class="p">,</span> <span class="s2">"31 (51.7%)"</span><span class="p">,</span> <span class="s2">"29 (48.3%)"</span><span class="p">],</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="s2">"Drug B"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"58"</span><span class="p">,</span> <span class="s2">"56.8 (10.1)"</span><span class="p">,</span> <span class="s2">"57.5"</span><span class="p">,</span> <span class="s2">"27 (46.6%)"</span><span class="p">,</span> <span class="s2">"31 (53.4%)"</span><span class="p">],</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="p">}</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="n">dm_doc</span> <span class="o">=</span> <span class="n">rtf_tables</span><span class="p">(</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">rtf_document</span><span class="p">(</span><span class="n">page</span><span class="o">=</span><span class="n">rtf_page</span><span class="p">(</span><span class="n">orientation</span><span class="o">=</span><span class="s2">"landscape"</span><span class="p">)),</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="n">as_rtftables</span><span class="p">(</span><span class="n">dm</span><span class="p">,</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>                 <span class="n">group_col</span><span class="o">=</span><span class="s2">"Characteristic"</span><span class="p">,</span>   <span class="c1"># keep a characteristic whole</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>                 <span class="n">split</span><span class="o">=</span><span class="s2">"group_safe"</span><span class="p">,</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>                 <span class="n">max_rows</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>                 <span class="n">border</span><span class="o">=</span><span class="s2">"tfl"</span><span class="p">),</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>    <span class="n">titles</span><span class="o">=</span><span class="p">[[</span><span class="s2">"Table 14.1.1"</span><span class="p">,</span> <span class="s2">"Demographic and Baseline Characteristics"</span><span class="p">,</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>             <span class="s2">"&lt;Safety Analysis Set&gt;"</span><span class="p">]],</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="p">)</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="n">generate_rtfreport</span><span class="p">(</span><span class="n">dm_doc</span><span class="p">,</span> <span class="s2">"t-14-1-1.rtf"</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="2-ae-adverse-events">2. AE -- adverse events<a class="headerlink" href="#2-ae-adverse-events" title="Permanent link">&para;</a></h2>
+<p>The SOC / PT hierarchy folded into one indented stub column.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">ae</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="s2">"SOC"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Cardiac disorders"</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">[</span><span class="s2">"Gastrointestinal disorders"</span><span class="p">]</span> <span class="o">*</span> <span class="mi">3</span><span class="p">,</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="s2">"PT"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Atrial fibrillation"</span><span class="p">,</span> <span class="s2">"Bradycardia"</span><span class="p">,</span> <span class="s2">"Nausea"</span><span class="p">,</span> <span class="s2">"Vomiting"</span><span class="p">,</span> <span class="s2">"Diarrhoea"</span><span class="p">],</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="s2">"Drug A"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"3 (5.0%)"</span><span class="p">,</span> <span class="s2">"1 (1.7%)"</span><span class="p">,</span> <span class="s2">"8 (13.3%)"</span><span class="p">,</span> <span class="s2">"4 (6.7%)"</span><span class="p">,</span> <span class="s2">"2 (3.3%)"</span><span class="p">],</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="s2">"Drug B"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"2 (3.4%)"</span><span class="p">,</span> <span class="s2">"0"</span><span class="p">,</span> <span class="s2">"6 (10.3%)"</span><span class="p">,</span> <span class="s2">"3 (5.2%)"</span><span class="p">,</span> <span class="s2">"5 (8.6%)"</span><span class="p">],</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="p">}</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">ae_doc</span> <span class="o">=</span> <span class="n">rtf_tables</span><span class="p">(</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    <span class="n">rtf_document</span><span class="p">(</span><span class="n">page</span><span class="o">=</span><span class="n">rtf_page</span><span class="p">(</span><span class="n">orientation</span><span class="o">=</span><span class="s2">"landscape"</span><span class="p">)),</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    <span class="n">as_rtftables</span><span class="p">(</span><span class="n">ae</span><span class="p">,</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>                 <span class="n">stub</span><span class="o">=</span><span class="n">stub_spec</span><span class="p">([</span><span class="s2">"SOC"</span><span class="p">,</span> <span class="s2">"PT"</span><span class="p">]),</span>  <span class="c1"># the hierarchy DM does not have</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>                 <span class="n">group_by</span><span class="o">=</span><span class="s2">"indent"</span><span class="p">,</span>              <span class="c1"># groups are found by indentation</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>                 <span class="n">blank_rows</span><span class="o">=</span><span class="s2">"between_groups"</span><span class="p">,</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>                 <span class="n">split</span><span class="o">=</span><span class="s2">"group_safe"</span><span class="p">,</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>                 <span class="n">max_rows</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>                 <span class="n">border</span><span class="o">=</span><span class="s2">"tfl"</span><span class="p">),</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>    <span class="n">titles</span><span class="o">=</span><span class="p">[[</span><span class="s2">"Table 14.3.1"</span><span class="p">,</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>             <span class="s2">"Adverse Events by System Organ Class and Preferred Term"</span><span class="p">,</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>             <span class="s2">"&lt;Safety Analysis Set&gt;"</span><span class="p">]],</span>
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>    <span class="n">footnotes</span><span class="o">=</span><span class="p">[[</span><span class="s2">"Percentages use the number of treated subjects."</span><span class="p">]],</span>
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="p">)</span>
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="n">generate_rtfreport</span><span class="p">(</span><span class="n">ae_doc</span><span class="p">,</span> <span class="s2">"t-14-3-1.rtf"</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="3-pk-concentrations">3. PK -- concentrations<a class="headerlink" href="#3-pk-concentrations" title="Permanent link">&para;</a></h2>
+<p>Decimal alignment, and a table wider than a page.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">pk</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="s2">"Time"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"1 h"</span><span class="p">]</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="p">[</span><span class="s2">"2 h"</span><span class="p">]</span> <span class="o">*</span> <span class="mi">3</span><span class="p">,</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="s2">"Statistic"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"n"</span><span class="p">,</span> <span class="s2">"Mean"</span><span class="p">,</span> <span class="s2">"SD"</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="s2">"Day 1"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"24"</span><span class="p">,</span> <span class="s2">"1104.5"</span><span class="p">,</span> <span class="s2">"233.41"</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="s2">"Day 7"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"24"</span><span class="p">,</span> <span class="s2">"88.012"</span><span class="p">,</span> <span class="s2">"19.223"</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="s2">"Day 14"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"24"</span><span class="p">,</span> <span class="s2">"9.0125"</span><span class="p">,</span> <span class="s2">"2.1044"</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="s2">"Day 28"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"24"</span><span class="p">,</span> <span class="s2">"1234.5"</span><span class="p">,</span> <span class="s2">"301.22"</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="p">}</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="n">pk_pages</span> <span class="o">=</span> <span class="n">as_rtftables</span><span class="p">(</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="n">pk</span><span class="p">,</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>    <span class="n">stub</span><span class="o">=</span><span class="n">stub_spec</span><span class="p">([</span><span class="s2">"Time"</span><span class="p">,</span> <span class="s2">"Statistic"</span><span class="p">]),</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>    <span class="n">group_by</span><span class="o">=</span><span class="s2">"indent"</span><span class="p">,</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>    <span class="n">blank_rows</span><span class="o">=</span><span class="s2">"between_groups"</span><span class="p">,</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>    <span class="c1"># ABSOLUTE widths: relative ones are normalised to the page, so the table</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>    <span class="c1"># could never be too wide and paginate_cols() would have nothing to do</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>    <span class="n">column_widths_twips</span><span class="o">=</span><span class="p">[</span><span class="mi">2000</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1800</span><span class="p">]</span> <span class="o">*</span> <span class="mi">4</span><span class="p">,</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>    <span class="n">border</span><span class="o">=</span><span class="s2">"tfl"</span><span class="p">,</span>
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="p">)</span>
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="n">pk_pages</span> <span class="o">=</span> <span class="n">set_decimal_split</span><span class="p">(</span><span class="n">pk_pages</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="p">[</span><span class="s2">"Day 1"</span><span class="p">,</span> <span class="s2">"Day 7"</span><span class="p">,</span> <span class="s2">"Day 14"</span><span class="p">,</span> <span class="s2">"Day 28"</span><span class="p">])</span>
+<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="n">pk_pages</span> <span class="o">=</span> <span class="n">paginate_cols</span><span class="p">(</span><span class="n">pk_pages</span><span class="p">,</span> <span class="n">at</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">carry</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>   <span class="c1"># split by COLUMN, repeat the stub</span>
+<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a>
+<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="n">pk_doc</span> <span class="o">=</span> <span class="n">rtf_document</span><span class="p">(</span><span class="n">page</span><span class="o">=</span><span class="n">rtf_page</span><span class="p">(</span><span class="n">orientation</span><span class="o">=</span><span class="s2">"landscape"</span><span class="p">))</span>
+<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pk_pages</span><span class="p">:</span>
+<a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a>    <span class="n">pk_doc</span> <span class="o">=</span> <span class="n">rtf_tables</span><span class="p">(</span><span class="n">pk_doc</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+<a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a><span class="n">generate_rtfreport</span><span class="p">(</span><span class="n">pk_doc</span><span class="p">,</span> <span class="s2">"t-14-2-1.rtf"</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+<p><code>at=3</code> and <code>carry=0</code> are 0-based column positions (R's <code>at = 4L</code>,
+<code>carry = 1L</code>): the second page starts at the fourth column, and the stub is
+carried onto it.</p>
+<h2 id="4-lb-laboratory-shift">4. LB -- laboratory shift<a class="headerlink" href="#4-lb-laboratory-shift" title="Permanent link">&para;</a></h2>
+<p>Grouped by a column that is never printed.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">lb</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="s2">"PARAMCD"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"ALT"</span><span class="p">]</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="p">[</span><span class="s2">"AST"</span><span class="p">]</span> <span class="o">*</span> <span class="mi">3</span><span class="p">,</span>          <span class="c1"># carrier: groups, not printed</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="s2">"Baseline"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Normal"</span><span class="p">,</span> <span class="s2">"Grade 1"</span><span class="p">,</span> <span class="s2">"Grade 2"</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="s2">"Normal"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"40"</span><span class="p">,</span> <span class="s2">"5"</span><span class="p">,</span> <span class="s2">"1"</span><span class="p">,</span> <span class="s2">"38"</span><span class="p">,</span> <span class="s2">"6"</span><span class="p">,</span> <span class="s2">"2"</span><span class="p">],</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="s2">"Grade 1"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"8"</span><span class="p">,</span> <span class="s2">"12"</span><span class="p">,</span> <span class="s2">"3"</span><span class="p">,</span> <span class="s2">"9"</span><span class="p">,</span> <span class="s2">"11"</span><span class="p">,</span> <span class="s2">"4"</span><span class="p">],</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="s2">"Grade 2"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"1"</span><span class="p">,</span> <span class="s2">"4"</span><span class="p">,</span> <span class="s2">"7"</span><span class="p">,</span> <span class="s2">"2"</span><span class="p">,</span> <span class="s2">"3"</span><span class="p">,</span> <span class="s2">"6"</span><span class="p">],</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="p">}</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="n">lb_doc</span> <span class="o">=</span> <span class="n">rtf_tables</span><span class="p">(</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>    <span class="n">rtf_document</span><span class="p">(</span><span class="n">page</span><span class="o">=</span><span class="n">rtf_page</span><span class="p">(</span><span class="n">orientation</span><span class="o">=</span><span class="s2">"landscape"</span><span class="p">)),</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>    <span class="n">as_rtftables</span><span class="p">(</span><span class="n">lb</span><span class="p">,</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>                 <span class="n">group_col</span><span class="o">=</span><span class="s2">"PARAMCD"</span><span class="p">,</span>    <span class="c1"># group by it ...</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>                 <span class="n">drop_cols</span><span class="o">=</span><span class="s2">"PARAMCD"</span><span class="p">,</span>    <span class="c1"># ... but never print it</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>                 <span class="n">blank_rows</span><span class="o">=</span><span class="s2">"between_groups"</span><span class="p">,</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>                 <span class="n">border</span><span class="o">=</span><span class="s2">"tfl"</span><span class="p">),</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>    <span class="n">titles</span><span class="o">=</span><span class="p">[[</span><span class="s2">"Table 14.4.1"</span><span class="p">,</span> <span class="s2">"Shift from Baseline in Laboratory Grade"</span><span class="p">,</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>             <span class="s2">"&lt;Safety Analysis Set&gt;"</span><span class="p">]],</span>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="p">)</span>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="n">generate_rtfreport</span><span class="p">(</span><span class="n">lb_doc</span><span class="p">,</span> <span class="s2">"t-14-4-1.rtf"</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="where-next">Where next<a class="headerlink" href="#where-next" title="Permanent link">&para;</a></h2>
 <ul>
-<li>an <strong>“Subjects with any adverse event”</strong> row on top;</li>
-<li><strong>each SOC row carries its own independent distinct-subject count</strong> — never
-  the sum of the preferred terms printed beneath it;</li>
-<li>a preferred term appears only if it reaches <strong>≥ 3% in any arm</strong>;</li>
-<li>SOCs alphabetically; PTs within a SOC by total distinct-subject count
-  descending, ties A→Z;</li>
-<li>zero cells written out as an aligned <code>0 (0.0%)</code>;</li>
-<li>PTs indented under their SOC.</li>
+<li><a href="../getting-started/">Get started</a> walks through one report slowly.</li>
+<li><a href="../importing-tables/">Importing tables</a> for the conversion,
+  <a href="../adding-content/">Adding tables and figures</a> for placement,
+  <a href="../output/">Rendering and post-processing</a> to render.</li>
+<li><a href="../listings/">Listings</a> for the fifth shape, which is built from source data.</li>
 </ul>
-<h3 id="why-a-soc-row-is-not-a-column-sum">Why a SOC row is not a column sum<a class="headerlink" href="#why-a-soc-row-is-not-a-column-sum" title="Permanent link">&para;</a></h3>
-<p>A subject who reports both <em>Diarrhoea</em> and <em>Nausea</em> is <strong>one</strong> subject with a
-gastrointestinal event, but appears on two PT rows. Adding the PT rows up
-would double-count them. Each level is therefore counted independently over
-distinct <code>USUBJID</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">_distinct_counts</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="o">*</span><span class="n">keys</span><span class="p">):</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="k">return</span> <span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">([</span><span class="s2">"USUBJID"</span><span class="p">,</span> <span class="s2">"TRT01A"</span><span class="p">,</span> <span class="o">*</span><span class="n">keys</span><span class="p">])</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>                 <span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">"TRT01A"</span><span class="p">,</span> <span class="o">*</span><span class="n">keys</span><span class="p">],</span> <span class="n">observed</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>                 <span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"n"</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">())</span>
-</code></pre></div>
-<p>For this dataset the gastrointestinal SOC is 17 / 15 / 19 subjects, while its
-printed PTs sum to considerably more. <code>tests/test_showcase.py</code> asserts the two
-differ, so a refactor cannot quietly turn the SOC row into a sum.</p>
-<h2 id="zeros-that-align">Zeros that align<a class="headerlink" href="#zeros-that-align" title="Permanent link">&para;</a></h2>
-<p>The built-in <a class="autorefs autorefs-internal" title="&lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;rtfreporter.format_count_pct.format_count_pct&lt;/span&gt;" href="../reference/#rtfreporter.format_count_pct.format_count_pct"><code>format_count_pct</code></a> collapses a
-zero to a padded bare <code>0</code> — correct, and what R does. For this table we want
-the zeros written out so the column stays visually flush, exactly as the R
-article does with its own <code>fmt_ae()</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">fmt_ae</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">denom</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="n">pct</span> <span class="o">=</span> <span class="mf">100.0</span> <span class="o">*</span> <span class="n">n</span> <span class="o">/</span> <span class="n">denom</span> <span class="k">if</span> <span class="n">denom</span> <span class="k">else</span> <span class="mf">0.0</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>        <span class="n">body</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">n</span><span class="si">:</span><span class="s2">&gt;3</span><span class="si">}{</span><span class="n">NBSP</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">2</span><span class="si">}</span><span class="s2">(0.0%)"</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="k">elif</span> <span class="n">pct</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>        <span class="n">body</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">n</span><span class="si">:</span><span class="s2">&gt;3</span><span class="si">}{</span><span class="n">NBSP</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">2</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="n">pct</span><span class="si">:</span><span class="s2">&gt;3.1f</span><span class="si">}</span><span class="s2">%)"</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>        <span class="n">body</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">n</span><span class="si">:</span><span class="s2">&gt;3</span><span class="si">}{</span><span class="n">NBSP</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="n">pct</span><span class="si">:</span><span class="s2">&gt;4.1f</span><span class="si">}</span><span class="s2">%)"</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    <span class="k">return</span> <span class="n">body</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">" "</span><span class="p">,</span> <span class="n">NBSP</span><span class="p">)</span>
-</code></pre></div>
-<p>Every branch is 11 characters wide, so the closing parenthesis lines up. A
-test asserts that every cell in the table is exactly 11 characters — a ragged
-column fails the build.</p>
-<h2 id="indentation-is-the-group-structure">Indentation <em>is</em> the group structure<a class="headerlink" href="#indentation-is-the-group-structure" title="Permanent link">&para;</a></h2>
-<p>The preferred terms are indented with four non-breaking spaces, and that
-indent is what rtfreporter uses to find group boundaries:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">pages</span> <span class="o">=</span> <span class="n">as_rtftables</span><span class="p">(</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="n">body</span><span class="p">,</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">group_col</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="n">group_by</span><span class="o">=</span><span class="s2">"indent"</span><span class="p">,</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="n">split</span><span class="o">=</span><span class="s2">"group_force"</span><span class="p">,</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="n">max_rows</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="n">min_group_rows</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="n">cont_label</span><span class="o">=</span><span class="s2">" (Cont.)"</span><span class="p">,</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="n">col_header</span><span class="o">=</span><span class="n">ae_col_header</span><span class="p">(</span><span class="n">adsl</span><span class="p">),</span>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="n">col_rel_width</span><span class="o">=</span><span class="p">[</span><span class="mi">46</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="mi">18</span><span class="p">],</span>
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="p">)</span>
-</code></pre></div>
-<p><code>group_by</code> chooses <strong>how</strong> a boundary is detected, independently of <strong>which</strong>
-column carries it:</p>
-<table>
-<thead>
-<tr>
-<th>mode</th>
-<th>a new group starts when…</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>"value"</code></td>
-<td>the cell value changes (run-length)</td>
-</tr>
-<tr>
-<td><code>"indent"</code></td>
-<td>the cell is <strong>not</strong> indented (flush-left rows are headers)</td>
-</tr>
-<tr>
-<td><code>"filled"</code></td>
-<td>the cell is non-empty (blank cells are members)</td>
-</tr>
-<tr>
-<td><code>"auto"</code></td>
-<td>detected from the column: indent → filled → value</td>
-</tr>
-</tbody>
-</table>
-<p>Group on a <strong>printed</strong> column. Under <code>group_force</code> the <code>(Cont.)</code> marker is
-written into the grouping column's cell, so hiding that column via <code>drop_cols</code>
-would take the marker with it.</p>
-<h2 id="pagination-and-continuation">Pagination and continuation<a class="headerlink" href="#pagination-and-continuation" title="Permanent link">&para;</a></h2>
-<p><code>split="group_force"</code> cuts on <strong>every</strong> <code>max_rows</code> and, when the cut lands
-inside a SOC, repeats that SOC's header on the next page with <code>(Cont.)</code>
-appended:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Page 1   … Skin And Subcutaneous Tissue Disorders
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>             Pruritus            8 (9.3%)   21 (21.9%)   25 (34.7%)
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>Page 2   Skin And Subcutaneous Tissue Disorders (Cont.)
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>             Erythema            8 (9.3%)   14 (14.6%)   14 (19.4%)
-</code></pre></div>
-<p><code>min_group_rows=2</code> is widow/orphan control: a group that would show only one
-row before the break is pushed to the next page, and a cut that would leave a
-single trailing row is pulled back.</p>
-<p>Contrast with <code>split="group_safe"</code>, which never splits a group — it fills up
-to <code>max_rows</code> and moves a whole group down instead, so no continuation marker
-is ever produced.</p>
-<h2 id="validation-against-r">Validation against R<a class="headerlink" href="#validation-against-r" title="Permanent link">&para;</a></h2>
-<p><code>tests/test_showcase.py</code> checks these figures against
-<code>data-raw/R_reference_numbers.txt</code>:</p>
-<table>
-<thead>
-<tr>
-<th>Row</th>
-<th style="text-align: right;">Placebo</th>
-<th style="text-align: right;">Xanomeline Low Dose</th>
-<th style="text-align: right;">Xanomeline High Dose</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Subjects with any adverse event</td>
-<td style="text-align: right;">65</td>
-<td style="text-align: right;">84</td>
-<td style="text-align: right;">68</td>
-</tr>
-<tr>
-<td>Cardiac disorders</td>
-<td style="text-align: right;">12</td>
-<td style="text-align: right;">14</td>
-<td style="text-align: right;">14</td>
-</tr>
-<tr>
-<td>Gastrointestinal disorders</td>
-<td style="text-align: right;">17</td>
-<td style="text-align: right;">15</td>
-<td style="text-align: right;">19</td>
-</tr>
-<tr>
-<td>General disorders and administration site conditions</td>
-<td style="text-align: right;">21</td>
-<td style="text-align: right;">51</td>
-<td style="text-align: right;">36</td>
-</tr>
-</tbody>
-</table>
-<p>Also asserted: exactly <strong>32</strong> preferred terms pass the 3% filter; the PT order
-starts Pruritus → Application Site Pruritus → Erythema; SOCs are alphabetical;
-the rendered RTF is well-formed, ASCII-safe, spans more than one page, and
-contains a <code>(Cont.)</code> marker.</p>
 
 
 

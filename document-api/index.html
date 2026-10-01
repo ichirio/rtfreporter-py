@@ -551,6 +551,8 @@
       
         
       
+        
+      
     
     
     
@@ -859,6 +861,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../listings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Listings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../pagination/" class="md-nav__link">
         
   
@@ -1069,6 +1099,8 @@
       
         
       
+        
+      
     
     
     
@@ -1116,6 +1148,34 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../recipes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Four recipes: DM, AE, PK, LB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -1579,7 +1639,7 @@ yourself. See <a href="../output/">Rendering and post-processing</a>.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="n">as_rtftables</span><span class="p">,</span> <span class="n">generate_rtfreport</span><span class="p">,</span> <span class="n">rtf_document</span><span class="p">,</span> <span class="n">rtf_footer</span><span class="p">,</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="n">rtf_header</span><span class="p">,</span> <span class="n">rtf_page</span><span class="p">,</span> <span class="n">rtf_section</span><span class="p">,</span> <span class="n">rtf_tables</span><span class="p">,</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="n">rtf_header</span><span class="p">,</span> <span class="n">rtf_page</span><span class="p">,</span> <span class="n">rtf_section</span><span class="p">,</span> <span class="n">rtf_tables</span><span class="p">,</span> <span class="n">stub_spec</span><span class="p">,</span>
 <a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="p">)</span>
 <a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
 <a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
@@ -1591,21 +1651,20 @@ yourself. See <a href="../output/">Rendering and post-processing</a>.</p>
 <a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>
 <a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="n">pages</span> <span class="o">=</span> <span class="n">as_rtftables</span><span class="p">(</span>
 <a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>    <span class="n">df</span><span class="p">,</span>
-<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>    <span class="n">stub_vars</span><span class="o">=</span><span class="p">[</span><span class="s2">"Characteristic"</span><span class="p">,</span> <span class="s2">"Statistic"</span><span class="p">],</span>
-<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>    <span class="n">stub_label</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span>
-<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>    <span class="n">col_rel_width</span><span class="o">=</span><span class="p">[</span><span class="mi">40</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">],</span>
-<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>    <span class="n">blank_rows</span><span class="o">=</span><span class="s2">"between_groups"</span><span class="p">,</span>
-<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a><span class="p">)</span>
-<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a>
-<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a><span class="n">doc</span> <span class="o">=</span> <span class="n">rtf_document</span><span class="p">(</span><span class="n">page</span><span class="o">=</span><span class="n">rtf_page</span><span class="p">(</span><span class="n">paper_size</span><span class="o">=</span><span class="s2">"letter"</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="s2">"landscape"</span><span class="p">))</span>
-<a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a><span class="n">doc</span> <span class="o">=</span> <span class="n">rtf_tables</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">pages</span><span class="p">,</span> <span class="n">titles</span><span class="o">=</span><span class="p">[</span><span class="s2">"Table 14.1.1"</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"Demographics"</span><span class="p">])</span>
-<a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a><span class="n">doc</span> <span class="o">=</span> <span class="n">rtf_section</span><span class="p">(</span>
-<a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a>    <span class="n">doc</span><span class="p">,</span>
-<a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a>    <span class="n">header</span><span class="o">=</span><span class="n">rtf_header</span><span class="p">([{</span><span class="s2">"l"</span><span class="p">:</span> <span class="s2">"Protocol ABC-2026-001"</span><span class="p">,</span>
-<a id="__codelineno-6-27" name="__codelineno-6-27" href="#__codelineno-6-27"></a>                        <span class="s2">"r"</span><span class="p">:</span> <span class="s2">"Page </span><span class="si">{AUTO_PAGE}</span><span class="s2"> of </span><span class="si">{AUTO_TOTAL_PAGES}</span><span class="s2">"</span><span class="p">}]),</span>
-<a id="__codelineno-6-28" name="__codelineno-6-28" href="#__codelineno-6-28"></a>    <span class="n">footer</span><span class="o">=</span><span class="n">rtf_footer</span><span class="p">([{</span><span class="s2">"c"</span><span class="p">:</span> <span class="s2">"CONFIDENTIAL"</span><span class="p">}]),</span>
-<a id="__codelineno-6-29" name="__codelineno-6-29" href="#__codelineno-6-29"></a><span class="p">)</span>
-<a id="__codelineno-6-30" name="__codelineno-6-30" href="#__codelineno-6-30"></a><span class="n">generate_rtfreport</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="s2">"demographics.rtf"</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>    <span class="n">stub</span><span class="o">=</span><span class="n">stub_spec</span><span class="p">([</span><span class="s2">"Characteristic"</span><span class="p">,</span> <span class="s2">"Statistic"</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">""</span><span class="p">),</span>
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>    <span class="n">col_rel_width</span><span class="o">=</span><span class="p">[</span><span class="mi">40</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">],</span>
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>    <span class="n">blank_rows</span><span class="o">=</span><span class="s2">"between_groups"</span><span class="p">,</span>
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a><span class="p">)</span>
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a>
+<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a><span class="n">doc</span> <span class="o">=</span> <span class="n">rtf_document</span><span class="p">(</span><span class="n">page</span><span class="o">=</span><span class="n">rtf_page</span><span class="p">(</span><span class="n">paper_size</span><span class="o">=</span><span class="s2">"letter"</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="s2">"landscape"</span><span class="p">))</span>
+<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a><span class="n">doc</span> <span class="o">=</span> <span class="n">rtf_tables</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">pages</span><span class="p">,</span> <span class="n">titles</span><span class="o">=</span><span class="p">[</span><span class="s2">"Table 14.1.1"</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"Demographics"</span><span class="p">])</span>
+<a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a><span class="n">doc</span> <span class="o">=</span> <span class="n">rtf_section</span><span class="p">(</span>
+<a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a>    <span class="n">doc</span><span class="p">,</span>
+<a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a>    <span class="n">header</span><span class="o">=</span><span class="n">rtf_header</span><span class="p">([{</span><span class="s2">"l"</span><span class="p">:</span> <span class="s2">"Protocol ABC-2026-001"</span><span class="p">,</span>
+<a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a>                        <span class="s2">"r"</span><span class="p">:</span> <span class="s2">"Page </span><span class="si">{AUTO_PAGE}</span><span class="s2"> of </span><span class="si">{AUTO_TOTAL_PAGES}</span><span class="s2">"</span><span class="p">}]),</span>
+<a id="__codelineno-6-27" name="__codelineno-6-27" href="#__codelineno-6-27"></a>    <span class="n">footer</span><span class="o">=</span><span class="n">rtf_footer</span><span class="p">([{</span><span class="s2">"c"</span><span class="p">:</span> <span class="s2">"CONFIDENTIAL"</span><span class="p">}]),</span>
+<a id="__codelineno-6-28" name="__codelineno-6-28" href="#__codelineno-6-28"></a><span class="p">)</span>
+<a id="__codelineno-6-29" name="__codelineno-6-29" href="#__codelineno-6-29"></a><span class="n">generate_rtfreport</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="s2">"demographics.rtf"</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="where-to-next">Where to next<a class="headerlink" href="#where-to-next" title="Permanent link">&para;</a></h2>
 <ul>
