@@ -76,6 +76,19 @@ def test_listing_wrap_matches_r(k, width):
         assert got == exp, layout
 
 
+def test_listing_key_wrap_matches_r():
+    # ichirio/rtfreporter#505 / #506: a key column to the left that wraps
+    # ("Xanomeline" / "High Dose") must not stop the key to its right
+    # (SUBJ) from being blanked on the wrapped continuation line.
+    data = {"TRT": ["Placebo", "Xanomeline High Dose", "Xanomeline High Dose"],
+            "SUBJ": ["S-1", "S-2", "S-3"], "TERM": ["A", "B", "C"]}
+    spec = rr.listing_spec([
+        rr.listing_col("TRT", width=12, collapse_repeats=True),
+        rr.listing_col("SUBJ", width=8, collapse_repeats=True),
+        rr.listing_col("TERM", width=8)])
+    assert _rtf(rr.as_rtftables(data, listing=spec)) == _golden("wrap_key")
+
+
 def test_listing_wrap_code_is_runnable():
     src = rr.listing_wrap_code("my_wrap")
     ns: dict = {}

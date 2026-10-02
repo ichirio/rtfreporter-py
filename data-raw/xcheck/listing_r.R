@@ -35,6 +35,20 @@ spec2 <- listing_spec(list(
   "AESEV"), spacer = FALSE, blank_row = FALSE, record = FALSE, align = "right")
 write_doc(as_rtftables(ae, listing = spec2), "flow_no_spacer")
 
+# A key column to the LEFT that wraps must not stop the one to its right
+# from being blanked inside the record (ichirio/rtfreporter#505): "Xanomeline"
+# / "High Dose" are two lines of one record, not two values. Rendered by R
+# main after the #506 fix -- see README.md's provenance table.
+wrap_keys <- data.frame(
+  TRT  = c("Placebo", "Xanomeline High Dose", "Xanomeline High Dose"),
+  SUBJ = c("S-1", "S-2", "S-3"),
+  TERM = c("A", "B", "C"), stringsAsFactors = FALSE)
+spec_wrap <- listing_spec(list(
+  listing_col("TRT", width = 12, collapse_repeats = TRUE),
+  listing_col("SUBJ", width = 8, collapse_repeats = TRUE),
+  listing_col("TERM", width = 8)))
+write_doc(as_rtftables(wrap_keys, listing = spec_wrap), "wrap_key")
+
 body <- build_listing(ae, spec1)
 spec3 <- fit_listing_widths(ae, listing_spec(list(
   listing_col("USUBJID"), listing_col(c("AETERM", "AEDECOD")),
