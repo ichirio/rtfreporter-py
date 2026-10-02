@@ -93,6 +93,7 @@ ported here as a bug fix (0.4.1):
 | Golden files | Rendered by | Why |
 |---|---|---|
 | `decimal/styles_size.rtf`, `decimal/font_fill.rtf` | R `main` at the fix (0e05ce5, 0.8.2.9003) | ichirio/rtfreporter#509: a row split by `set_decimal_split()` lost the table's font switch and the cell fill.  Re-rendering the other `decimal/`, `paginate_cols/` and `recipes/` files from that commit leaves them unchanged. |
+| `listing/wrap_key.rtf` | R `main` after the fix (0.8.2.9001) | ichirio/rtfreporter#505/#506: a listing key column to the left that wraps ("Xanomeline" / "High Dose") stopped the key to its right from being blanked on the wrapped continuation line. Checked against R pre-fix (c1dae2e) and R `main`: the port's output already matches `main`, not pre-fix -- pinned so it stays that way. |
 | everything else | R v0.8.2 | |
 
 So regenerate `decimal_r.R` from R `main` at or after that commit, and every

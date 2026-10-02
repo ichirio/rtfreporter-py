@@ -6,6 +6,25 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Verified
+
+- **R ichirio/rtfreporter#505/#506 ("a listing key prints once per record
+  when a key to its left wraps") does not reproduce in the port.**  R's
+  pre-fix bug was in `.collapse_repeats_chunk()`'s hierarchical key: a key
+  column's repeat test was combined with the columns to its left, so a left
+  key that wraps across lines ("Xanomeline" / "High Dose") changed that
+  combined key from line to line and made the key to its right (e.g.
+  `SUBJ`) reprint on the wrapped continuation line instead of staying
+  blank.  The port's `_collapse_repeats()` (`src/rtfreporter/adapters.py`)
+  blanks each `collapse_repeats` column against only its own previous
+  value, independent of other columns, so it was never susceptible.
+  Checked by rendering the trigger scenario (`TRT` wrapping over `SUBJ`,
+  both `collapse_repeats` keys) with R pre-fix (c1dae2e), R `main` (post-fix,
+  0.8.2.9001), and this port: the port's output is byte-identical to R
+  `main` and differs from R pre-fix.  Pinned with
+  `test_listing_key_wrap_matches_r` (`tests/test_listing_vs_r.py`) and its
+  golden `tests/xcheck_golden/listing/wrap_key.rtf`, rendered by R `main`.
+
 ## [0.4.1] — 2026-10-01
 
 ### Fixed
