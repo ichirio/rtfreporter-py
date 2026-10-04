@@ -6,6 +6,35 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **An explicit section on the page an auto section starts** (R
+  ichirio/rtfreporter#548, fixed in R 0.8.2.9017; #10).  With a running header
+  (`rtf_section(doc, header=)`), an explicit `rtf_section(doc, page=n, ...)`
+  and `rtf_tables(..., auto_section=True)`, the port took the explicit
+  section's header as the base of every auto section and kept two sections
+  starting on page n, so an empty extra section was emitted.  Now, as in R:
+  the auto sections build on the running header only (a section given its
+  page never becomes their base), an explicit section wins the page an auto
+  section would start on, and when two sections start on one page the one
+  added later is that page's (R keeps one section per page).  R did not
+  render here at all on page 1 and rendered the pages twice on page 2; the
+  port never crashed, but its output differed from R's.  A new differential
+  test, `tests/test_sections_vs_r.py` (goldens written by
+  `data-raw/xcheck/sections_r.R` with R 0.8.2.9017), checks the running
+  header alone and an explicit section on page 1 and on page 2
+  byte-for-byte.
+
+### Verified
+
+- **R ichirio/rtfreporter#546, #547, #549 and #550 do not apply to the
+  port.**  #546 (`print.rtf_watermark` not registered) and #547
+  (`print(rtf_document())` showing "x inches" for a preset page) are R
+  print methods the port has no counterpart of; #549 (`cell_rows()` with
+  one bare guard) is in the ARD tables, which the port does not include;
+  #550 (the console preview drawing dash / dot rules as single ones) is in
+  R's console rendering of a table, which the port does not have.
+
 ### Documentation
 
 - **Citation and credits** (#8).  A `CITATION.cff` (GitHub's "Cite this

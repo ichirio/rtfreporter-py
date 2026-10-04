@@ -169,9 +169,14 @@ class RtfDocument:
                 next page to be added.
         """
         new = self._copy()
+        # a section given its page is explicit: it wins that page over an
+        # auto section (R #548); one with no page is the running header the
+        # auto sections build on (R's ``rtf_section(page = NULL)``)
+        explicit = from_page is not None
         if from_page is None:
             from_page = len(new._pages) + 1
-        section = {"header": header, "footer": footer, "from_page": int(from_page)}
+        section = {"header": header, "footer": footer, "from_page": int(from_page),
+                   "explicit": explicit}
         if watermark is not _NOT_GIVEN:
             from .watermark import normalize_watermark
 
@@ -420,10 +425,11 @@ def _auto_section_base(doc: RtfDocument) -> HeaderFooter | None:
 
     Captured **once**, before any auto-sections are added, so each section is
     the base plus its own label -- never the previous section's label as well.
-    Corresponds to R's ``"_default"`` section entry.
+    Corresponds to R's ``"_default"`` section entry: a section added with no
+    page (``rtf_section(doc, header=)``), never one given its page.
     """
     for section in reversed(doc._sections):
-        if section.get("header") is not None:
+        if not section.get("explicit") and section.get("header") is not None:
             return section["header"]
     return None
 
@@ -458,6 +464,11 @@ def _open_auto_section(doc: RtfDocument, header: HeaderFooter) -> RtfDocument:
     as the first auto-section and would never render -- only an extra
     ``\sectd``.  Replacing it keeps the emitted sections identical to R's.
     """
+    # an explicit ``rtf_section(page = n)`` wins the page an auto section
+    # would start on (R #548)
+    page = len(doc._pages) + 1
+    if any(sec.get("explicit") and sec["from_page"] == page for sec in doc._sections):
+        return doc
     new = doc.add_section(header=header)
     if len(new._sections) >= 2 and new._sections[-2]["from_page"] == new._sections[-1]["from_page"]:
         superseded = new._sections.pop(-2)
@@ -805,6 +816,12 @@ def _resolve_sections(report: _Report) -> list[dict]:
     # Order by from_page, then reassign contiguous ranges.
     order = sorted(range(len(sections)), key=lambda i: sections[i]["from_page"] or 1)
     sections = [sections[i] for i in order]
+    # Two sections starting on one page: the one added later is the page's
+    # (R keeps one section per page); the other would have no pages and only
+    # add an empty section (R #548).
+    sections = [sec for i, sec in enumerate(sections)
+                if i + 1 >= len(sections)
+                or (sections[i + 1]["from_page"] or 1) != (sec["from_page"] or 1)]
     from_pages = [s["from_page"] or 1 for s in sections]
     from_pages[0] = 1
     n_sec = len(sections)
