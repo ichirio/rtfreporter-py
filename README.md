@@ -84,6 +84,30 @@ Full documentation, including per-topic guides and the API reference, lives at
 Runnable end-to-end examples are in [`examples/`](examples/):
 `demographics.py`, `pagination.py`, and `styling.py`.
 
+## Citation
+
+If rtfreporter helps your work, please cite it. GitHub's "Cite this
+repository" button reads [`CITATION.cff`](CITATION.cff):
+
+> Masui Y (2026). rtfreporter: Clinical RTF Reporting Toolkit for Tables,
+> Listings and Figures (Python port). https://github.com/ichirio/rtfreporter-py
+
+## Acknowledgements
+
+- This package is a port of the R package
+  [rtfreporter](https://github.com/ichirio/rtfreporter), by the same author;
+  its API and output are kept in step with it.
+- It reads tables built with [pandas](https://pandas.pydata.org/),
+  [polars](https://pola.rs/) and [great_tables](https://posit-dev.github.io/great-tables/),
+  and embeds figures drawn with [matplotlib](https://matplotlib.org/); the
+  tables and figures themselves are their work.
+- The example data are a subset of
+  [pharmaverseadam](https://pharmaverse.github.io/pharmaverseadam/)
+  (from the CDISC pilot study; see [`examples/data/README.md`](examples/data/README.md)).
+
+rtfreporter is an independent project and is not affiliated with, or endorsed
+by, the authors of these packages.
+
 ## License
 
 Apache-2.0. See [LICENSE](LICENSE).
