@@ -6,6 +6,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Documentation
+
+- **Citation and credits** (#8).  A `CITATION.cff` (GitHub's "Cite this
+  repository"), and README sections on how to cite the package and what it
+  builds on: the R rtfreporter it is ported from, pandas / polars /
+  great_tables / matplotlib, and pharmaverseadam for the example data, whose
+  copyright holders `examples/data/README.md` now names.
+
 ### Verified
 
 - **R ichirio/rtfreporter#505/#506 ("a listing key prints once per record

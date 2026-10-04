@@ -2,7 +2,9 @@
 
 `adsl.csv` and `adae.csv` are a trimmed copy of the `adsl` and `adae` datasets
 from **[pharmaverseadam](https://pharmaverse.github.io/pharmaverseadam/)**
-(© the pharmaverse authors, released under the **Apache License 2.0**), which
+(© Cytel Inc., F. Hoffmann-La Roche AG and GlaxoSmithKline LLC, the
+copyright holders pharmaverseadam names; released under the **Apache License
+2.0**), which
 are themselves derived from the CDISC pilot study. They are vendored here so
 every example in this repository runs with **no R installation and no network
 access**.
