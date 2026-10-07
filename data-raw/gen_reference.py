@@ -18,7 +18,7 @@ GROUPS: list[tuple[str, str, list[str]]] = [
         "the one passed in is left unchanged, as in R.",
         ["RtfDocument", "rtf_document", "rtf_config", "rtf_page", "DefaultFormat",
          "rtf_default_format", "Page", "rtf_watermark", "Watermark",
-         "generate_rtfreport", "to_rtf", "save"],
+         "generate_rtfreport", "rtf_text_tokens", "to_rtf", "save"],
     ),
     (
         "Package defaults",
@@ -31,7 +31,9 @@ GROUPS: list[tuple[str, str, list[str]]] = [
         "Sections: headers and footers",
         "A section applies a running header and footer to a range of pages.  The "
         "bands are themselves small tables whose rows you build with `rtf_header()` "
-        "/ `rtf_footer()` and edit with the `update_*_row()` helpers.",
+        "/ `rtf_footer()`; `drop_empty_rows=` leaves out a row whose tokens of "
+        "one's own are empty.  (The `update_*_row()` helpers are deprecated: "
+        "make the band again.)",
         ["rtf_section", "rtf_header", "rtf_footer", "HeaderFooter",
          "update_header_row", "update_footer_row"],
     ),
@@ -129,7 +131,7 @@ GROUPS: list[tuple[str, str, list[str]]] = [
         "Border specifications.  Borders apply to content-table zones, to header "
         "and footer rows, and to individual columns and cells, so the same builders "
         "are reused throughout a report.",
-        ["rtf_border_side", "rtf_border", "rtf_border_none",
+        ["rtf_border_line", "rtf_border", "rtf_border_side", "rtf_border_none",
          "rtf_border_top", "rtf_border_bottom", "rtf_border_box",
          "Border", "BorderSide", "TableBorder"],
     ),
@@ -149,7 +151,9 @@ GROUPS: list[tuple[str, str, list[str]]] = [
     (
         "Assembling multiple RTF files",
         "Combine several rendered RTF files into one deliverable with a table of "
-        "contents -- for example a TLF shell catalogue.",
+        "contents -- for example a TLF shell catalogue.  `assemble_folder()` "
+        "returns a folder's table of contents, to edit and hand to "
+        "`assemble_rtf(toc=)`; the other helpers are deprecated.",
         ["assemble_rtf", "assemble_files", "assemble_folder", "assemble_spec",
          "assemble_from_spec", "assemble_toc", "toc_heading", "toc_entry"],
     ),

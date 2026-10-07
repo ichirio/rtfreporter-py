@@ -14,6 +14,7 @@ Cells may contain page tokens (``{AUTO_PAGE}``, ``{AUTO_TOTAL_PAGES}``,
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field, replace
 
 from ._escape import resolve_markup
@@ -72,6 +73,8 @@ class HeaderFooter:
     font_size_half_points: int | None = None
     font: str | None = None
     markup: object = None
+    #: Leave out a row whose tokens of one's own are all empty (R #571).
+    drop_empty_rows: bool = False
 
     def __post_init__(self) -> None:
         from .element_style import check_block_width, check_font, check_font_size
@@ -85,6 +88,29 @@ class HeaderFooter:
         self.font = check_font(self.font, f"{verb}(font)")
         if self.markup is not None and not isinstance(self.markup, frozenset):
             self.markup = resolve_markup(self.markup)
+        if not isinstance(self.drop_empty_rows, bool):
+            raise ValueError("`drop_empty_rows` must be True or False.")
+
+
+_TOKEN_IN_ROW = re.compile(r"\{[A-Z][A-Z0-9_]*\}")
+
+
+def hf_row_empty(row: dict, tokens) -> bool:
+    """A band row left with nothing to say (``drop_empty_rows=True``): it has
+    tokens of one's own, every one empty, and the rest is blanks and brackets
+    (``"<{POPULATION}>"``).  A row with no token, or one of rtfreporter's own
+    (``{PAGE}``) or an unknown one, is never empty (R ``.hf_row_empty()``)."""
+    tokens = tokens or {}
+    txt = " ".join(str(v) for v in row.values() if v is not None)
+    found = _TOKEN_IN_ROW.findall(txt)
+    if not found:
+        return False
+    names = [m[1:-1] for m in found]
+    if not all(n in tokens for n in names):
+        return False
+    if any(tokens[n].strip() for n in names):
+        return False
+    return re.sub(r"[\][\s<>():;,.|/-]", "", _TOKEN_IN_ROW.sub("", txt)) == ""
 
 
 
@@ -104,6 +130,7 @@ def rtf_header(
     font_size_half_points: int | None = None,
     font: str | None = None,
     markup=None,
+    drop_empty_rows: bool = False,
 ) -> HeaderFooter:
     """Build a page-header band.
 
@@ -117,7 +144,14 @@ def rtf_header(
         font_size_half_points, markup: Style for this band, overriding the
             document default.  A size given without ``row_height_twips``
             recomputes the height from that size.
-        font: Per-band font family -- not supported yet (issue #3).
+        font: Per-band font family.
+        drop_empty_rows: ``True``: a row whose tokens of one's own
+            (``rtf_document(tokens=)``, ``rtfreporter_options(tokens=)``) are
+            all empty when the file is written, and which says nothing else
+            but blanks and brackets (``"<{POPULATION}>"``), is left out.  One
+            header can then serve every report of a study, a report with no
+            value for a line going without it.  ``False`` (default): every
+            row is written.
     """
     return HeaderFooter(
         rows=list(rows),
@@ -131,6 +165,7 @@ def rtf_header(
         font_size_half_points=font_size_half_points,
         font=font,
         markup=markup,
+        drop_empty_rows=drop_empty_rows,
     )
 
 
@@ -145,6 +180,7 @@ def rtf_footer(
     font_size_half_points: int | None = None,
     font: str | None = None,
     markup=None,
+    drop_empty_rows: bool = False,
 ) -> HeaderFooter:
     """Build a page-footer band (same shape as :func:`rtf_header`)."""
     return HeaderFooter(
@@ -159,6 +195,7 @@ def rtf_footer(
         font_size_half_points=font_size_half_points,
         font=font,
         markup=markup,
+        drop_empty_rows=drop_empty_rows,
     )
 
 
@@ -180,18 +217,39 @@ def _update_hf_rows(hf: HeaderFooter, row: int, content) -> HeaderFooter:
 
 
 def update_header_row(header: HeaderFooter, row: int, content) -> HeaderFooter:
-    """Add or replace a single row of a header band (mirrors ``update_header_row()``).
+    """Add or replace a single row of a header band (deprecated; mirrors ``update_header_row()``).
+
+    **Deprecated** (warns once a session, still works; removed in 0.9.0, as in
+    R): make the header again with ``rtf_header(rows=)`` -- its rows are a
+    list, and a list is edited with Python.
 
     Returns a **copy** with row ``row`` (0-based; the top row is ``0``) set to
     ``content`` (a str, an ``l``/``c``/``r`` dict, or a short sequence).  A
     ``row`` beyond the current rows extends the band, filling any gap with empty
     centred rows.
     """
+    from .borders import _deprecate_once
+
+    _deprecate_once(
+        "update_header_row",
+        "`update_header_row()` is deprecated: make the header again with "
+        "`rtf_header(rows=)` (a list of rows).\n  Removed in 0.9.0.",
+    )
     return _update_hf_rows(header, row, content)
 
 
 def update_footer_row(footer: HeaderFooter, row: int, content) -> HeaderFooter:
-    """Add or replace a single row of a footer band (see :func:`update_header_row`)."""
+    """Add or replace a single row of a footer band (deprecated; see :func:`update_header_row`).
+
+    **Deprecated**: make the footer again with ``rtf_footer(rows=)``.
+    """
+    from .borders import _deprecate_once
+
+    _deprecate_once(
+        "update_footer_row",
+        "`update_footer_row()` is deprecated: make the footer again with "
+        "`rtf_footer(rows=)` (a list of rows).\n  Removed in 0.9.0.",
+    )
     return _update_hf_rows(footer, row, content)
 
 

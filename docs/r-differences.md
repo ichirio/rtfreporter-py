@@ -63,7 +63,11 @@ does the same job as its R counterpart:
 | `rtf_header_source()` returns R source (`set_col_header(...) \|> style_zone(...)`) | returns Python statements on a table named `tbl` | the snippet has to run in the language you paste it into |
 | `rtfplot()` draws a ggplot2 / lattice / grid object | draws a matplotlib figure, a plotnine plot, or a drawing function | the plotting libraries of each ecosystem |
 | `listing_code()`, `listing_wrap_code()` write R source | write Python source | as above |
-| `add_col_header_row(.position = )` | `add_col_header_row(position=)` | a leading dot is not a Python name |
+| `add_col_header_row(.position = )` | `add_col_header_row(position=)` | a leading dot is not a Python name (the function is deprecated in both) |
+| `{PROGRAM}` is found from `source()`, `Rscript`, knitr or RStudio | found from the script Python runs, then a Jupyter notebook | each language's way of running a program; a name with no extension is completed with `.py` / `.ipynb` instead of `.R` / `.Rmd` / `.qmd` |
+| `rtf_document(tokens = list(STUDY = ))`, `options(rtfreporter.tokens = )` | `rtf_document(tokens={"STUDY": ...})`, `rtfreporter_options(tokens=)` | a dict for a named list |
+| `rtf_text_tokens()` returns a data frame | returns a list of row dicts (`token`, `kind`, `when`, `description`, `example`) | no data-frame dependency in the core |
+| `assemble_rtf(toc = <data.frame or .xlsx / .csv>)` | `toc=<list of dicts, a pandas / polars DataFrame, or a .csv path>` | the spec file is a `.csv` here |
 
 ## Everything else matches R
 

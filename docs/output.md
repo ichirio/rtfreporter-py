@@ -139,8 +139,8 @@ through the header, is safer than a post-hoc edit.
 
 Rendering produces one file per report. To ship them as a single deliverable
 with a table of contents, see [Assembling deliverables](assembling.md), which
-covers `assemble_rtf()`, `assemble_files()`, `assemble_folder()` and the
-`toc_*` helpers.
+covers `assemble_rtf()` and `assemble_folder()` (the folder's table of
+contents, to edit and assemble).
 
 To structure **one** document into sections instead, see
 [Splitting a report into sections](section-splitting.md).

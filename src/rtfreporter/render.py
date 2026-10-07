@@ -763,6 +763,15 @@ def render_header_footer(
     """Render a header/footer band to a list of RTF row strings."""
     if hf is None or not hf.rows:
         return []
+    rows = hf.rows
+    if hf.drop_empty_rows:
+        from ._run_tokens import current_tokens
+        from .header_footer import hf_row_empty
+
+        tokens = current_tokens()
+        rows = [r for r in rows if not hf_row_empty(r, tokens)]
+        if not rows:
+            return []
     hf_markup = hf.markup if hf.markup is not None else doc_markup
     # Width: the absolute `width_twips` wins (the legacy form), then the shared
     # `width` vocabulary, then the writable width.  A header/footer band has no
@@ -785,7 +794,7 @@ def render_header_footer(
     pad_r = _first_not_none(hf.cell_padding_right_twips, doc_pad_r, C.DEFAULT_CELL_PADDING_RIGHT_TWIPS, 0)
 
     out_rows = []
-    for row_idx, row in enumerate(hf.rows):
+    for row_idx, row in enumerate(rows):
         cols_display, aligns = _hf_row_columns(row)
         n_cols = len(cols_display)
         cell_w = width // n_cols

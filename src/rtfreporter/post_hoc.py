@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 from dataclasses import replace
 
+from ._run_tokens import RENDER_TOKENS
 from .adapters import _collapse_repeats, _resolve_indices
 from .table import (
     HeaderRow,
@@ -69,7 +70,11 @@ def rtf_columns(x) -> list[str]:
 
 
 def col_header_from_names(names, sep=None) -> list:
-    """Reconstruct spanning header rows from delimited column names.
+    """Reconstruct spanning header rows from delimited column names (deprecated).
+
+    **Deprecated** (warns once a session, still works; removed in 0.9.0, as in
+    R): :func:`~rtfreporter.as_rtftables` builds this header from a frame's
+    names (``header_sep=``).
 
     Mirrors R's ``col_header_from_names()``.  Splits each name on ``sep`` (the
     longest match wins); adjacent columns sharing a label and ancestor path are
@@ -84,7 +89,13 @@ def col_header_from_names(names, sep=None) -> list:
             (``"____"`` and ``"___tlang_delim___"``).
     """
     from .adapters import _DEFAULT_HEADER_SEPS, _split_names_to_col_header
+    from .borders import _deprecate_once
 
+    _deprecate_once(
+        "col_header_from_names",
+        "`col_header_from_names()` is deprecated: `as_rtftables()` builds this "
+        "header from a frame's names (`header_sep=`).\n  Removed in 0.9.0.",
+    )
     if hasattr(names, "column_names"):
         names = list(names.column_names)
     elif hasattr(names, "columns"):
@@ -100,7 +111,11 @@ def col_header_from_names(names, sep=None) -> list:
 
 
 def add_col_header_row(hdr, row, position: str = "bottom") -> list:
-    """Add one header row to a ``col_header`` spec (mirrors ``add_col_header_row()``).
+    """Add one header row to a ``col_header`` spec (deprecated; mirrors ``add_col_header_row()``).
+
+    **Deprecated** (warns once a session, still works; removed in 0.9.0, as in
+    R): write the row in :func:`~rtfreporter.rtf_col_header` itself (its rows,
+    top first).
 
     Args:
         hdr: An existing ``col_header`` spec (a list of rows) or any value
@@ -112,6 +127,13 @@ def add_col_header_row(hdr, row, position: str = "bottom") -> list:
     Returns:
         A new list of header rows.
     """
+    from .borders import _deprecate_once
+
+    _deprecate_once(
+        "add_col_header_row",
+        "`add_col_header_row()` is deprecated: write the row in "
+        "`rtf_col_header()` itself (its rows, top first).\n  Removed in 0.9.0.",
+    )
     if position not in ("top", "bottom"):
         raise ValueError('`position` must be "top" or "bottom".')
     current = list(rtf_col_header(hdr)) if not isinstance(hdr, list) else list(hdr)
@@ -226,10 +248,8 @@ def set_col_header(x, *rows, align=None, values=None, by=None):
 # its position (R col_header_values.R).
 
 #: Tokens the RENDERER fills later: left alone here.
-_RENDER_TOKENS = frozenset({
-    "PAGE", "TOTAL_PAGES", "DATE", "BOOK_PAGE", "AUTO_PAGE", "AUTO_TOTAL_PAGES",
-    "SECTION_PAGES", "PROGRAM", "PROGRAM_NAME", "PROGRAM_DIR", "DATETIME",
-})
+#: ``{DATE}`` is not one (R #532): nothing ever filled it.
+_RENDER_TOKENS = frozenset(RENDER_TOKENS)
 _TOKEN_RX = r"[{]([A-Za-z._][A-Za-z0-9._]*)[}]"
 
 
@@ -374,7 +394,12 @@ def _row_to_spans(row: HeaderRow, ncols: int) -> list[SpanCell]:
 
 
 def set_header_cell(x, *cells, row: int):
-    """Merge individual :func:`~rtfreporter.col_cell` cells into one header row.
+    """Merge individual :func:`~rtfreporter.col_cell` cells into one header row (deprecated).
+
+    **Deprecated** (warns once a session, still works; removed in 0.9.0, as in
+    R): write the spanning cell in the header (:func:`~rtfreporter.rtf_col_header`
+    / :func:`set_col_header`, a new row with :func:`add_header_row`) and
+    restyle cells with :func:`~rtfreporter.style_header`.
 
     Places one or more cells (by name/position, spanning via a ``(a, b)`` range)
     into header row ``row`` (0-based), keeping the other cells of that row
@@ -388,6 +413,15 @@ def set_header_cell(x, *cells, row: int):
         row: The 0-based header row to edit (top = 0).  Add a new row with
             :func:`add_header_row`.
     """
+    from .borders import _deprecate_once
+
+    _deprecate_once(
+        "set_header_cell",
+        "`set_header_cell()` is deprecated: write the spanning cell in the header "
+        "(`rtf_col_header()` / `set_col_header()`, a new row with "
+        "`add_header_row()`) and restyle cells with `style_header()`.\n  "
+        "Removed in 0.9.0.",
+    )
     if len(cells) == 0:
         raise ValueError("Provide at least one col_cell() to place.")
 
@@ -546,7 +580,7 @@ def _hs_side(sd, level: str) -> str:
         args.append(str(sd.width or 15))
     if sd.color is not None:
         args.append(f"color={_hs_str(sd.color)}")
-    return f"rtf_border_side({', '.join(args)})"
+    return f"rtf_border_line({', '.join(args)})"
 
 
 def _hs_border(b, level: str) -> str:

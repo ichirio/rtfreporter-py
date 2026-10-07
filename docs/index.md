@@ -69,7 +69,7 @@ The same report written in the R package's functional style works too — see th
     [issue tracker](https://github.com/ichirio/rtfreporter-py/issues) for
     defects specific to the port.
 
-The exported R functions (R v0.8.2) exist here under the same names, and the
+The exported R functions (R 0.8.2.9026, outside the ARD / plan layer) exist here under the same names, and the
 output is checked byte-for-byte against R. The one exception is deliberate:
 the R package's ARD / plan layer (`table_plan()`, `plan_*()`,
 `normalize_ard()`, `widen_ard()`, …) is not ported because it consumes

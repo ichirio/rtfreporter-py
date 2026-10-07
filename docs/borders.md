@@ -8,7 +8,8 @@ one-word preset down to a single cell.
 The border objects are immutable records, so a border you build can be reused
 across tables safely. The vocabulary is small:
 
-- [`rtf_border_side(style, width, color)`](reference.md#rtfreporter.borders.border_side)
+- [`rtf_border_line(style, width, color)`](reference.md#rtfreporter.borders.rtf_border_line)
+  (one line, for any edge; `rtf_border_side()` is its deprecated old name)
   — one **edge** (a line).
 - [`rtf_border(top, bottom, left, right)`](reference.md#rtfreporter.borders.border)
   — the four edges of one **cell/row** ([`Border`][border]).
@@ -73,7 +74,7 @@ A single `Border` passed as the `border` argument applies to the **header** zone
 from rtfreporter import rtftable, style_zone, Border, BorderSide
 
 tbl = rtftable({"A": [1], "B": [2]}, border="tfl")
-tbl = style_zone(tbl, "last_row", Border(bottom=BorderSide("double", 20)))
+tbl = style_zone(tbl, last_row=Border(bottom=BorderSide("double", 20)))
 ```
 
 ## Side styles, widths and colours

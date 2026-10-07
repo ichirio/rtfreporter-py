@@ -51,6 +51,7 @@ from .borders import (
     rtf_border,
     rtf_border_bottom,
     rtf_border_box,
+    rtf_border_line,
     rtf_border_none,
     rtf_border_side,
     rtf_border_tfl,
@@ -144,10 +145,11 @@ from .table import (
     rtf_col_header,
     rtftable,
 )
+from .text_tokens import rtf_text_tokens
 from .text_width import auto_col_widths, text_width_in
 from .watermark import Watermark, rtf_watermark
 
-__version__ = "0.4.1"
+__version__ = "0.5.0.dev0"
 
 __all__ = [
     "__version__",
@@ -160,6 +162,7 @@ __all__ = [
     "rtf_footnotes",
     "rtf_section",
     "generate_rtfreport",
+    "rtf_text_tokens",
     "to_rtf",
     "save",
     # table model
@@ -192,6 +195,7 @@ __all__ = [
     "BorderSide",
     "TableBorder",
     "rtf_border",
+    "rtf_border_line",
     "rtf_border_side",
     "rtf_border_none",
     "rtf_border_top",

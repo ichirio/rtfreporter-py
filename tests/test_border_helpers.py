@@ -18,26 +18,26 @@ from rtfreporter.borders import (
 
 def test_border_side_bad_style_raises():
     with pytest.raises(ValueError, match="style"):
-        rr.rtf_border_side(style="squiggle")
+        rr.rtf_border_line(style="squiggle")
 
 
 def test_border_side_zero_width_raises():
     with pytest.raises(ValueError, match="positive"):
-        rr.rtf_border_side(width=0)
+        rr.rtf_border_line(width=0)
 
 
 def test_border_side_none_style_ignores_width():
-    side = rr.rtf_border_side(style="none", width=0)
+    side = rr.rtf_border_line(style="none", width=0)
     assert side.style == "none"
 
 
 def test_border_side_bad_color_raises():
     with pytest.raises(ValueError, match="hex"):
-        rr.rtf_border_side(color="red")
+        rr.rtf_border_line(color="red")
 
 
 def test_border_side_accepts_hex_color():
-    assert rr.rtf_border_side(color="#003366").color == "#003366"
+    assert rr.rtf_border_line(color="#003366").color == "#003366"
 
 
 # -- constructors -------------------------------------------------------------
@@ -65,8 +65,8 @@ def test_rtf_border_tfl_header_top_and_bottom():
 
 
 def test_with_sides_replaces_only_supplied():
-    b = rr.rtf_border(top=rr.rtf_border_side())
-    b2 = b.with_sides(bottom=rr.rtf_border_side(style="double"))
+    b = rr.rtf_border(top=rr.rtf_border_line())
+    b2 = b.with_sides(bottom=rr.rtf_border_line(style="double"))
     assert b2.top is b.top
     assert b2.bottom.style == "double"
 
@@ -75,30 +75,30 @@ def test_with_sides_replaces_only_supplied():
 
 
 def test_merge_border_base_none():
-    over = Border(top=rr.rtf_border_side())
+    over = Border(top=rr.rtf_border_line())
     assert merge_border(None, over) is over
 
 
 def test_merge_border_over_none():
-    base = Border(top=rr.rtf_border_side())
+    base = Border(top=rr.rtf_border_line())
     assert merge_border(base, None) is base
 
 
 def test_merge_border_override_wins_per_side():
-    base = Border(top=rr.rtf_border_side(width=15), bottom=rr.rtf_border_side(width=15))
-    over = Border(top=rr.rtf_border_side(width=40))
+    base = Border(top=rr.rtf_border_line(width=15), bottom=rr.rtf_border_line(width=15))
+    over = Border(top=rr.rtf_border_line(width=40))
     merged = merge_border(base, over)
     assert merged.top.width == 40
     assert merged.bottom.width == 15  # inherited from base
 
 
 def test_effective_row_border_over_none_returns_base():
-    base = Border(top=rr.rtf_border_side())
+    base = Border(top=rr.rtf_border_line())
     assert effective_row_border(base, None) is base
 
 
 def test_effective_row_border_base_none_returns_over():
-    over = Border(top=rr.rtf_border_side())
+    over = Border(top=rr.rtf_border_line())
     assert effective_row_border(None, over) is over
 
 
@@ -111,17 +111,17 @@ def test_collect_border_colors_none():
 
 def test_collect_border_colors_dedupes_by_presence():
     b = Border(
-        top=rr.rtf_border_side(color="#111111"),
-        bottom=rr.rtf_border_side(color="#222222"),
-        left=rr.rtf_border_side(),  # no colour
+        top=rr.rtf_border_line(color="#111111"),
+        bottom=rr.rtf_border_line(color="#222222"),
+        left=rr.rtf_border_line(),  # no colour
     )
     assert collect_border_colors(b) == ["#111111", "#222222"]
 
 
 def test_collect_table_border_colors_across_zones():
     tb = TableBorder(
-        header=Border(top=rr.rtf_border_side(color="#AA0000")),
-        body=Border(bottom=rr.rtf_border_side(color="#00BB00")),
+        header=Border(top=rr.rtf_border_line(color="#AA0000")),
+        body=Border(bottom=rr.rtf_border_line(color="#00BB00")),
     )
     assert collect_table_border_colors(tb) == ["#AA0000", "#00BB00"]
 
@@ -149,7 +149,7 @@ def test_normalize_table_border_unknown_preset_raises():
 
 
 def test_normalize_table_border_passthrough_tableborder():
-    tb = TableBorder(body=Border(top=rr.rtf_border_side()))
+    tb = TableBorder(body=Border(top=rr.rtf_border_line()))
     assert normalize_table_border(tb) is tb
 
 
@@ -159,7 +159,7 @@ def test_normalize_table_border_border_selects_the_whole_table():
     b = rr.rtf_border(top=True, inside_h="double")
     tb = normalize_table_border(b)
     assert tb.outer is b
-    assert tb.inside_h == rr.rtf_border_side("double")
+    assert tb.inside_h == rr.rtf_border_line("double")
     assert tb.header is None
 
 

@@ -61,8 +61,7 @@ def build_table():
     # A coloured rule under the whole body (custom zone border).
     tbl = style_zone(
         tbl,
-        "last_row",
-        Border(bottom=BorderSide(style="single", width=20, color="#003366")),
+        last_row=Border(bottom=BorderSide(style="single", width=20, color="#003366")),
     )
     return tbl
 

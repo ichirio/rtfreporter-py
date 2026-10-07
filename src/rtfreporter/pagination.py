@@ -251,16 +251,40 @@ def run_split(split, frame: Frame, **ctx) -> list[Frame]:
 # -- Continuation-label helper -----------------------------------------------
 
 
-def add_cont_label(chunk: Frame, label: str, cont_label: str = " (Cont.)", col=0) -> Frame:
-    """Prepend a continuation-label row to ``chunk`` (mirrors R ``add_cont_label()``).
+_MISSING: Any = object()
+
+
+def _renamed_first_arg(data, old, verb: str, old_name: str):
+    """The first argument, ``data`` (R #544), or its old keyword with a
+    once-a-session warning."""
+    if old is not _MISSING:
+        from .borders import _deprecate_once
+
+        _deprecate_once(
+            f"{verb}_{old_name}",
+            f"`{verb}({old_name}=)` is deprecated: the argument is `data` now.\n"
+            "  The old name is removed in 0.9.0.",
+        )
+        if data is _MISSING:
+            data = old
+    if data is _MISSING:
+        raise TypeError(f"{verb}() missing the argument `data`.")
+    return data
+
+
+def add_cont_label(data: Frame = _MISSING, label: str | None = None, cont_label: str = " (Cont.)",
+                   col=0, *, chunk=_MISSING) -> Frame:
+    """Prepend a continuation-label row to ``data`` (mirrors R ``add_cont_label()``).
 
     Args:
-        chunk: The :class:`Frame` (or any :func:`as_frame` input) to prepend to.
+        data: The :class:`Frame` (or any :func:`as_frame` input) to prepend to.
+            (Was ``chunk``; the old keyword still works and warns once a
+            session, removed in 0.9.0, as in R.)
         label: The group label; the inserted cell reads ``label + cont_label``.
         cont_label: The continuation suffix (default ``" (Cont.)"``).
         col: The 0-based column (or name) that carries the label (default 0).
     """
-    chunk = as_frame(chunk)
+    chunk = as_frame(_renamed_first_arg(data, chunk, "add_cont_label", "chunk"))
     if not isinstance(label, str):
         raise TypeError("`label` must be a single string.")
     from .table import _resolve_col
@@ -279,12 +303,14 @@ def add_cont_label(chunk: Frame, label: str, cont_label: str = " (Cont.)", col=0
 
 
 def set_blank_rows(
-    df,
+    data=_MISSING,
     blank_rows=None,
     blank_row_first: bool = False,
     blank_row_end: bool = False,
     group_col=None,
     group_by: str = "auto",
+    *,
+    df=_MISSING,
 ) -> Frame:
     """Resolve a blank-row spec and attach the positions to a frame.
 
@@ -292,11 +318,12 @@ def set_blank_rows(
     :func:`~rtfreporter.rtftable` accepts, plus the string ``"between_groups"``)
     into 0-based positions and stores them on the returned
     :class:`Frame`'s :attr:`~Frame.blank_rows`, so
-    ``rtftable(set_blank_rows(df, ...))`` picks them up automatically.
+    ``rtftable(set_blank_rows(data, ...))`` picks them up automatically.
 
     Args:
-        df: A ``(column_names, rows)`` pair, dict, list of row dicts, DataFrame,
-            or :class:`Frame`.
+        data: A ``(column_names, rows)`` pair, dict, list of row dicts,
+            DataFrame, or :class:`Frame`.  (Was ``df``; the old keyword still
+            works and warns once a session, removed in 0.9.0, as in R.)
         blank_rows: ``None``; a 0-based ``int`` / sentinel / list of them;
             ``"between_groups"`` (a blank at every group-value change); or a
             :func:`~rtfreporter.blank_rows_by_change` /
@@ -314,7 +341,7 @@ def set_blank_rows(
     from .blank_rows import BEFORE_FIRST, BlankRowsByChange, BlankRowsByRule
     from .table import _resolve_blank_rows
 
-    frame = as_frame(df)
+    frame = as_frame(_renamed_first_arg(data, df, "set_blank_rows", "df"))
     names, rows = frame.column_names, frame.rows
     nrows = len(rows)
 
@@ -380,7 +407,11 @@ def paginate(
     align_count_pct: bool = False,
     cell_format=None,
 ) -> list[Frame]:
-    """Paginate ``x`` into a list of per-page :class:`Frame` objects.
+    """Paginate ``x`` into a list of per-page :class:`Frame` objects (deprecated).
+
+    **Deprecated** (warns once a session, still works; removed in 0.9.0, as in
+    R, where it has been deprecated since 0.7.x): use
+    :func:`~rtfreporter.as_rtftables`, which paginates and builds the pages.
 
     Mirrors R's ``paginate()``: applies an optional sort and cell-format pass,
     then the ``split`` strategy (a built-in name or a custom callable).  Returns
@@ -395,6 +426,12 @@ def paginate(
         cont_label, min_group_rows: As in :func:`~rtfreporter.as_rtftables`.
         align_count_pct, cell_format: Optional pre-split cell-format pass.
     """
+    from .borders import _deprecate_once
+
+    _deprecate_once(
+        "paginate",
+        "`paginate()` is deprecated: use `as_rtftables()`.\n  Removed in 0.9.0.",
+    )
     frame = as_frame(x)
     names = frame.column_names
     rows = [list(r) for r in frame.rows]

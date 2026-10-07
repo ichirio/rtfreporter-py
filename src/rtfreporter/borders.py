@@ -127,7 +127,7 @@ def as_border_side(x, arg: str) -> BorderSide | None:
             )
         return BorderSide(x)
     raise TypeError(
-        f"`{arg}` must be True, False, a border style name, an rtf_border_side(), or None."
+        f"`{arg}` must be True, False, a border style name, an rtf_border_line(), or None."
     )
 
 
@@ -193,9 +193,27 @@ class TableBorder:
 # -- Constructors -------------------------------------------------------------
 
 
-def rtf_border_side(style: str = "single", width: int = 15, color: str | None = None) -> BorderSide:
-    """Build a :class:`BorderSide` -- one line's style, weight and colour."""
+def rtf_border_line(style: str = "single", width: int = 15, color: str | None = None) -> BorderSide:
+    """Build a :class:`BorderSide` -- one line's style, weight and colour.
+
+    It describes one line, used for any edge (``rtf_border(top=...)``,
+    ``inside_h=...``), hence the name (R ``rtf_border_line()``; was
+    ``rtf_border_side()``).
+    """
     return BorderSide(style, width, color)
+
+
+def rtf_border_side(style: str = "single", width: int = 15, color: str | None = None) -> BorderSide:
+    """Deprecated: it is :func:`rtf_border_line` now (the same arguments).
+
+    Warns once a session; removed in 0.9.0 (as in R).
+    """
+    _deprecate_once(
+        "rtf_border_side",
+        "`rtf_border_side()` is deprecated: it is `rtf_border_line()` now "
+        "(the same arguments).\n  The old name is removed in 0.9.0.",
+    )
+    return rtf_border_line(style, width, color)
 
 
 def rtf_border(
@@ -215,8 +233,8 @@ def rtf_border(
     outer edges at once; a side named explicitly wins over it.  Sides that
     differ fit in one call::
 
-        rtf_border(top=rtf_border_side(color="#C9372C"),
-                   bottom=rtf_border_side("double", 30))
+        rtf_border(top=rtf_border_line(color="#C9372C"),
+                   bottom=rtf_border_line("double", 30))
     """
     if all is not None:
         top = all if top is None else top
@@ -248,7 +266,7 @@ def rtf_border_with(
     ``style_zone()`` / ``style_header()`` / ``style_body()`` merge side by
     side, so a second call adds to the first instead of replacing it.  A
     border that needs different weights or colours per side says so in one
-    call: ``rtf_border(top=rtf_border_side(...), bottom=rtf_border_side(...))``.
+    call: ``rtf_border(top=rtf_border_line(...), bottom=rtf_border_line(...))``.
     """
     _deprecate_once(
         "rtf_border_with",
@@ -256,7 +274,7 @@ def rtf_border_with(
         "attached:\n    style_zone() / style_header() / style_body() merge side by "
         "side, so a\n    second call adds to the first instead of replacing it.\n"
         "  A border that needs different weights or colours per side says so in "
-        "one\n  call: rtf_border(top=rtf_border_side(...), bottom=rtf_border_side(...)).",
+        "one\n  call: rtf_border(top=rtf_border_line(...), bottom=rtf_border_line(...)).",
     )
     if border is None:
         border = rtf_border()
@@ -281,7 +299,7 @@ def rtf_border_none() -> Border:
 
 
 def rtf_border_top(style: str = "single", width: int = 15, color: str | None = None) -> Border:
-    """Deprecated: write ``rtf_border(top=True)`` (or ``top=rtf_border_side(...)``)."""
+    """Deprecated: write ``rtf_border(top=True)`` (or ``top=rtf_border_line(...)``)."""
     _deprecate_sugar("rtf_border_top", "rtf_border(top=True)")
     return rtf_border(top=BorderSide(style, width, color))
 
@@ -364,7 +382,7 @@ def _rtf_table_border(
         )
     for nm, v in (("inside_h", inside_h), ("inside_v", inside_v)):
         if v is not None and not isinstance(v, BorderSide):
-            raise TypeError(f"`{nm}` must be None or an rtf_border_side object.")
+            raise TypeError(f"`{nm}` must be None or an rtf_border_line object.")
     return TableBorder(header=header, spanning=spanning, body=body,
                        first_row=first_row, last_row=last_row,
                        outer=outer, inside_h=inside_h, inside_v=inside_v)
@@ -570,6 +588,6 @@ def warn_old_edge_reading(tb: TableBorder | None, ncols: int, nrows: int) -> boo
         "To keep that look, name the interior rule:\n"
         "    rtf_border(left=s, right=s, inside_v=s)   # was: left/right alone\n"
         "    rtf_border(bottom=s, inside_h=s)          # was: bottom alone on a body zone\n"
-        '  Naming `inside_h` / `inside_v` (with rtf_border_side("none") for "no rule") '
+        '  Naming `inside_h` / `inside_v` (with rtf_border_line("none") for "no rule") '
         "silences this.",
     )

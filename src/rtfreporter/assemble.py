@@ -43,13 +43,37 @@ class TocEntry:
     level: int = 2
 
 
+def _deprecated(key: str, msg: str) -> None:
+    from .borders import _deprecate_once
+
+    _deprecate_once(key, msg + "\n  Removed in 0.9.0.")
+
+
+_TOC_TABLE_MSG = ("give `assemble_rtf(toc=)` a table (rows with the keys file, label, "
+                  "heading, level).")
+
+
 def toc_heading(label: str, level: int = 1) -> TocHeading:
-    """Build a :class:`TocHeading` for :func:`assemble_rtf`'s ``toc`` list."""
+    """Build a :class:`TocHeading` for :func:`assemble_rtf`'s ``toc`` list (deprecated).
+
+    **Deprecated** (warns once a session, still works; removed in 0.9.0, as in
+    R): give :func:`assemble_rtf` the table of contents as a table -- a row
+    whose ``heading`` is filled starts a heading.
+    """
+    _deprecated("toc_heading", "`toc_heading()` is deprecated: " + _TOC_TABLE_MSG)
+    return _toc_heading(label, level)
+
+
+def _toc_heading(label: str, level: int = 1) -> TocHeading:
     return TocHeading(label=str(label), level=int(level))
 
 
 def toc_entry(label: str, file=None, level: int = 2) -> TocEntry:
-    """Build a :class:`TocEntry` pointing at one of ``input_files``.
+    """Build a :class:`TocEntry` pointing at one of ``input_files`` (deprecated).
+
+    **Deprecated** (warns once a session, still works; removed in 0.9.0, as in
+    R): give :func:`assemble_rtf` the table of contents as a table -- one row
+    per file (``file``, ``label``, ``level``).
 
     Args:
         label: The entry text.
@@ -57,6 +81,11 @@ def toc_entry(label: str, file=None, level: int = 2) -> TocEntry:
             (consume the next unused file in order).
         level: Indent depth (1 = flush left, 2 = small indent, ...).
     """
+    _deprecated("toc_entry", "`toc_entry()` is deprecated: " + _TOC_TABLE_MSG)
+    return _toc_entry(label, file, level)
+
+
+def _toc_entry(label: str, file=None, level: int = 2) -> TocEntry:
     return TocEntry(label=str(label), file=file, level=int(level))
 
 
@@ -260,6 +289,10 @@ def _normalize_toc(toc, input_files: list[str]) -> list[dict] | None:
     if toc is None:
         return None
 
+    # A table of contents as a table (file, label, heading, level)
+    if _is_toc_table(toc):
+        toc = _spec_to_toc(toc)
+
     if isinstance(toc, str) and toc == "auto":
         out = []
         for i, f in enumerate(input_files):
@@ -315,8 +348,8 @@ def _normalize_toc(toc, input_files: list[str]) -> list[dict] | None:
         return out
 
     raise TypeError(
-        '`toc` must be None, "auto", a list of labels, or a list of '
-        "toc_heading() / toc_entry()."
+        '`toc` must be None, "auto", a list of labels, a table (rows with the keys '
+        "file, label, heading, level) or the path of one (.csv)."
     )
 
 
@@ -412,7 +445,7 @@ def _fill_book_page_slots(lines, book_page, total_pages):
     return [line.replace(C.BOOK_PAGE_SLOT, filled) for line in lines]
 
 
-def assemble_rtf(input_files, output_file, overwrite: bool = False,
+def assemble_rtf(input_files=None, output_file=None, overwrite: bool = False,
                  cover: dict | None = None, toc=None,
                  toc_title: str = "Table of Contents", toc_leader: str = "dot",
                  toc_page_numbering: str = "none",
@@ -421,14 +454,25 @@ def assemble_rtf(input_files, output_file, overwrite: bool = False,
 
     Args:
         input_files: Paths to at least two RTF files (from
-            :func:`~rtfreporter.generate_rtfreport`).
-        output_file: Destination path for the assembled RTF.
+            :func:`~rtfreporter.generate_rtfreport`).  May be left out when
+            ``toc`` is a table (or its path): the table's ``file`` column, in
+            its order.
+        output_file: Destination path for the assembled RTF (required).
         overwrite: When ``False`` (default), raise if ``output_file`` exists.
         cover: Optional cover-page dict (``title`` / ``subtitle`` / ``date`` /
             ``version`` / ``meta``).
         toc: ``None`` (no TOC), ``"auto"`` (extract each file's title), a list of
-            one label per file, or a list of :func:`toc_heading` /
-            :func:`toc_entry` for a multi-level TOC.
+            one label per file, or -- for multi-level (chapter / table)
+            layouts -- a **table**: one row per file, in order, as a list of
+            dicts or a pandas / polars DataFrame, with ``file`` (the path),
+            ``label`` (the entry text) and optionally ``heading`` (a heading
+            printed above the row's entry whenever it changes; ``None`` =
+            none), ``level`` (the entry's indent, default 2) and ``order``.
+            :func:`assemble_folder` makes one from a folder, ready to edit.
+            The path of such a table (a ``.csv``, e.g. the one
+            ``assemble_folder(spec_file=)`` wrote) works too.  A list of
+            :func:`toc_heading` / :func:`toc_entry` is the older spelling
+            (deprecated).
         toc_title: Centred title on the TOC page.
         toc_leader: ``"dot"`` (dotted leader) or ``"none"``.
         toc_page_numbering: ``"none"`` (default) / ``"roman"`` / ``"decimal"``.
@@ -445,11 +489,21 @@ def assemble_rtf(input_files, output_file, overwrite: bool = False,
     Returns:
         ``output_file``.
     """
+    # A table of contents given as a table, or as the path of one: its rows in
+    # `order`, and its files when `input_files` is left out.
+    if isinstance(toc, str) and re.search(r"[.](xlsx|csv)$", toc, re.IGNORECASE):
+        toc = _read_spec(toc)
+    if _is_toc_table(toc):
+        toc = _check_toc_table(toc)
+        if input_files is None:
+            input_files = [r["file"] for r in toc]
+    if output_file is None:
+        raise TypeError("assemble_rtf() needs `output_file`.")
     if toc_leader not in ("dot", "none"):
         raise ValueError('`toc_leader` must be "dot" or "none".')
     if toc_page_numbering not in ("none", "roman", "decimal"):
         raise ValueError('`toc_page_numbering` must be "none", "roman", or "decimal".')
-    input_files = list(input_files)
+    input_files = list(input_files) if input_files is not None else []
     if len(input_files) < 2:
         raise ValueError("`input_files` must have at least 2 elements.")
     for f in input_files:
@@ -563,7 +617,20 @@ def _natural_order(strings: list[str]) -> list[int]:
 
 def assemble_files(dir, pattern: str = r"\.rtf$", recursive: bool = False,
                    sort: bool = True) -> list[str]:
-    """List the ``.rtf`` files in ``dir`` (natural-sorted by default)."""
+    """List the ``.rtf`` files in ``dir`` (natural-sorted by default; deprecated).
+
+    **Deprecated** (warns once a session, still works; removed in 0.9.0, as in
+    R): :func:`assemble_folder` gives the folder's table of contents (its
+    ``file`` column).
+    """
+    _deprecated("assemble_files",
+                "`assemble_files()` is deprecated: `assemble_folder(dir)` gives the "
+                "folder's table of contents (its `file` column).")
+    return _assemble_files(dir, pattern, recursive, sort)
+
+
+def _assemble_files(dir, pattern: str = r"\.rtf$", recursive: bool = False,
+                    sort: bool = True) -> list[str]:
     if not os.path.isdir(dir):
         raise FileNotFoundError(f"Directory not found: {dir}")
     rx = re.compile(pattern, re.IGNORECASE)
@@ -608,17 +675,22 @@ def _rtf_table_label(file: str) -> dict:
 
 
 def assemble_spec(dir=None, files=None, recursive: bool = False) -> list[dict]:
-    """Build an editable assembly spec (one dict per RTF file).
+    """Build an editable assembly spec (one dict per RTF file; deprecated).
 
-    Reads each file's title block for a table number / title and returns a list
-    of row dicts with ``order`` / ``file`` / ``table`` / ``heading`` / ``label``
-    / ``level`` / ``pages``.  Edit rows (rename labels, add ``heading``s,
-    reorder) and pass to :func:`assemble_from_spec`.
+    **Deprecated** (warns once a session, still works; removed in 0.9.0, as in
+    R): it is :func:`assemble_folder` without an ``output_file``.
     """
+    _deprecated("assemble_spec",
+                "`assemble_spec()` is deprecated: it is `assemble_folder(dir)` "
+                "(no `output_file`).")
+    return _assemble_spec(dir, files, recursive)
+
+
+def _assemble_spec(dir=None, files=None, recursive: bool = False) -> list[dict]:
     if files is None:
         if dir is None:
             raise ValueError("Supply `dir` or `files`.")
-        files = assemble_files(dir, recursive=recursive)
+        files = _assemble_files(dir, recursive=recursive)
     files = list(files)
     if len(files) == 0:
         raise ValueError("No RTF files found.")
@@ -643,26 +715,76 @@ def assemble_spec(dir=None, files=None, recursive: bool = False) -> list[dict]:
     return spec
 
 
-def _spec_to_toc(spec: list[dict]) -> list:
-    """Convert an assembly spec into a ``toc=`` list."""
+def _na(v) -> bool:
+    """A missing cell: ``None``, a float NaN (pandas) or an empty string (csv)."""
+    return v is None or (isinstance(v, float) and v != v) or v == ""
+
+
+def _is_toc_table(toc) -> bool:
+    """A table of contents given as a table: a list of row dicts, or a
+    pandas / polars DataFrame."""
+    if hasattr(toc, "columns") and not isinstance(toc, (list, tuple, dict, str)):
+        return True
+    return isinstance(toc, (list, tuple)) and bool(toc) and all(isinstance(r, dict) for r in toc)
+
+
+def _check_toc_table(spec) -> list[dict]:
+    """A table of contents given as a table: rows as dicts, the keys it needs,
+    its rows in ``order`` when it has one, and its files present."""
+    if not isinstance(spec, (list, tuple)):
+        from .pagination import as_frame
+
+        frame = as_frame(spec)
+        spec = [dict(zip(frame.column_names, r, strict=True)) for r in frame.rows]
+    rows = [dict(r) for r in spec]
+    if not rows or not all("file" in r and "label" in r for r in rows):
+        raise ValueError(
+            "A table of contents needs the columns `file` and `label` (and "
+            "optionally `heading`, `level`, `order`; see assemble_folder())."
+        )
+    if all(not _na(r.get("order")) for r in rows):
+        rows = sorted(rows, key=lambda r: r["order"])
+    for r in rows:
+        r["file"] = str(r["file"])
+        r["label"] = str(r["label"])
+        r["heading"] = None if _na(r.get("heading")) else str(r["heading"])
+    missing = [r["file"] for r in rows if not os.path.exists(r["file"])]
+    if missing:
+        raise FileNotFoundError(
+            "The table of contents names missing file(s): " + ", ".join(missing)
+        )
+    return rows
+
+
+def _spec_to_toc(spec) -> list:
+    """Convert an assembly spec (a table of contents) into a ``toc=`` list.
+    A new heading is emitted whenever the ``heading`` value changes."""
     toc: list = []
     last_heading = None
-    for row in spec:
+    for row in _check_toc_table(spec):
         h = row.get("heading")
-        if h and str(h).strip() and h != last_heading:
-            toc.append(toc_heading(str(h).strip(), level=1))
+        if h and h.strip() and h != last_heading:
+            toc.append(_toc_heading(h.strip(), level=1))
             last_heading = h
-        lvl = int(row["level"]) if row.get("level") is not None else 2
-        toc.append(toc_entry(row["label"], file=row["file"], level=lvl))
+        lvl = 2 if _na(row.get("level")) else int(row["level"])
+        toc.append(_toc_entry(row["label"], file=row["file"], level=lvl))
     return toc
 
 
 def assemble_toc(files=None, spec=None, **kwargs) -> list:
-    """Build a ``toc=`` list from ``files`` (via :func:`assemble_spec`) or a ``spec``."""
+    """Build a ``toc=`` list from ``files`` or a ``spec`` (deprecated).
+
+    **Deprecated** (warns once a session, still works; removed in 0.9.0, as in
+    R): give :func:`assemble_rtf` the table of contents itself
+    (``toc=`` the table from :func:`assemble_folder`).
+    """
+    _deprecated("assemble_toc",
+                "`assemble_toc()` is deprecated: give `assemble_rtf(toc=)` the table "
+                "of contents (from `assemble_folder()`).")
     if spec is None:
         if files is None:
             raise ValueError("Supply `files` or `spec`.")
-        spec = assemble_spec(files=files, **kwargs)
+        spec = _assemble_spec(files=files, **kwargs)
     return _spec_to_toc(spec)
 
 
@@ -701,21 +823,37 @@ def _read_spec(path: str) -> list[dict]:
 def assemble_from_spec(spec, output_file, toc_title: str = "Table of Contents",
                        toc_leader: str = "dot", toc_page_numbering: str = "decimal",
                        overwrite: bool = False, **kwargs) -> str:
-    """Assemble RTF files using a TOC built from an assembly spec.
+    """Assemble RTF files using a TOC built from an assembly spec (deprecated).
+
+    **Deprecated** (warns once a session, still works; removed in 0.9.0, as in
+    R): it is ``assemble_rtf(toc=spec)`` -- :func:`assemble_rtf` takes the
+    table (or its ``.csv`` path) as ``toc``.
 
     Args:
-        spec: An assembly-spec list of dicts (from :func:`assemble_spec`) or a
-            path to a saved ``.csv`` spec.
+        spec: An assembly-spec list of dicts (from :func:`assemble_folder`) or
+            a path to a saved ``.csv`` spec.
         output_file: Destination path.
         toc_title, toc_leader, toc_page_numbering, overwrite: Passed to
             :func:`assemble_rtf`.
     """
+    _deprecated("assemble_from_spec",
+                "`assemble_from_spec()` is deprecated: it is `assemble_rtf(toc=spec)` "
+                "(a table or its .csv path).")
+    return _assemble_from_spec(spec, output_file, toc_title=toc_title,
+                               toc_leader=toc_leader,
+                               toc_page_numbering=toc_page_numbering,
+                               overwrite=overwrite, **kwargs)
+
+
+def _assemble_from_spec(spec, output_file, toc_title: str = "Table of Contents",
+                        toc_leader: str = "dot", toc_page_numbering: str = "decimal",
+                        overwrite: bool = False, **kwargs) -> str:
     if isinstance(spec, str):
         spec = _read_spec(spec)
     if not isinstance(spec, list) or not all(
         isinstance(r, dict) and "file" in r and "label" in r for r in spec
     ):
-        raise TypeError("`spec` must be an assembly-spec list (see assemble_spec()) or a path.")
+        raise TypeError("`spec` must be an assembly-spec list (see assemble_folder()) or a path.")
     if spec and spec[0].get("order") is not None:
         spec = sorted(spec, key=lambda r: r["order"])
     missing = [r["file"] for r in spec if not os.path.exists(r["file"])]
@@ -729,18 +867,45 @@ def assemble_from_spec(spec, output_file, toc_title: str = "Table of Contents",
     )
 
 
-def assemble_folder(dir, output_file, spec_file=None, recursive: bool = False,
+def assemble_folder(dir, output_file=None, spec_file=None, recursive: bool = False,
                     toc_title: str = "Table of Contents", toc_leader: str = "dot",
                     toc_page_numbering: str = "decimal", overwrite: bool = False,
-                    **kwargs) -> dict:
-    """Scan a folder, build a spec, and assemble a TOC deliverable in one call.
+                    **kwargs):
+    """A folder's table of contents, and the assembled deliverable when asked.
+
+    Scans ``dir`` for ``.rtf`` files (natural-sorted, so ``t2`` comes before
+    ``t10``) and reads each file's table number and title from its title
+    block into a **table of contents**: a list of row dicts, one per file.
+    With an ``output_file`` it assembles the deliverable with that table of
+    contents (:func:`assemble_rtf`); without one it only returns the table, to
+    edit (rename labels, fill ``heading`` to group entries, change ``level``,
+    reorder or drop rows) and hand to ``assemble_rtf(toc=)``.
+
+    Each row has the keys ``order`` (the assembly order), ``file``, ``table``
+    (the table number read from the title, or ``None``), ``heading`` (a
+    heading printed above the entry whenever it changes; ``None`` = none),
+    ``label`` (the entry text, ``"Table N  <title>"``), ``level`` (the
+    entry's indent, default 2) and ``pages`` (informational).
+
+    Args:
+        dir: The folder to scan.
+        output_file: Path of the assembled ``.rtf`` to write, or ``None``
+            (default): return the table of contents only.
+        spec_file: Also write the table of contents to this ``.csv``.
+        recursive: Scan sub-folders too.
+        toc_title, toc_leader, toc_page_numbering, overwrite, **kwargs: Passed
+            to :func:`assemble_rtf`.
 
     Returns:
-        A dict with ``output`` (the assembled file) and ``spec`` (the spec used).
+        Without ``output_file``, the table of contents.  With one, a dict with
+        ``output`` (the assembled file) and ``spec`` (the table of contents
+        used).
     """
-    spec = assemble_spec(dir=dir, recursive=recursive)
+    spec = _assemble_spec(dir=dir, recursive=recursive)
     if spec_file is not None:
         _write_spec(spec, spec_file)
-    assemble_from_spec(spec, output_file, toc_title=toc_title, toc_leader=toc_leader,
-                       toc_page_numbering=toc_page_numbering, overwrite=overwrite, **kwargs)
+    if output_file is None:
+        return spec
+    _assemble_from_spec(spec, output_file, toc_title=toc_title, toc_leader=toc_leader,
+                        toc_page_numbering=toc_page_numbering, overwrite=overwrite, **kwargs)
     return {"output": output_file, "spec": spec}

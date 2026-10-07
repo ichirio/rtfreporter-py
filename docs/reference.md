@@ -17,7 +17,7 @@ each a program that ends in a rendered RTF.
 
 | Group | Symbols |
 |---|---|
-| [Document and rendering](#document-and-rendering) | `RtfDocument`, `rtf_document`, `rtf_config`, `rtf_page`, `DefaultFormat`, `rtf_default_format`, `Page`, `rtf_watermark`, `Watermark`, `generate_rtfreport`, `to_rtf`, `save` |
+| [Document and rendering](#document-and-rendering) | `RtfDocument`, `rtf_document`, `rtf_config`, `rtf_page`, `DefaultFormat`, `rtf_default_format`, `Page`, `rtf_watermark`, `Watermark`, `generate_rtfreport`, `rtf_text_tokens`, `to_rtf`, `save` |
 | [Package defaults](#package-defaults) | `rtfreporter_options`, `rtfreporter_reset_defaults` |
 | [Sections: headers and footers](#sections-headers-and-footers) | `rtf_section`, `rtf_header`, `rtf_footer`, `HeaderFooter`, `update_header_row`, `update_footer_row` |
 | [Page content: tables and figures](#page-content-tables-and-figures) | `rtf_tables`, `rtf_figures`, `rtf_titles`, `rtf_footnotes`, `rtftable`, `RtfTable`, `ColSpec`, `rtfplot`, `Figure` |
@@ -30,7 +30,7 @@ each a program that ends in a rendered RTF.
 | [Utilities](#utilities) | `round_num` |
 | [Blank rows](#blank-rows) | `set_blank_rows`, `blank_rows_by_change`, `blank_rows_by_rule`, `BlankRowsByChange`, `BlankRowsByRule`, `BEFORE_FIRST`, `AFTER_LAST` |
 | [Pagination strategies and helpers](#pagination-strategies-and-helpers) | `paginate_cols`, `paginate`, `Frame`, `PaginationError`, `add_cont_label` |
-| [Borders](#borders) | `rtf_border_side`, `rtf_border`, `rtf_border_none`, `rtf_border_top`, `rtf_border_bottom`, `rtf_border_box`, `Border`, `BorderSide`, `TableBorder` |
+| [Borders](#borders) | `rtf_border_line`, `rtf_border`, `rtf_border_side`, `rtf_border_none`, `rtf_border_top`, `rtf_border_bottom`, `rtf_border_box`, `Border`, `BorderSide`, `TableBorder` |
 | [Shared table styles](#shared-table-styles) | `rtf_table_style`, `rtf_table_style_with`, `rtf_table_style_tfl`, `TableStyle` |
 | [Column-width utilities](#column-width-utilities) | `text_width_in`, `auto_col_widths` |
 | [Assembling multiple RTF files](#assembling-multiple-rtf-files) | `assemble_rtf`, `assemble_files`, `assemble_folder`, `assemble_spec`, `assemble_from_spec`, `assemble_toc`, `toc_heading`, `toc_entry` |
@@ -63,6 +63,8 @@ The entry point and the final render call.  Build a document by passing `rtf_doc
 
 ::: rtfreporter.document.generate_rtfreport
 
+::: rtfreporter.text_tokens.rtf_text_tokens
+
 ::: rtfreporter.document.to_rtf
 
 ::: rtfreporter.document.save
@@ -79,7 +81,7 @@ Inspect and reset the configurable `rtfreporter.*` defaults (paper size, orienta
 
 ## Sections: headers and footers
 
-A section applies a running header and footer to a range of pages.  The bands are themselves small tables whose rows you build with `rtf_header()` / `rtf_footer()` and edit with the `update_*_row()` helpers.
+A section applies a running header and footer to a range of pages.  The bands are themselves small tables whose rows you build with `rtf_header()` / `rtf_footer()`; `drop_empty_rows=` leaves out a row whose tokens of one's own are empty.  (The `update_*_row()` helpers are deprecated: make the band again.)
 
 ::: rtfreporter.document.rtf_section
 
@@ -286,9 +288,11 @@ The standalone paginator and the helpers for writing your own split function (th
 
 Border specifications.  Borders apply to content-table zones, to header and footer rows, and to individual columns and cells, so the same builders are reused throughout a report.
 
-::: rtfreporter.borders.rtf_border_side
+::: rtfreporter.borders.rtf_border_line
 
 ::: rtfreporter.borders.rtf_border
+
+::: rtfreporter.borders.rtf_border_side
 
 ::: rtfreporter.borders.rtf_border_none
 
@@ -329,7 +333,7 @@ Measure rendered text and propose column widths.
 
 ## Assembling multiple RTF files
 
-Combine several rendered RTF files into one deliverable with a table of contents -- for example a TLF shell catalogue.
+Combine several rendered RTF files into one deliverable with a table of contents -- for example a TLF shell catalogue.  `assemble_folder()` returns a folder's table of contents, to edit and hand to `assemble_rtf(toc=)`; the other helpers are deprecated.
 
 ::: rtfreporter.assemble.assemble_rtf
 

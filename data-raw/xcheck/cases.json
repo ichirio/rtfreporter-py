@@ -2059,6 +2059,166 @@
           ]
         }
       }
+    },
+    {
+      "id": "own_tokens_program_full",
+      "why": "R 0.8.2.9026 #560/#564: {PROGRAM_FULL} of a path that does not exist (the nearest existing folder resolved, '.' and '..' folded) and tokens of one's own (RTF-escaped, a number as text) in the header, a title and a footnote; an unknown token left as written.",
+      "data": {
+        "A": [
+          "1",
+          "2"
+        ],
+        "B": [
+          "x",
+          "y"
+        ]
+      },
+      "as_rtftables": {},
+      "tokens": {
+        "STUDY": "ABC-{1}\\x",
+        "CUTOFF": "01JUN2026",
+        "N": 3
+      },
+      "titles": [
+        "Table 1  Study {STUDY} (N = {N})"
+      ],
+      "footnotes": [
+        "Data cut-off: {CUTOFF}.  {UNKNOWN} stays."
+      ],
+      "header": [
+        {
+          "l": "Study {STUDY}",
+          "r": "{PROGRAM_FULL}"
+        }
+      ],
+      "footer": [
+        {
+          "l": "{PROGRAM_DIR}|{PROGRAM_NAME}",
+          "r": "{DATETIME}"
+        }
+      ],
+      "run": {
+        "program": "/nonexistent_rtfreporter_xcheck/a/../prog/./t_dm.R",
+        "render_time": "2026-10-04 10:05:00"
+      }
+    },
+    {
+      "id": "drop_empty_rows",
+      "why": "R 0.8.2.9026 #571: rtf_header/rtf_footer(drop_empty_rows = TRUE) leave out a row whose own tokens are all empty and that says nothing else but blanks and brackets; a row with {PAGE}, with text, or with a filled token stays.",
+      "data": {
+        "A": [
+          "1",
+          "2"
+        ],
+        "B": [
+          "x",
+          "y"
+        ]
+      },
+      "as_rtftables": {},
+      "tokens": {
+        "STUDY": "ABC",
+        "POPULATION": "",
+        "SUBGROUP": "Age < 65",
+        "BLANK": " "
+      },
+      "header": [
+        {
+          "l": "Study {STUDY}",
+          "r": "Page {PAGE} of {TOTAL_PAGES}"
+        },
+        {
+          "l": "<{POPULATION}>"
+        },
+        {
+          "c": "({SUBGROUP})"
+        },
+        {
+          "l": "[{BLANK}] - {POPULATION}",
+          "r": "{BLANK}"
+        },
+        {
+          "l": "{POPULATION} {PAGE}"
+        }
+      ],
+      "header_drop_empty_rows": true,
+      "footer": [
+        {
+          "l": "{POPULATION}"
+        },
+        {
+          "l": "Source: {STUDY}"
+        }
+      ],
+      "footer_drop_empty_rows": true
+    },
+    {
+      "id": "drop_empty_rows_whole_band",
+      "why": "R #571: a band whose every row is left out is no band at all; the default (drop_empty_rows = FALSE) writes every row.",
+      "data": {
+        "A": [
+          "1"
+        ]
+      },
+      "as_rtftables": {},
+      "tokens": {
+        "POPULATION": ""
+      },
+      "header": [
+        {
+          "l": "<{POPULATION}>"
+        }
+      ],
+      "footer": [
+        {
+          "c": "({POPULATION})"
+        }
+      ],
+      "footer_drop_empty_rows": true
+    },
+    {
+      "id": "table_style_align_default",
+      "why": "R 0.8.2.9026 #522: rtf_table_style() with align unset keeps each column's default (row-title column left, the others centred).",
+      "data": {
+        "Parameter": [
+          "Age",
+          "Sex"
+        ],
+        "Placebo": [
+          "75.1",
+          "53%"
+        ],
+        "Active": [
+          "74.9",
+          "51%"
+        ]
+      },
+      "as_rtftables": {},
+      "table_style": {
+        "header_bold": true
+      }
+    },
+    {
+      "id": "table_style_align_set",
+      "why": "R #522: rtf_table_style(align = ) set applies to every column, as before.",
+      "data": {
+        "Parameter": [
+          "Age",
+          "Sex"
+        ],
+        "Placebo": [
+          "75.1",
+          "53%"
+        ],
+        "Active": [
+          "74.9",
+          "51%"
+        ]
+      },
+      "as_rtftables": {},
+      "table_style": {
+        "align": "right"
+      }
     }
   ]
 }
