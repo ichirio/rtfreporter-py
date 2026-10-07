@@ -36,6 +36,11 @@ mkdocs build          # docs build (must succeed with no errors)
 - Keep the public surface documented in `docs/` and exported from
   `rtfreporter/__init__.py`.
 
+## Releasing
+
+Releases are published to PyPI by GitHub Actions with Trusted Publishing; the
+maintainer's steps are in [docs/releasing.md](docs/releasing.md).
+
 ## Reporting issues
 
 Please include the input data, the code you ran, and either the generated RTF

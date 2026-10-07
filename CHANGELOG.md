@@ -6,6 +6,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Packaging
+
+- **A release path to PyPI, not yet used** (`.github/workflows/release.yml`):
+  the sdist and wheel are built, `twine check --strict`ed and
+  installed into a clean venv, then published with PyPI Trusted Publishing
+  (OIDC, `pypa/gh-action-pypi-publish`; no token or secret in the repository)
+  -- to TestPyPI on a manual run, to PyPI when a GitHub release is published,
+  through the GitHub environments `testpypi` and `pypi`.  The maintainer's
+  one-time setup and the release checklist are in `docs/releasing.md`.
+- The package metadata is ready for PyPI: project URLs Homepage /
+  Documentation / Source / Issues / Changelog, the licence file declared
+  (`license-files`, PEP 639; the licence classifier, which PEP 639 replaces
+  with the `license` expression, is dropped), and the README's logo and links
+  absolute, so they work on the PyPI project page.
+
 ### Fixed
 
 - **An explicit section on the page an auto section starts** (R

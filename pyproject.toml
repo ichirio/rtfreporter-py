@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
@@ -9,6 +9,7 @@ description = "Clinical RTF Reporting Toolkit for Tables, Listings and Figures (
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
+license-files = ["LICENSE"]
 authors = [
     { name = "Yoichi Masui", email = "ichi.r.pro@gmail.com" },
 ]
@@ -30,7 +31,6 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Intended Audience :: Healthcare Industry",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -67,7 +67,7 @@ docs = ["mkdocs-material", "mkdocstrings[python]"]
 [project.urls]
 Homepage = "https://github.com/ichirio/rtfreporter-py"
 Documentation = "https://ichirio.github.io/rtfreporter-py/"
-Repository = "https://github.com/ichirio/rtfreporter-py"
+Source = "https://github.com/ichirio/rtfreporter-py"
 Issues = "https://github.com/ichirio/rtfreporter-py/issues"
 Changelog = "https://github.com/ichirio/rtfreporter-py/blob/main/CHANGELOG.md"
 
