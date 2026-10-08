@@ -368,6 +368,17 @@ def check_col_header_width(header, ncols: int, arg: str = "col_header") -> None:
         )
 
 
+def _deprecate_spanning_header() -> None:
+    from .borders import _deprecate_once
+
+    _deprecate_once(
+        "spanning_header",
+        "`spanning_header=` is deprecated: write the spanning row as the first "
+        "row of `col_header`\n  (`col_header=[<spanning row>, <label row>]`, or "
+        "`rtf_col_header()` / `col_cell()`).\n  Removed in 0.9.0.",
+    )
+
+
 def _spanning_header_row(spanning_header, ncols: int, names: list[str]) -> HeaderRow:
     """Build one spanning :class:`HeaderRow` from a ``spanning_header`` spec.
 
@@ -798,8 +809,10 @@ def rtftable(
         spanning_header: A standalone spanning row placed **above** the
             ``col_header`` rows.  A list of :class:`SpanCell` / :func:`col_cell`
             specs or dicts (``from`` / ``to`` 0-based inclusive, ``label``,
-            ``underline``).  New code should put spanning rows directly in
-            ``col_header``.
+            ``underline``).  **Deprecated** (warns once a session; removed in
+            0.9.0, as in R): put the spanning row first in
+            ``col_header=[<spanning row>, <label row>]`` -- the RTF is
+            byte-identical.
         col_spec: A list of dicts, each with a ``col`` key (0-based index or
             name) plus any :class:`ColSpec` fields.
         row_title: Which column(s) are row-heading columns (0-based index/name
@@ -889,6 +902,7 @@ def rtftable(
 
     header_rows = _normalize_col_header(col_header, ncols, column_names)
     if spanning_header is not None:
+        _deprecate_spanning_header()
         header_rows = [
             _spanning_header_row(spanning_header, ncols, column_names)
         ] + header_rows
@@ -1080,6 +1094,8 @@ def override_rtftable_fields(tbl: RtfTable, ov: dict) -> RtfTable:
     # -- spanning header / column header
     if has("spanning_header"):
         sp = ov["spanning_header"]
+        if sp is not None:
+            _deprecate_spanning_header()
         rows = [] if sp is None else [_spanning_header_row(sp, ncols, names)]
         t.col_header = rows + list(t.col_header[t.spanning_rows:])
         t.spanning_rows = len(rows)

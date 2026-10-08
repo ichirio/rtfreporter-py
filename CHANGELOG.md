@@ -6,6 +6,122 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+The version is **0.5.0.dev0**.
+
+### Following R 0.8.2.9026
+
+The port now follows the R package's development version **0.8.2.9026**
+(`main` at 2385a6b, after the v0.8.2 release), outside the ARD / table-plan
+engine.  Every R `NEWS.md` entry since v0.8.2 was read; each user-visible
+change outside ARD / plan is ported below with the R entry it comes from.
+Every cross-check golden file re-rendered from 0.8.2.9026 came out
+byte-identical, and five new cases (plus one assembly case) pin the new
+features byte-for-byte against R (`data-raw/xcheck/README.md`).
+
+#### Added
+
+- **`{PROGRAM_FULL}`** (R #560): a run token beside `{PROGRAM}`, the same
+  path made absolute from the working folder when the file is written, with
+  the system's separator; a path that does not exist yet gets its nearest
+  existing folder resolved and the rest joined (`.` / `..` folded).
+- **The program is found when it is not said** (R #562): with no
+  `generate_rtfreport(program=)`, `rtf_document(program=)` or
+  `rtfreporter_options(program=)`, a `{PROGRAM...}` token takes the script
+  Python runs (`__main__.__file__`, else `sys.argv[0]`), then the notebook a
+  Jupyter kernel runs when it knows it (VS Code's `__vsc_ipynb_file__`,
+  Jupyter Server 2's `JPY_SESSION_NAME`) -- R's `source()` / `Rscript` /
+  knitr / RStudio, in Python terms.  A program found is said in a message on
+  stderr; one said is quiet, and a file with no `{PROGRAM...}` token looks
+  for nothing (0.4.x looked for the running script at every render).  The
+  file name is completed to the one on disk: its real case, and a name with
+  no extension becomes the `.py` / `.ipynb` program of that name, else gets
+  `.py`.  The error with no program now says `rtf_document(program=)`.
+- **`program_fallback`** (R #566): `rtf_document(program_fallback=)` (and
+  `generate_rtfreport(program_fallback=)` / `to_rtf()` / `save()` for one
+  call) names the program when none is said and none is found -- the last
+  resort, said in a message, completed like any program.
+- **Tokens of one's own** (R #564): `rtf_document(tokens={"STUDY":
+  "ABC-123"})` -- or `rtfreporter_options(tokens=)` for a session, the
+  document's value winning -- and a header, footer, title or footnote says
+  `{STUDY}`, filled when the file is written (RTF-escaped).  A name is upper
+  case, a letter then letters, digits or `_`, and not one of rtfreporter's
+  own; a value is one string or number.
+- **`rtf_text_tokens(doc=None)`** (R #529, new export): the tokens a page's
+  text may carry -- `token`, `kind` (`page` / `run` / `own`), `when`
+  (`render` / `viewer` / `assemble`), `description`, `example` -- as a list
+  of row dicts, a document's and the session's own tokens included.
+- **`rtf_header()` / `rtf_footer(drop_empty_rows=)`** (R #571): `True` leaves
+  out a band row whose tokens of one's own are all empty and which says
+  nothing else but blanks and brackets (`"<{POPULATION}>"`); a row with no
+  token, rtfreporter's own (`{PAGE}`) or an unknown one is always written.
+  Default `False`: unchanged.
+- **`rtf_border_line()`** (R 0.8.2.9013, new export): the name of
+  `rtf_border_side()` -- one line, for any edge.
+- **`assemble_folder(dir)` without an `output_file` returns the folder's
+  table of contents**, and **`assemble_rtf(toc=)` takes that table** -- a
+  list of dicts, a pandas / polars DataFrame, or the path of a `.csv` --
+  with `input_files` then optional (R 0.8.2.9014).
+- A run of the R cross-check scripts without devtools uses the installed R
+  package; `data-raw/r_api/` snapshots R's exports, and
+  `tests/test_api_parity.py` checks that every one outside ARD / plan is
+  here (93 of 94; `rtfreporter_ai_manual()` is not ported on purpose).
+
+#### Changed
+
+- **`rtf_table_style(align=)` defaults to `None`** (R #522): an unset `align`
+  keeps each column's default (row-title column left, the others centred)
+  instead of left-aligning every column; `rtf_table_style_tfl()` follows.
+  What changes: a table given a style that does not say `align`, whose
+  non-row-title columns now centre.  Write `rtf_table_style(align="left")`
+  for the old look.
+- **`{DATE}` is not a token** (R #532): it was on the list of tokens
+  `set_col_header()` leaves for the renderer, but nothing ever filled it; it
+  is now an unfilled token there (`{DATETIME:%Y-%m-%d}` is a date).
+- **The first argument of `set_blank_rows()` (was `df`) and
+  `add_cont_label()` (was `chunk`) is `data`** (R #544).  A positional call
+  is unchanged; the old keyword still works and warns once a session.
+- `rtf_header_source()` writes `rtf_border_line(...)`.
+
+#### Deprecated
+
+Each still works, warns once a session (`DeprecationWarning`) naming what to
+write instead, and is removed in 0.9.0, as in R (0.8.2.9013 / 0.8.2.9014 /
+#544):
+
+- `rtf_border_side()` -> `rtf_border_line()`.
+- `add_col_header_row()`, `col_header_from_names()`, `set_header_cell()` ->
+  write the rows in `rtf_col_header()` / `set_col_header()`, add a row with
+  `add_header_row()`, restyle with `style_header()`; `as_rtftables()` splits
+  delimited names (`header_sep=`).
+- `update_header_row()` / `update_footer_row()` -> make the band again with
+  `rtf_header(rows=)` / `rtf_footer(rows=)`.
+- `paginate()` -> `as_rtftables()` (deprecated in R since 0.7.x; the port now
+  warns too).
+- `rtftable(spanning_header=)` and `rtf_tables(spanning_header=)` -> put the
+  spanning row first in `col_header=[<spanning row>, <label row>]` (the RTF is
+  byte-identical).
+- `as_rtftables(stub_vars=, stub_label=, stub_indent=, stub_group_summary=)`
+  -> `stub=stub_spec(vars, label=, indent=, group_summary=)` (or `stub=vars`).
+- `assemble_files()`, `assemble_spec()`, `assemble_toc()`,
+  `assemble_from_spec()`, `toc_heading()`, `toc_entry()` -> `assemble_folder()`
+  and `assemble_rtf(toc=<table>)`.
+- `set_blank_rows(df=)`, `add_cont_label(chunk=)` -> `data=`.
+
+#### Not ported (ARD / plan only, or R-only)
+
+- ARD / plan: `normalize_ard()` keeps `stat` numeric (#583), a group count
+  stated twice (#554), `plan_header_tokens()` (#536, a new export),
+  `plan_levels(.drop_empty=)`, the plan verbs for every `as_rtftables()`
+  setting (#518), `plan_paginate_rows(page_by=)` (#516), level relabelling
+  (#514), `widen_ard()` level order (#534), `plan_columns(sep=)` (#520),
+  `plan_apply()`'s error (#507).
+- R-only: CRAN preparation (#512, #524, #526, #551), `CITATION` / README /
+  NEWS / AI-manual documentation (#528, #558, #573, #574, #579), cards verb
+  names (#556), `print()` methods (#546, #547), the console preview (#550),
+  `as_rtftable(gt_obj=)` (the port's argument was already `x`).
+- #505 (listing key wrap) and #509 (decimal split font / fill) were already
+  matched in 0.4.x; #548 is below.
+
 ### Packaging
 
 - **A release path to PyPI, not yet used** (`.github/workflows/release.yml`):

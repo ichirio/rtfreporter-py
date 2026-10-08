@@ -3,15 +3,20 @@
 # Usage (from the repo root, with the R package checked out beside it):
 #   Rscript data-raw/xcheck/render_r.R [path/to/rtfreporter]
 #
-# The path should be a checkout of the R RELEASE the port tracks (a `git
-# worktree add ../rtfreporter-v0.8.2 v0.8.2`), so the goldens say which R the
-# port matches.  Writes one RTF per case into tests/xcheck_golden/, which is
+# The path should be a checkout of the R commit the port tracks (0.8.2.9026,
+# 2385a6b, since 0.5.0; see README.md), so the goldens say which R the port
+# matches.  Writes one RTF per case into tests/xcheck_golden/, which is
 # committed so the Python test suite can compare against R's output without
 # needing R installed.
 
 args <- commandArgs(trailingOnly = TRUE)
 pkg  <- if (length(args) >= 1) args[[1]] else "C:/Yrepo/rtfreporter"
-suppressMessages(devtools::load_all(pkg, quiet = TRUE))
+if (requireNamespace("devtools", quietly = TRUE)) {
+  suppressMessages(devtools::load_all(pkg, quiet = TRUE))
+} else {
+  # no devtools: the installed package (`R CMD INSTALL <pkg>` first)
+  suppressMessages(library(rtfreporter))
+}
 
 if (!requireNamespace("jsonlite", quietly = TRUE)) {
   stop("jsonlite is required: install.packages('jsonlite')")
@@ -95,6 +100,10 @@ for (case in cases) {
     a$border <- as_border(a$border$rtf_border)
   }
 
+  # A shared table style: {"align": , "header_bold": , ...} -> rtf_table_style()
+  # ({} = its defaults).
+  if (!is.null(case$table_style)) a$style <- do.call(rtf_table_style, case$table_style)
+
   pages <- do.call(as_rtftables, c(list(df), a))
 
   # Post-hoc zone borders, applied to every page.
@@ -119,6 +128,8 @@ for (case in cases) {
     doc_args$watermark <- if (is.list(case$watermark))
       do.call(rtf_watermark, case$watermark) else case$watermark
   }
+  # Tokens of one's own: {"STUDY": "ABC-123", ...}.
+  if (!is.null(case$tokens)) doc_args$tokens <- case$tokens
   doc <- do.call(rtf_document, doc_args)
 
   # rtf_tables() arguments: overrides of the pre-built pages, auto_title, ...
@@ -140,12 +151,17 @@ for (case in cases) {
   if (!is.null(case$header) || !is.null(case$footer)) {
     to_rows <- function(rows) lapply(rows, function(r) unlist(r))
     sec <- list()
-    if (!is.null(case$header)) sec$header <- rtf_header(rows = to_rows(case$header))
+    drop_h <- isTRUE(case$header_drop_empty_rows)
+    drop_f <- isTRUE(case$footer_drop_empty_rows)
+    if (!is.null(case$header)) {
+      sec$header <- rtf_header(rows = to_rows(case$header), drop_empty_rows = drop_h)
+    }
     if (!is.null(case$footer)) {
       if (identical(case$footer_border, "none")) {
-        sec$footer <- rtf_footer(rows = to_rows(case$footer), border = NULL)
+        sec$footer <- rtf_footer(rows = to_rows(case$footer), border = NULL,
+                                 drop_empty_rows = drop_f)
       } else {
-        sec$footer <- rtf_footer(rows = to_rows(case$footer))
+        sec$footer <- rtf_footer(rows = to_rows(case$footer), drop_empty_rows = drop_f)
       }
     }
     doc <- rtf_section(doc, page = 1, secinfo = sec)

@@ -127,8 +127,9 @@ A split function that returns anything other than a list of `Frame` raises
 `" (Cont.)"` label row when a group carries onto the next page.
 
 The standalone [`paginate()`][rtfreporter.pagination.paginate] applies the same
-machinery and returns the per-page `Frame` objects directly (use
-`as_rtftables()` to also build the `RtfTable` pages).
+machinery and returns the per-page `Frame` objects directly.  It is
+**deprecated** (as in R, removed in 0.9.0): `as_rtftables()` paginates and
+builds the `RtfTable` pages in one call.
 
 ## Assembling the document
 

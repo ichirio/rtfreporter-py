@@ -175,13 +175,13 @@ def test_explicit_col_spec_overrides_style():
 
 
 def test_rtf_border_with_replaces_side():
-    b = rr.rtf_border(top=rr.rtf_border_side())
-    b2 = rr.rtf_border_with(b, bottom=rr.rtf_border_side())
+    b = rr.rtf_border(top=rr.rtf_border_line())
+    b2 = rr.rtf_border_with(b, bottom=rr.rtf_border_line())
     assert b2.top is not None and b2.bottom is not None
 
 
 def test_rtf_border_with_none_start():
-    b = rr.rtf_border_with(None, top=rr.rtf_border_side())
+    b = rr.rtf_border_with(None, top=rr.rtf_border_line())
     assert b.top is not None and b.bottom is None
 
 
