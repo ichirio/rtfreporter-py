@@ -897,6 +897,39 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#run-tokens-which-program-and-when" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run tokens: which program, and when
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tokens-of-ones-own" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tokens of one's own
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#leaving-out-empty-rows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Leaving out empty rows
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#band-options" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1434,6 +1467,39 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#run-tokens-which-program-and-when" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run tokens: which program, and when
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tokens-of-ones-own" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tokens of one's own
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#leaving-out-empty-rows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Leaving out empty rows
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#band-options" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1532,8 +1598,8 @@ is no separate per-page header mechanism. You create sections with
 <td>Total page count (a live <code>NUMPAGES</code> field).</td>
 </tr>
 <tr>
-<td><code>{SECTION_PAGES}</code></td>
-<td>Pages in the current section (a live field).</td>
+<td><code>{BOOK_PAGE}</code></td>
+<td>An empty slot that <a href="../assembling/"><code>assemble_rtf(book_page=)</code></a> fills with the assembled book's page number.</td>
 </tr>
 <tr>
 <td><code>{PAGE}</code></td>
@@ -1552,11 +1618,93 @@ own section so the number bakes in distinctly.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">rtf_header</span><span class="p">([{</span><span class="s2">"r"</span><span class="p">:</span> <span class="s2">"Page </span><span class="si">{AUTO_PAGE}</span><span class="s2"> of </span><span class="si">{AUTO_TOTAL_PAGES}</span><span class="s2">"</span><span class="p">}])</span>   <span class="c1"># live field</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">rtf_header</span><span class="p">([{</span><span class="s2">"r"</span><span class="p">:</span> <span class="s2">"Page </span><span class="si">{PAGE}</span><span class="s2">"</span><span class="p">}])</span>                              <span class="c1"># baked number</span>
 </code></pre></div>
+<p>(<code>{SECTION_PAGES}</code> was removed: it raises an error naming <code>{TOTAL_PAGES}</code> /
+<code>{AUTO_TOTAL_PAGES}</code> instead.)</p>
+<h2 id="run-tokens-which-program-and-when">Run tokens: which program, and when<a class="headerlink" href="#run-tokens-which-program-and-when" title="Permanent link">&para;</a></h2>
+<p>A header, footer, title or footnote can also say which program wrote the file
+and when.  These are filled <strong>as the file is written</strong>, the same on every page:</p>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Becomes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{PROGRAM}</code></td>
+<td>The program's path, as given.</td>
+</tr>
+<tr>
+<td><code>{PROGRAM_FULL}</code></td>
+<td>The same path made absolute (from the working folder when the file is written), with the system's separator.</td>
+</tr>
+<tr>
+<td><code>{PROGRAM_NAME}</code> / <code>{PROGRAM_DIR}</code></td>
+<td>Its file name / its folder.</td>
+</tr>
+<tr>
+<td><code>{DATETIME}</code></td>
+<td>The time of the render, <code>%d%b%Y  %H:%M</code> by default (<code>rtfreporter_options(datetime_format=)</code>); <code>{DATETIME:%Y-%m-%d}</code> takes a format of its own. Month and day names are English whatever the locale.</td>
+</tr>
+</tbody>
+</table>
+<p>Say the program <strong>once, where the document is made</strong>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">doc</span> <span class="o">=</span> <span class="n">rtf_document</span><span class="p">(</span><span class="n">program</span><span class="o">=</span><span class="s2">"programs/t_dm.py"</span><span class="p">)</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">footer</span> <span class="o">=</span> <span class="n">rtf_footer</span><span class="p">([{</span><span class="s2">"l"</span><span class="p">:</span> <span class="s2">"</span><span class="si">{PROGRAM_FULL}</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">:</span> <span class="s2">"Generated on: </span><span class="si">{DATETIME}</span><span class="s2">"</span><span class="p">}])</span>
+</code></pre></div>
+<p><code>generate_rtfreport(program=)</code> overrides it for one call, and
+<code>rtfreporter_options(program=)</code> sets one for the session.  When none is said
+and a <code>{PROGRAM...}</code> token is used, the program is <strong>found</strong>, in this order:</p>
+<ol>
+<li>the script Python runs (<code>__main__.__file__</code>, else <code>sys.argv[0]</code>);</li>
+<li>the notebook a Jupyter kernel runs, when the kernel knows it (VS Code's
+   <code>__vsc_ipynb_file__</code>, Jupyter Server 2's <code>JPY_SESSION_NAME</code>);</li>
+<li><code>rtf_document(program_fallback=)</code> (or <code>generate_rtfreport(program_fallback=)</code>)
+   -- the last resort, so a program's own file name always wins.</li>
+</ol>
+<p>A program found (or the fallback) is said in a one-line message on stderr; a
+program said is not, and a file with no <code>{PROGRAM...}</code> token looks for
+nothing.  The file name is completed to the one on disk: a file that is there
+gets its real case; a name with no extension becomes the program of that name
+in its folder (<code>.py</code>, <code>.ipynb</code>), else gets <code>.py</code>.  No program at all is an
+error.  For a validated production run, say the program: a relative path
+found this way is joined to the working folder.</p>
+<p>For reproducible output (tests, golden files) fix the time with
+<code>rtfreporter_options(render_time="2026-10-04 10:05:00")</code>.</p>
+<h2 id="tokens-of-ones-own">Tokens of one's own<a class="headerlink" href="#tokens-of-ones-own" title="Permanent link">&para;</a></h2>
+<p>A study's own values -- <code>{STUDY}</code>, <code>{CUTOFF}</code>, <code>{POPULATION}</code> -- come from
+<code>rtf_document(tokens=)</code>, or <code>rtfreporter_options(tokens=)</code> for a session (the
+document's value wins), and are filled like the run tokens, RTF-escaped:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">doc</span> <span class="o">=</span> <span class="n">rtf_document</span><span class="p">(</span><span class="n">tokens</span><span class="o">=</span><span class="p">{</span><span class="s2">"STUDY"</span><span class="p">:</span> <span class="s2">"ABC-123"</span><span class="p">,</span> <span class="s2">"CUTOFF"</span><span class="p">:</span> <span class="s2">"01JUN2026"</span><span class="p">})</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">hdr</span> <span class="o">=</span> <span class="n">rtf_header</span><span class="p">([{</span><span class="s2">"l"</span><span class="p">:</span> <span class="s2">"Study </span><span class="si">{STUDY}</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">:</span> <span class="s2">"Data cut-off: </span><span class="si">{CUTOFF}</span><span class="s2">"</span><span class="p">}])</span>
+</code></pre></div>
+<p>A name is upper case -- a letter, then letters, digits or <code>_</code> -- and not one of
+rtfreporter's own; a value is one string or number.  A column header takes its
+values from <code>set_col_header(values=)</code> instead.</p>
+<p><a href="../reference/#rtfreporter.text_tokens.rtf_text_tokens"><code>rtf_text_tokens()</code></a>
+lists every token a page's text may carry -- the page and run tokens, then a
+document's (and the session's) own -- with when each is filled and an example
+value, for a program that offers them in an "insert" menu or a preview.</p>
+<h2 id="leaving-out-empty-rows">Leaving out empty rows<a class="headerlink" href="#leaving-out-empty-rows" title="Permanent link">&para;</a></h2>
+<p>One header can serve every report of a study when a report with no value for
+a line goes without it.  With <code>drop_empty_rows=True</code>, a band row whose tokens
+of one's own are <strong>all empty</strong> when the file is written, and which says
+nothing else but blanks and brackets, is left out:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">hdr</span> <span class="o">=</span> <span class="n">rtf_header</span><span class="p">([</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    <span class="p">{</span><span class="s2">"l"</span><span class="p">:</span> <span class="s2">"Study </span><span class="si">{STUDY}</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">:</span> <span class="s2">"Page </span><span class="si">{PAGE}</span><span class="s2"> of </span><span class="si">{TOTAL_PAGES}</span><span class="s2">"</span><span class="p">},</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="p">{</span><span class="s2">"l"</span><span class="p">:</span> <span class="s2">"&lt;</span><span class="si">{POPULATION}</span><span class="s2">&gt;"</span><span class="p">},</span>          <span class="c1"># left out when POPULATION is ""</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="p">],</span> <span class="n">drop_empty_rows</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+<p>A row with no token, one of rtfreporter's own (<code>{PAGE}</code>) or an unknown one is
+always written; a band whose every row is left out is no band.  The default,
+<code>False</code>, writes every row.</p>
 <h2 id="band-options">Band options<a class="headerlink" href="#band-options" title="Permanent link">&para;</a></h2>
-<p>Both <a href="../reference/#rtfreporter.header_footer.header"><code>header</code></a> and
-<a href="../reference/#rtfreporter.header_footer.footer"><code>footer</code></a> accept a <code>border</code>
-(applied to the first row), <code>row_height_twips</code>, per-side cell padding, and an
-explicit <code>width_twips</code>.</p>
+<p>Both <a href="../reference/#rtfreporter.header_footer.rtf_header"><code>rtf_header()</code></a> and
+<a href="../reference/#rtfreporter.header_footer.rtf_footer"><code>rtf_footer()</code></a> accept a
+<code>border</code> (applied to the first row), <code>row_height_twips</code>, per-side cell
+padding, a <code>width</code> (or the absolute <code>width_twips</code>), a <code>font</code> and
+<code>font_size_half_points</code>, <code>markup</code> and <code>drop_empty_rows</code>.</p>
 
 
 

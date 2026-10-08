@@ -1026,10 +1026,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#folder-spec-deliverable" class="md-nav__link">
+  <a href="#folder-table-of-contents-deliverable" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Folder → spec → deliverable
+        Folder → table of contents → deliverable
       
     </span>
   </a>
@@ -1412,10 +1412,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#folder-spec-deliverable" class="md-nav__link">
+  <a href="#folder-table-of-contents-deliverable" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Folder → spec → deliverable
+        Folder → table of contents → deliverable
       
     </span>
   </a>
@@ -1473,43 +1473,55 @@ with how <a class="autorefs autorefs-internal" title="&lt;span class=&quot;doc d
 <em>table</em> instead of text, the same centred-bold cell is matched.</p>
 </div>
 <h2 id="multi-level-toc-and-a-cover-page">Multi-level TOC and a cover page<a class="headerlink" href="#multi-level-toc-and-a-cover-page" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="n">assemble_rtf</span><span class="p">,</span> <span class="n">toc_heading</span><span class="p">,</span> <span class="n">toc_entry</span>
+<p>A multi-level (chapter / table) table of contents is a <strong>table</strong>: one row per
+file, in order -- a list of dicts or a pandas / polars DataFrame -- with
+<code>file</code> and <code>label</code>, and optionally <code>heading</code> (printed above the row's entry
+whenever it changes; <code>None</code> = none), <code>level</code> (the entry's indent, default 2)
+and <code>order</code>.  <code>input_files</code> can then be left out: the table's <code>file</code> column
+is used.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="n">assemble_rtf</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">assemble_rtf</span><span class="p">(</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="p">[</span><span class="s2">"t14_1_1.rtf"</span><span class="p">,</span> <span class="s2">"t14_2_1.rtf"</span><span class="p">,</span> <span class="s2">"l16_1.rtf"</span><span class="p">],</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="s2">"deliverable.rtf"</span><span class="p">,</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">cover</span><span class="o">=</span><span class="p">{</span><span class="s2">"title"</span><span class="p">:</span> <span class="s2">"Study XYZ-001"</span><span class="p">,</span> <span class="s2">"subtitle"</span><span class="p">:</span> <span class="s2">"Final Report"</span><span class="p">,</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>           <span class="s2">"date"</span><span class="p">:</span> <span class="s2">"2026-05-28"</span><span class="p">,</span> <span class="s2">"version"</span><span class="p">:</span> <span class="s2">"v1.0"</span><span class="p">,</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>           <span class="s2">"meta"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Confidential"</span><span class="p">]},</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">toc</span><span class="o">=</span><span class="p">[</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>        <span class="n">toc_heading</span><span class="p">(</span><span class="s2">"EFFICACY ANALYSES"</span><span class="p">),</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>        <span class="n">toc_entry</span><span class="p">(</span><span class="s2">"Table 14.1.1 Demographics"</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="s2">"t14_1_1.rtf"</span><span class="p">),</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>        <span class="n">toc_heading</span><span class="p">(</span><span class="s2">"SAFETY ANALYSES"</span><span class="p">),</span>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>        <span class="n">toc_entry</span><span class="p">(</span><span class="s2">"Table 14.2.1 Adverse Events"</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="s2">"t14_2_1.rtf"</span><span class="p">),</span>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>        <span class="n">toc_heading</span><span class="p">(</span><span class="s2">"LISTINGS"</span><span class="p">),</span>
-<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>        <span class="n">toc_entry</span><span class="p">(</span><span class="s2">"Listing 16.1 Disposition"</span><span class="p">),</span>   <span class="c1"># bound to the next unused file</span>
-<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    <span class="p">],</span>
-<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>    <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="p">)</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">toc</span><span class="o">=</span><span class="p">[</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>        <span class="p">{</span><span class="s2">"file"</span><span class="p">:</span> <span class="s2">"t14_1_1.rtf"</span><span class="p">,</span> <span class="s2">"heading"</span><span class="p">:</span> <span class="s2">"EFFICACY ANALYSES"</span><span class="p">,</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>         <span class="s2">"label"</span><span class="p">:</span> <span class="s2">"Table 14.1.1 Demographics"</span><span class="p">},</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>        <span class="p">{</span><span class="s2">"file"</span><span class="p">:</span> <span class="s2">"t14_2_1.rtf"</span><span class="p">,</span> <span class="s2">"heading"</span><span class="p">:</span> <span class="s2">"SAFETY ANALYSES"</span><span class="p">,</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>         <span class="s2">"label"</span><span class="p">:</span> <span class="s2">"Table 14.2.1 Adverse Events"</span><span class="p">},</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>        <span class="p">{</span><span class="s2">"file"</span><span class="p">:</span> <span class="s2">"l16_1.rtf"</span><span class="p">,</span> <span class="s2">"heading"</span><span class="p">:</span> <span class="s2">"LISTINGS"</span><span class="p">,</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>         <span class="s2">"label"</span><span class="p">:</span> <span class="s2">"Listing 16.1 Disposition"</span><span class="p">},</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="p">],</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="n">output_file</span><span class="o">=</span><span class="s2">"deliverable.rtf"</span><span class="p">,</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="n">cover</span><span class="o">=</span><span class="p">{</span><span class="s2">"title"</span><span class="p">:</span> <span class="s2">"Study XYZ-001"</span><span class="p">,</span> <span class="s2">"subtitle"</span><span class="p">:</span> <span class="s2">"Final Report"</span><span class="p">,</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>           <span class="s2">"date"</span><span class="p">:</span> <span class="s2">"2026-05-28"</span><span class="p">,</span> <span class="s2">"version"</span><span class="p">:</span> <span class="s2">"v1.0"</span><span class="p">,</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>           <span class="s2">"meta"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Confidential"</span><span class="p">]},</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="p">)</span>
 </code></pre></div>
-<h2 id="folder-spec-deliverable">Folder → spec → deliverable<a class="headerlink" href="#folder-spec-deliverable" title="Permanent link">&para;</a></h2>
-<p>For a whole output folder, build an editable <strong>assembly spec</strong> (one row per
-file, with the table number and title read from each file), tweak it, and
-assemble:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="n">assemble_spec</span><span class="p">,</span> <span class="n">assemble_from_spec</span><span class="p">,</span> <span class="n">assemble_folder</span>
+<h2 id="folder-table-of-contents-deliverable">Folder → table of contents → deliverable<a class="headerlink" href="#folder-table-of-contents-deliverable" title="Permanent link">&para;</a></h2>
+<p>For a whole output folder, <a class="autorefs autorefs-internal" title="&lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;rtfreporter.assemble.assemble_folder&lt;/span&gt;" href="../reference/#rtfreporter.assemble.assemble_folder"><code>assemble_folder</code></a>
+reads each file's table number and title into that table (natural-sorted, so
+<code>t2</code> precedes <code>t10</code>).  Without an <code>output_file</code> it only returns the table, to
+edit and hand to <code>assemble_rtf(toc=)</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="n">assemble_folder</span><span class="p">,</span> <span class="n">assemble_rtf</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># One editable dict per file: order / file / table / heading / label / level / pages</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">spec</span> <span class="o">=</span> <span class="n">assemble_spec</span><span class="p">(</span><span class="s2">"output/tfl"</span><span class="p">)</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">spec</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"heading"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"Demographics"</span>   <span class="c1"># group entries under a TOC heading</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">assemble_from_spec</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="s2">"deliverable.rtf"</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">toc</span> <span class="o">=</span> <span class="n">assemble_folder</span><span class="p">(</span><span class="s2">"output/tfl"</span><span class="p">)</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">toc</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"heading"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"Demographics"</span>   <span class="c1"># group entries under a TOC heading</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">assemble_rtf</span><span class="p">(</span><span class="n">toc</span><span class="o">=</span><span class="n">toc</span><span class="p">,</span> <span class="n">output_file</span><span class="o">=</span><span class="s2">"deliverable.rtf"</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1"># Or do all of it in one call (optionally saving the spec to a .csv):</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="n">assemble_folder</span><span class="p">(</span><span class="s2">"output/tfl"</span><span class="p">,</span> <span class="s2">"deliverable.rtf"</span><span class="p">,</span> <span class="n">spec_file</span><span class="o">=</span><span class="s2">"spec.csv"</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1"># Or do all of it in one call (optionally saving the table to a .csv, which</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="c1"># assemble_rtf(toc="toc.csv") reads back after you edit it):</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="n">assemble_folder</span><span class="p">(</span><span class="s2">"output/tfl"</span><span class="p">,</span> <span class="s2">"deliverable.rtf"</span><span class="p">,</span> <span class="n">spec_file</span><span class="o">=</span><span class="s2">"toc.csv"</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </code></pre></div>
-<p><a class="autorefs autorefs-internal" title="&lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;rtfreporter.assemble.assemble_files&lt;/span&gt;" href="../reference/#rtfreporter.assemble.assemble_files"><code>assemble_files</code></a> lists a folder's <code>.rtf</code>
-files in natural-sorted order (so <code>t2</code> precedes <code>t10</code>);
-<a class="autorefs autorefs-internal" title="&lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;rtfreporter.assemble.assemble_toc&lt;/span&gt;" href="../reference/#rtfreporter.assemble.assemble_toc"><code>assemble_toc</code></a> turns files (or a spec) into
-the <code>toc=</code> list directly.</p>
+<div class="admonition warning">
+<p class="admonition-title">Deprecated in 0.5.0 (as in R 0.8.2.9014)</p>
+<p><code>assemble_files()</code>, <code>assemble_spec()</code>, <code>assemble_toc()</code>,
+<code>assemble_from_spec()</code>, <code>toc_heading()</code> and <code>toc_entry()</code> still work and
+warn once a session; they are removed in 0.9.0.  <code>assemble_spec(dir)</code> is
+<code>assemble_folder(dir)</code>, <code>assemble_from_spec(spec, out)</code> is
+<code>assemble_rtf(toc=spec, output_file=out)</code>, and a list of <code>toc_heading()</code> /
+<code>toc_entry()</code> is a table whose <code>heading</code> column is filled.</p>
+</div>
 <p>See the runnable <a href="https://github.com/ichirio/rtfreporter-py/blob/main/examples/assemble.py"><code>examples/assemble.py</code></a>.</p>
 
 

@@ -1573,8 +1573,8 @@ port.</p>
 <p>The Python package deliberately mirrors the R one:</p>
 <ul>
 <li><strong>Every exported R function outside the ARD / plan layer exists in Python</strong>
-  (R v0.8.2; see <em>Current parity</em> below) under the same names —
-  <code>rtf_border_side()</code>, <code>rtf_document()</code>, <code>generate_rtfreport()</code>,
+  (R 0.8.2.9026; see <em>Current parity</em> below) under the same names —
+  <code>rtf_border_line()</code>, <code>rtf_document()</code>, <code>generate_rtfreport()</code>,
   <code>as_rtftables()</code>, <code>assemble_rtf()</code>, and so on.</li>
 <li><strong>Argument names, order and defaults follow R</strong>, so R documentation and
   existing R code translate almost literally.</li>
@@ -1644,15 +1644,15 @@ from <code>tab_style()</code>, row groups, summary rows and footnotes. See
 <tbody>
 <tr>
 <td>Followed R version</td>
-<td><span class="rtf-badge ok">v0.8.2</span> the R release this port matches</td>
+<td><span class="rtf-badge ok">0.8.2.9026</span> the R development version after the v0.8.2 release (<code>main</code> at 2385a6b), which this port matches</td>
 </tr>
 <tr>
 <td>Exported functions</td>
-<td><span class="rtf-badge ok">87 / 88</span> every R v0.8.2 export outside the ARD / plan engine, except <code>rtfreporter_ai_manual()</code> (the R package's AI-assistant manuals, which describe the R API)</td>
+<td><span class="rtf-badge ok">93 / 94</span> every R export outside the ARD / plan engine (125 exports, 31 of them ARD / plan), except <code>rtfreporter_ai_manual()</code> (the R package's AI-assistant manuals, which describe the R API); <code>tests/test_api_parity.py</code> checks it</td>
 </tr>
 <tr>
-<td>Renderer, pagination, borders, styling, listings, figures, assembly</td>
-<td><span class="rtf-badge ok">ported</span> — checked byte-for-byte against R v0.8.2</td>
+<td>Renderer, pagination, borders, styling, listings, figures, assembly, run tokens</td>
+<td><span class="rtf-badge ok">ported</span> — checked byte-for-byte against R 0.8.2.9026</td>
 </tr>
 <tr>
 <td>Table-object adapters</td>

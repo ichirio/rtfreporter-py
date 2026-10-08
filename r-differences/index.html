@@ -1587,7 +1587,27 @@ does the same job as its R counterpart:</p>
 <tr>
 <td><code>add_col_header_row(.position = )</code></td>
 <td><code>add_col_header_row(position=)</code></td>
-<td>a leading dot is not a Python name</td>
+<td>a leading dot is not a Python name (the function is deprecated in both)</td>
+</tr>
+<tr>
+<td><code>{PROGRAM}</code> is found from <code>source()</code>, <code>Rscript</code>, knitr or RStudio</td>
+<td>found from the script Python runs, then a Jupyter notebook</td>
+<td>each language's way of running a program; a name with no extension is completed with <code>.py</code> / <code>.ipynb</code> instead of <code>.R</code> / <code>.Rmd</code> / <code>.qmd</code></td>
+</tr>
+<tr>
+<td><code>rtf_document(tokens = list(STUDY = ))</code>, <code>options(rtfreporter.tokens = )</code></td>
+<td><code>rtf_document(tokens={"STUDY": ...})</code>, <code>rtfreporter_options(tokens=)</code></td>
+<td>a dict for a named list</td>
+</tr>
+<tr>
+<td><code>rtf_text_tokens()</code> returns a data frame</td>
+<td>returns a list of row dicts (<code>token</code>, <code>kind</code>, <code>when</code>, <code>description</code>, <code>example</code>)</td>
+<td>no data-frame dependency in the core</td>
+</tr>
+<tr>
+<td><code>assemble_rtf(toc = &lt;data.frame or .xlsx / .csv&gt;)</code></td>
+<td><code>toc=&lt;list of dicts, a pandas / polars DataFrame, or a .csv path&gt;</code></td>
+<td>the spec file is a <code>.csv</code> here</td>
 </tr>
 </tbody>
 </table>

@@ -1686,8 +1686,9 @@ page. A page's <code>name</code> becomes the page/section name. This is the R
 <a class="autorefs autorefs-internal" title="&lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;rtfreporter.pagination.add_cont_label&lt;/span&gt;" href="../reference/#rtfreporter.pagination.add_cont_label"><code>add_cont_label()</code></a> helps you prepend a
 <code>" (Cont.)"</code> label row when a group carries onto the next page.</p>
 <p>The standalone <a class="autorefs autorefs-internal" title="&lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;rtfreporter.pagination.paginate&lt;/span&gt;" href="../reference/#rtfreporter.pagination.paginate"><code>paginate()</code></a> applies the same
-machinery and returns the per-page <code>Frame</code> objects directly (use
-<code>as_rtftables()</code> to also build the <code>RtfTable</code> pages).</p>
+machinery and returns the per-page <code>Frame</code> objects directly.  It is
+<strong>deprecated</strong> (as in R, removed in 0.9.0): <code>as_rtftables()</code> paginates and
+builds the <code>RtfTable</code> pages in one call.</p>
 <h2 id="assembling-the-document">Assembling the document<a class="headerlink" href="#assembling-the-document" title="Permanent link">&para;</a></h2>
 <p>Each page is an ordinary <code>RtfTable</code>; feed them to a document in order:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="n">RtfDocument</span><span class="p">,</span> <span class="n">header</span>

@@ -1472,7 +1472,8 @@ one-word preset down to a single cell.</p>
 <p>The border objects are immutable records, so a border you build can be reused
 across tables safely. The vocabulary is small:</p>
 <ul>
-<li><a href="../reference/#rtfreporter.borders.border_side"><code>rtf_border_side(style, width, color)</code></a>
+<li><a href="../reference/#rtfreporter.borders.rtf_border_line"><code>rtf_border_line(style, width, color)</code></a>
+  (one line, for any edge; <code>rtf_border_side()</code> is its deprecated old name)
   — one <strong>edge</strong> (a line).</li>
 <li><a href="../reference/#rtfreporter.borders.border"><code>rtf_border(top, bottom, left, right)</code></a>
   — the four edges of one <strong>cell/row</strong> (<a href="../reference/#rtfreporter.borders.Border"><code>Border</code></a>).</li>
@@ -1544,7 +1545,7 @@ a body rule and still special-case the edges.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rtfreporter</span><span class="w"> </span><span class="kn">import</span> <span class="n">rtftable</span><span class="p">,</span> <span class="n">style_zone</span><span class="p">,</span> <span class="n">Border</span><span class="p">,</span> <span class="n">BorderSide</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">tbl</span> <span class="o">=</span> <span class="n">rtftable</span><span class="p">({</span><span class="s2">"A"</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">"B"</span><span class="p">:</span> <span class="p">[</span><span class="mi">2</span><span class="p">]},</span> <span class="n">border</span><span class="o">=</span><span class="s2">"tfl"</span><span class="p">)</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">tbl</span> <span class="o">=</span> <span class="n">style_zone</span><span class="p">(</span><span class="n">tbl</span><span class="p">,</span> <span class="s2">"last_row"</span><span class="p">,</span> <span class="n">Border</span><span class="p">(</span><span class="n">bottom</span><span class="o">=</span><span class="n">BorderSide</span><span class="p">(</span><span class="s2">"double"</span><span class="p">,</span> <span class="mi">20</span><span class="p">)))</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">tbl</span> <span class="o">=</span> <span class="n">style_zone</span><span class="p">(</span><span class="n">tbl</span><span class="p">,</span> <span class="n">last_row</span><span class="o">=</span><span class="n">Border</span><span class="p">(</span><span class="n">bottom</span><span class="o">=</span><span class="n">BorderSide</span><span class="p">(</span><span class="s2">"double"</span><span class="p">,</span> <span class="mi">20</span><span class="p">)))</span>
 </code></pre></div>
 <h2 id="side-styles-widths-and-colours">Side styles, widths and colours<a class="headerlink" href="#side-styles-widths-and-colours" title="Permanent link">&para;</a></h2>
 <p>A <code>BorderSide</code> has three fields:</p>
