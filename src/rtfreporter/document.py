@@ -104,12 +104,20 @@ class RtfDocument:
         program: str | None = None,
         watermark=None,
         font_table=None,
+        tokens=None,
+        program_fallback: str | None = None,
     ) -> None:
+        from ._run_tokens import _check_program, _check_user_tokens
         from .watermark import normalize_watermark
 
         self.page = page or Page()
         #: The program ``{PROGRAM}`` names (R ``rtf_document(program=)``).
-        self.program = program
+        self.program = _check_program(program)
+        #: The program named when none is said or found (R #566).
+        self.program_fallback = _check_program(program_fallback, "program_fallback")
+        #: Tokens of one's own, ``{"STUDY": "ABC-123"}`` (R #564).
+        _check_user_tokens(tokens)
+        self.tokens = dict(tokens) if tokens else None
         #: The watermark on every page (R ``rtf_document(watermark=)``).
         self.watermark = normalize_watermark(watermark)
         #: The declared fonts, first = the document default (R ``font_table``);
@@ -140,6 +148,8 @@ class RtfDocument:
         new.default_format = self.default_format
         new.color_table = list(self.color_table) if self.color_table else None
         new.program = self.program
+        new.program_fallback = self.program_fallback
+        new.tokens = dict(self.tokens) if self.tokens else None
         new.watermark = self.watermark
         new.font_table = list(self.font_table) if self.font_table else None
         new._sections = [dict(section) for section in self._sections]
@@ -278,26 +288,33 @@ class RtfDocument:
 
     # -- output --------------------------------------------------------------
 
-    def to_rtf(self, program: str | None = None) -> str:
+    def to_rtf(self, program: str | None = None,
+               program_fallback: str | None = None) -> str:
         """Render the whole document to an RTF string.
 
         Args:
             program: The program the run tokens (``{PROGRAM}`` ...) name;
                 ``None`` uses the document's, then the ``program`` option, then
-                the script Python is running.
+                finds it (see :func:`generate_rtfreport`).
+            program_fallback: Overrides the document's ``program_fallback``.
         """
         from ._run_tokens import run_context
 
-        with run_context(program if program is not None else self.program):
+        with run_context(
+            program if program is not None else self.program,
+            program_fallback if program_fallback is not None else self.program_fallback,
+            self.tokens,
+        ):
             return _generate(self._report())
 
-    def save(self, path: str, overwrite: bool = True, program: str | None = None) -> str:
+    def save(self, path: str, overwrite: bool = True, program: str | None = None,
+             program_fallback: str | None = None) -> str:
         """Render and write the document to ``path``.
 
         Args:
             path: Destination ``.rtf`` file path.
             overwrite: When ``False``, raises if the file already exists.
-            program: As in :meth:`to_rtf`.
+            program, program_fallback: As in :meth:`to_rtf`.
 
         Returns:
             The path written.
@@ -306,7 +323,7 @@ class RtfDocument:
 
         if os.path.exists(path) and not overwrite:
             raise FileExistsError(f"{path!r} already exists. Set overwrite=True.")
-        rtf = self.to_rtf(program=program)
+        rtf = self.to_rtf(program=program, program_fallback=program_fallback)
         with open(path, "w", encoding="ascii", newline="\n") as fh:
             fh.write(rtf)
         return path
@@ -335,6 +352,8 @@ def rtf_document(
     program: str | None = None,
     watermark=None,
     font_table=None,
+    tokens=None,
+    program_fallback: str | None = None,
 ) -> RtfDocument:
     """Create a new :class:`RtfDocument` (mirrors R's ``rtf_document()``).
 
@@ -343,10 +362,25 @@ def rtf_document(
     fluent :class:`RtfDocument` methods are an equivalent convenience.
 
     Args:
-        program: The path of the program that writes the file, for the
-            ``{PROGRAM}`` / ``{PROGRAM_NAME}`` / ``{PROGRAM_DIR}`` tokens.
-            ``None`` falls back to the ``program`` option, then the script
-            Python is running; :func:`generate_rtfreport` can also say it.
+        program: The path of the program that writes this document, for the
+            ``{PROGRAM}`` / ``{PROGRAM_FULL}`` / ``{PROGRAM_NAME}`` /
+            ``{PROGRAM_DIR}`` run tokens: the place to say it, once per
+            program.  ``generate_rtfreport(program=)`` overrides it for one
+            call.  ``None`` leaves it to that argument, then the ``program``
+            option, then finds it (the script Python runs, the notebook
+            Jupyter runs; see :func:`generate_rtfreport`).
+        tokens: Tokens of one's own for this document's headers, footers,
+            titles and footnotes: a dict, ``{"STUDY": "ABC-123", "CUTOFF":
+            "01JUN2026"}``, written ``{STUDY}``.  A name is upper case -- a
+            letter, then letters, digits or ``_`` -- and not one of
+            rtfreporter's own (:func:`~rtfreporter.rtf_text_tokens`); a value
+            is one string or number.  ``rtfreporter_options(tokens=)`` sets
+            them for a session; the document's value wins.  Not in column
+            headers: those take their values from ``set_col_header(values=)``.
+        program_fallback: The program to name when none is said
+            (``program``, the option) and none is found: the last resort,
+            e.g. the program a report is to be written to.  Said in a message
+            when used.
         watermark: A diagonal word behind the page body on every page: an
             :func:`~rtfreporter.rtf_watermark`, or a bare string
             (``"DRAFT"``) for the defaults.  A section can override it
@@ -358,7 +392,8 @@ def rtf_document(
     """
     return RtfDocument(page=page, default_format=default_format,
                        color_table=color_table, program=program,
-                       watermark=watermark, font_table=font_table)
+                       watermark=watermark, font_table=font_table,
+                       tokens=tokens, program_fallback=program_fallback)
 
 
 def rtf_config(
@@ -408,7 +443,8 @@ def rtf_config(
     out = RtfDocument(page=new_page, default_format=new_fmt, color_table=new_colors,
                       program=doc.program,
                       watermark=doc.watermark if watermark is _NOT_GIVEN else watermark,
-                      font_table=doc.font_table if font_table is None else font_table)
+                      font_table=doc.font_table if font_table is None else font_table,
+                      tokens=doc.tokens, program_fallback=doc.program_fallback)
     out._sections = list(doc._sections)
     out._pages = list(doc._pages)
     out.title_style = dict(doc.title_style)
@@ -735,25 +771,57 @@ def rtf_section(
 
 
 def generate_rtfreport(report: RtfDocument, file_path: str, overwrite: bool = False,
-                       program: str | None = None) -> str:
+                       program: str | None = None,
+                       program_fallback: str | None = None) -> str:
     """Render ``report`` and write it to ``file_path`` (mirrors R ``generate_rtfreport()``).
+
+    **Run tokens.**  Beside the page tokens (``{PAGE}``, ``{TOTAL_PAGES}``,
+    ...), a header, footer, title or footnote can say which program wrote the
+    file and when, filled as the file is written:
+
+    * ``{PROGRAM}`` -- the program path, as given;
+    * ``{PROGRAM_FULL}`` -- the same path made absolute (from the working
+      folder when the file is written), with the system's separator;
+    * ``{PROGRAM_NAME}``, ``{PROGRAM_DIR}`` -- its file name and its folder;
+    * ``{DATETIME}`` / ``{DATETIME:<format>}`` -- the time of this call (or
+      the ``render_time`` option), the same on every page.
+
+    The program is said once, where the document is made --
+    ``rtf_document(program=)``; ``program=`` here overrides it for one call;
+    ``rtfreporter_options(program=)`` sets one for the session.  When none is
+    said and a ``{PROGRAM...}`` token is used, it is found, in this order:
+    the script Python runs (``__main__.__file__``, else ``sys.argv[0]``),
+    then the notebook Jupyter runs (when the kernel knows it: VS Code, or
+    Jupyter Server 2's ``JPY_SESSION_NAME``), then ``program_fallback``.  A
+    program found (or the fallback) is said in a message on stderr; one said
+    is not.  The file name is completed to the one on disk: a file that is
+    there gets its real case; a name with no extension becomes the program
+    of that name in its folder (``.py``, ``.ipynb``), else gets ``.py``.  No
+    program at all is an error.
+
+    Tokens of one's own -- ``{STUDY}`` -- come from
+    ``rtf_document(tokens=)`` and ``rtfreporter_options(tokens=)`` (the
+    document's value wins); :func:`~rtfreporter.rtf_text_tokens` lists every
+    token.
 
     Args:
         report: The :class:`RtfDocument` to render.
         file_path: Destination ``.rtf`` path (required, as in R).
         overwrite: When ``False`` (the R default), raise if ``file_path`` exists.
-        program: The program the run tokens name (``{PROGRAM}``,
-            ``{PROGRAM_NAME}``, ``{PROGRAM_DIR}``); ``None`` uses the
-            document's, then the ``program`` option, then the running script.
-            ``{DATETIME}`` is the time of this call (or the ``render_time``
-            option), the same on every page.
+        program: Overrides, for this one file, the program the document names
+            (``rtf_document(program=)``).  ``None`` uses the document's, then
+            the ``program`` option, then finds it.
+        program_fallback: Overrides, for this one file, the document's
+            ``rtf_document(program_fallback=)``: the program to name when none
+            is said and none is found.
 
     Returns:
         The path written.
     """
     if not isinstance(report, RtfDocument):
         raise TypeError("`report` must be an RtfDocument.")
-    return report.save(file_path, overwrite=overwrite, program=program)
+    return report.save(file_path, overwrite=overwrite, program=program,
+                       program_fallback=program_fallback)
 
 
 def to_rtf(doc: RtfDocument) -> str:

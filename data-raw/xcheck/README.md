@@ -86,15 +86,35 @@ Everything else must match exactly.
 
 ## Which R the golden files come from
 
-The golden files are rendered by the **R v0.8.2 release** (the tag), which this
-package follows.  One exception, for a bug fixed in R after that release and
-ported here as a bug fix (0.4.1):
+Since 0.5.0 the port follows **R `main` at 0.8.2.9026** (ichirio/rtfreporter
+2385a6b), the development version after the v0.8.2 release, minus the ARD /
+plan layer.  Every golden file was re-rendered from that commit with R 4.3.3;
+all the files rendered by v0.8.2 (and the two #509 files rendered at
+0.8.2.9003) came out **byte-identical**, so the R changes since v0.8.2 move no
+output these cases cover.  New cases for the features ported from it:
 
-| Golden files | Rendered by | Why |
-|---|---|---|
-| `decimal/styles_size.rtf`, `decimal/font_fill.rtf` | R `main` at the fix (0e05ce5, 0.8.2.9003) | ichirio/rtfreporter#509: a row split by `set_decimal_split()` lost the table's font switch and the cell fill.  Re-rendering the other `decimal/`, `paginate_cols/` and `recipes/` files from that commit leaves them unchanged. |
-| `listing/wrap_key.rtf` | R `main` after the fix (0.8.2.9001) | ichirio/rtfreporter#505/#506: a listing key column to the left that wraps ("Xanomeline" / "High Dose") stopped the key to its right from being blanked on the wrapped continuation line. Checked against R pre-fix (c1dae2e) and R `main`: the port's output already matches `main`, not pre-fix -- pinned so it stays that way. |
-| everything else | R v0.8.2 | |
+| Golden files | What they pin |
+|---|---|
+| `own_tokens_program_full.rtf` | `{PROGRAM_FULL}` (#560) and tokens of one's own, `rtf_document(tokens=)` (#564) |
+| `drop_empty_rows.rtf`, `drop_empty_rows_whole_band.rtf` | `rtf_header()` / `rtf_footer(drop_empty_rows=)` (#571) |
+| `table_style_align_default.rtf`, `table_style_align_set.rtf` | `rtf_table_style(align=)` defaulting to each column's own (#522) |
+| `assemble/toc_table.rtf` | `assemble_rtf(toc=<table>)` with no `input_files` (0.8.2.9014) |
 
-So regenerate `decimal_r.R` from R `main` at or after that commit, and every
-other script from the v0.8.2 tag, until this package next follows an R release.
+`gt/` was not re-rendered (the `gt` R package was not installed); it is
+still R v0.8.2's, and no R change since touches the gt reader.
+
+Earlier history: `decimal/styles_size.rtf` and `decimal/font_fill.rtf` were
+first rendered at the #509 fix (0e05ce5, 0.8.2.9003), and
+`listing/wrap_key.rtf` after the #505/#506 fix (0.8.2.9001), while the rest
+came from the v0.8.2 tag.
+
+### Running the scripts without devtools
+
+Each script loads the R package from the checkout with
+`devtools::load_all(<path>)`; when devtools is not installed it falls back to
+the **installed** package, so install the checkout first:
+
+```bash
+R CMD INSTALL /path/to/rtfreporter
+Rscript data-raw/xcheck/render_r.R /path/to/rtfreporter
+```

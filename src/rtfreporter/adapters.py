@@ -216,6 +216,15 @@ def _resolve_stub_spec(stub, stub_vars, stub_label, stub_indent, stub_group_summ
         if flat_given:
             raise ValueError("Pass either `stub` or the superseded `stub_vars` family, not both.")
         return stub if isinstance(stub, StubSpec) else stub_spec(stub)
+    if flat_given:
+        from .borders import _deprecate_once
+
+        _deprecate_once(
+            "stub_vars",
+            "`stub_vars` / `stub_label` / `stub_indent` / `stub_group_summary` are "
+            "deprecated: write `stub=stub_spec(vars, label=, indent=, "
+            "group_summary=)` (or `stub=vars`).\n  Removed in 0.9.0.",
+        )
     if stub_vars is None:
         return None
     return stub_spec(stub_vars, label=stub_label, indent=stub_indent,
@@ -978,10 +987,12 @@ def as_rtftables(
         stub: The stub: a :func:`~rtfreporter.stub_spec` (every setting, including
             ``layout`` and ``label_span``), or just the hierarchy columns,
             parent first.  See :func:`~rtfreporter.stub_cols`.
-        stub_vars, stub_label, stub_indent, stub_group_summary: **Superseded**
-            by ``stub`` (still supported): the columns, the heading, the indent
-            and the group-summary folding of a merged stub.  Passing both
-            ``stub`` and any of these is an error.
+        stub_vars, stub_label, stub_indent, stub_group_summary: **Deprecated**
+            (warn once a session, still work; removed in 0.9.0, as in R): write
+            ``stub=stub_spec(vars, label=, indent=, group_summary=)`` (or
+            ``stub=vars``).  The columns, the heading, the indent and the
+            group-summary folding of a merged stub.  Passing both ``stub`` and
+            any of these is an error.
         auto_width: When ``True``, size each column to its widest content --
             column-header label or data cell -- via
             :func:`~rtfreporter.auto_col_widths`, so long labels do not wrap.

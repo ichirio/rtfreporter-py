@@ -2,7 +2,7 @@
 
 import pytest
 
-from rtfreporter import Border, BorderSide, rtf_border_side, rtf_border_tfl
+from rtfreporter import Border, BorderSide, rtf_border_line, rtf_border_tfl
 from rtfreporter.render import build_border_commands
 
 
@@ -51,4 +51,4 @@ def test_border_tfl_preset():
 
 
 def test_border_side_functional_alias():
-    assert rtf_border_side("thick", 40) == BorderSide("thick", 40)
+    assert rtf_border_line("thick", 40) == BorderSide("thick", 40)

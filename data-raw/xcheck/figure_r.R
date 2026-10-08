@@ -8,7 +8,12 @@
 
 args <- commandArgs(trailingOnly = TRUE)
 pkg  <- if (length(args) >= 1) args[[1]] else "C:/Yrepo/rtfreporter"
-suppressMessages(devtools::load_all(pkg, quiet = TRUE))
+if (requireNamespace("devtools", quietly = TRUE)) {
+  suppressMessages(devtools::load_all(pkg, quiet = TRUE))
+} else {
+  # no devtools: the installed package (`R CMD INSTALL <pkg>` first)
+  suppressMessages(library(rtfreporter))
+}
 
 dir <- file.path(getwd(), "tests", "xcheck_golden", "figure")
 png <- file.path(dir, "tiny.png")

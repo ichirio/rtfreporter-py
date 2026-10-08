@@ -183,7 +183,7 @@ def test_rtf_header_source_round_trips_by_name():
     t = rr.set_col_header(
         t,
         [col_cell(("g1", "Total"), "Arms", bold=True,
-                  border=rr.rtf_border(bottom=rr.rtf_border_side("double", 30, color="#FF0000")))],
+                  border=rr.rtf_border(bottom=rr.rtf_border_line("double", 30, color="#FF0000")))],
         ["Category", "Low", "High", "Total"],
         align=["left", "right", "right", "right"],
     )
@@ -213,7 +213,7 @@ def test_rtf_header_source_levels():
     assert "style_zone(tbl, header=rtf_border(top=True, bottom=True))" in explicit
     default = rr.rtf_header_source(t, level="default")
     assert 'col_cell(("g1", "g2"), "Treatment", align="center")' in default
-    assert 'rtf_border_side("single", 15)' in default
+    assert 'rtf_border_line("single", 15)' in default
     assert "bold=False" not in default
     assert "bold=False, italic=False, underline=False" in rr.rtf_header_source(t, level="all")
     with pytest.raises(ValueError, match="level"):

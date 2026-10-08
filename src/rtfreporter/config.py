@@ -41,12 +41,16 @@ _FACTORY_DEFAULTS: dict[str, Any] = {
     # "sas" = half away from zero with SAS's fuzz.  See round_num().
     "rounding": "r",
     # The run tokens (R: rtfreporter.program / .render_time /
-    # .datetime_format): the program {PROGRAM} names when none is given, a
+    # .datetime_format): the program {PROGRAM} names when none is given (the
+    # running script is looked for after it), a
     # fixed time for {DATETIME} (a datetime or an ISO string; None = now), and
     # {DATETIME}'s default format.
     "program": None,
     "render_time": None,
     "datetime_format": "%d%b%Y  %H:%M",
+    # Tokens of one's own for a session (R: rtfreporter.tokens), a dict such
+    # as {"STUDY": "ABC-123"}; a document's rtf_document(tokens=) wins.
+    "tokens": None,
 }
 
 # Session overrides.  Empty by default; set via ``rtfreporter_options(**kw)``.

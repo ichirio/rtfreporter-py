@@ -15,8 +15,8 @@ from rtfreporter import (
     rtf_border,
     rtf_border_bottom,
     rtf_border_box,
+    rtf_border_line,
     rtf_border_none,
-    rtf_border_side,
     rtf_border_tfl,
     rtf_border_top,
     rtf_col_header,
@@ -36,12 +36,12 @@ from rtfreporter import (
 # -- renamed border constructors ---------------------------------------------
 
 
-def test_rtf_border_side_is_border_side():
-    assert isinstance(rtf_border_side("double", 30, "#112233"), BorderSide)
+def test_rtf_border_line_is_border_side():
+    assert isinstance(rtf_border_line("double", 30, "#112233"), BorderSide)
 
 
 def test_rtf_border_constructors_return_expected_types():
-    assert isinstance(rtf_border(top=rtf_border_side()), Border)
+    assert isinstance(rtf_border(top=rtf_border_line()), Border)
     assert isinstance(rtf_border_none(), Border)
     assert isinstance(rtf_border_top(), Border)
     assert isinstance(rtf_border_bottom(), Border)

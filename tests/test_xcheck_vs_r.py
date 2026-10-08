@@ -39,7 +39,7 @@ def _as_border(b: dict):
     """A border written as JSON -> :func:`rtfreporter.rtf_border`; a side is
     ``True`` / ``False`` / a style name, or ``{"style", "width", "color"}``."""
     return rr.rtf_border(**{
-        k: rr.rtf_border_side(**v) if isinstance(v, dict) else v for k, v in b.items()
+        k: rr.rtf_border_line(**v) if isinstance(v, dict) else v for k, v in b.items()
     })
 
 
@@ -62,6 +62,9 @@ def render_case(case: dict) -> str:
     if isinstance(kwargs.get("border"), dict):
         kwargs["border"] = _as_border(kwargs["border"]["rtf_border"])
 
+    if case.get("table_style") is not None:
+        kwargs["style"] = rr.rtf_table_style(**case["table_style"])
+
     pages = rr.as_rtftables(case["data"], **kwargs)
 
     if case.get("style_zone"):
@@ -76,6 +79,7 @@ def render_case(case: dict) -> str:
         font_table=case.get("font_table"),
         watermark=(rr.rtf_watermark(**case["watermark"])
                    if isinstance(case.get("watermark"), dict) else case.get("watermark")),
+        tokens=case.get("tokens"),
     )
 
     doc = rr.rtf_tables(doc, pages, **{k: _pick(v) for k, v in case.get("rtf_tables", {}).items()})
@@ -85,11 +89,14 @@ def render_case(case: dict) -> str:
         doc = rr.rtf_footnotes(doc, [case["footnotes"]], **_as_style(case.get("footnotes_style")))
 
     if case.get("header") is not None or case.get("footer") is not None:
-        header = rr.rtf_header(case["header"]) if case.get("header") else None
+        header = (rr.rtf_header(case["header"],
+                                drop_empty_rows=bool(case.get("header_drop_empty_rows")))
+                  if case.get("header") else None)
         footer = None
         if case.get("footer") is not None:
             border = None if case.get("footer_border") == "none" else rr.rtf_border(top=True)
-            footer = rr.rtf_footer(case["footer"], border=border)
+            footer = rr.rtf_footer(case["footer"], border=border,
+                                   drop_empty_rows=bool(case.get("footer_drop_empty_rows")))
         doc = rr.rtf_section(doc, page=1, header=header, footer=footer)
 
     # The run tokens: a fixed program and time, so R and the port agree.

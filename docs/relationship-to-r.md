@@ -49,8 +49,8 @@ port.
 The Python package deliberately mirrors the R one:
 
 - **Every exported R function outside the ARD / plan layer exists in Python**
-  (R v0.8.2; see *Current parity* below) under the same names —
-  `rtf_border_side()`, `rtf_document()`, `generate_rtfreport()`,
+  (R 0.8.2.9026; see *Current parity* below) under the same names —
+  `rtf_border_line()`, `rtf_document()`, `generate_rtfreport()`,
   `as_rtftables()`, `assemble_rtf()`, and so on.
 - **Argument names, order and defaults follow R**, so R documentation and
   existing R code translate almost literally.
@@ -98,9 +98,9 @@ from `tab_style()`, row groups, summary rows and footnotes. See
 
 | Area | Status |
 |---|---|
-| Followed R version | <span class="rtf-badge ok">v0.8.2</span> the R release this port matches |
-| Exported functions | <span class="rtf-badge ok">87 / 88</span> every R v0.8.2 export outside the ARD / plan engine, except `rtfreporter_ai_manual()` (the R package's AI-assistant manuals, which describe the R API) |
-| Renderer, pagination, borders, styling, listings, figures, assembly | <span class="rtf-badge ok">ported</span> — checked byte-for-byte against R v0.8.2 |
+| Followed R version | <span class="rtf-badge ok">0.8.2.9026</span> the R development version after the v0.8.2 release (`main` at 2385a6b), which this port matches |
+| Exported functions | <span class="rtf-badge ok">93 / 94</span> every R export outside the ARD / plan engine (125 exports, 31 of them ARD / plan), except `rtfreporter_ai_manual()` (the R package's AI-assistant manuals, which describe the R API); `tests/test_api_parity.py` checks it |
+| Renderer, pagination, borders, styling, listings, figures, assembly, run tokens | <span class="rtf-badge ok">ported</span> — checked byte-for-byte against R 0.8.2.9026 |
 | Table-object adapters | <span class="rtf-badge partial">pandas, polars, great_tables</span> — the R-only frameworks have no Python counterpart |
 | ARD / plan layer (`table_plan()`, `plan_*()`, `normalize_ard()`, …) | <span class="rtf-badge partial">not ported</span> — by design; it consumes `cards` / `cardx` data that exist only in R (to be reconsidered when the Python package is used in earnest) |
 

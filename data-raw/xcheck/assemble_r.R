@@ -8,7 +8,12 @@
 
 args <- commandArgs(trailingOnly = TRUE)
 pkg  <- if (length(args) >= 1) args[[1]] else "C:/Yrepo/rtfreporter"
-suppressMessages(devtools::load_all(pkg, quiet = TRUE))
+if (requireNamespace("devtools", quietly = TRUE)) {
+  suppressMessages(devtools::load_all(pkg, quiet = TRUE))
+} else {
+  # no devtools: the installed package (`R CMD INSTALL <pkg>` first)
+  suppressMessages(library(rtfreporter))
+}
 
 out_dir <- file.path(getwd(), "tests", "xcheck_golden", "assemble")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
@@ -32,4 +37,10 @@ inputs <- c(one("T1", 3), one("T2", 2))
 assemble_rtf(inputs, file.path(out_dir, "book_page.rtf"), overwrite = TRUE,
              book_page = "Book page {AUTO_PAGE} of {AUTO_TOTAL_PAGES}")
 assemble_rtf(inputs, file.path(out_dir, "book_page_none.rtf"), overwrite = TRUE)
+# The table of contents as a table, its files standing in for input_files
+# (0.8.2.9014).
+toc <- data.frame(file = inputs, heading = c("EFFICACY", NA),
+                  label = c("Table T1  First", "Table T2  Second"), level = c(2L, 1L))
+assemble_rtf(toc = toc, output_file = file.path(out_dir, "toc_table.rtf"),
+             overwrite = TRUE, toc_page_numbering = "decimal")
 cat("wrote", out_dir, "\n")

@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, fields, replace
 
-from .borders import Border, TableBorder, rtf_border_side
+from .borders import Border, TableBorder, rtf_border_line
 
 _ALIGN = ("left", "center", "right")
 
@@ -36,7 +36,7 @@ class TableStyle:
     header_align: str | None = None
     header_bold: bool = False
     header_italic: bool = False
-    align: str | None = "left"
+    align: str | None = None
     bold: bool = False
     italic: bool = False
     underline: bool = False
@@ -70,7 +70,7 @@ def rtf_table_style(
     header_align: str | None = None,
     header_bold: bool = False,
     header_italic: bool = False,
-    align: str | None = "left",
+    align: str | None = None,
     bold: bool = False,
     italic: bool = False,
     underline: bool = False,
@@ -86,7 +86,11 @@ def rtf_table_style(
             ``None``).  ``first_row`` / ``last_row`` override ``body``.
         header_align: Column-header alignment (``None`` inherits the body align).
         header_bold, header_italic: Column-header decoration defaults.
-        align: Body alignment default (``"left"`` by default).
+        align: Body alignment for every column.  ``None`` (the default, R
+            #522) leaves each column's own default alone -- row-title columns
+            left, the others centred (see :func:`~rtfreporter.rtftable`'s
+            ``row_title``); ``"left"`` / ``"center"`` / ``"right"`` sets every
+            column.
         bold, italic, underline: Body decoration defaults.
         cell_padding_left_twips, cell_padding_right_twips: Cell padding defaults.
         row_height_twips: Default data-row height.
@@ -143,7 +147,7 @@ def rtf_table_style_tfl() -> TableStyle:
     bottom on the bottommost); no data-area borders, no bold headers, and the
     header alignment inherits the body alignment.
     """
-    s = rtf_border_side()
+    s = rtf_border_line()
     return rtf_table_style(
         border_header=Border(top=s, bottom=s),
         header_bold=False,
