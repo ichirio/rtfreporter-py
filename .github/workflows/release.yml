@@ -1,0 +1,101 @@
+name: release
+
+# Build the sdist and wheel, check them, and publish with PyPI Trusted
+# Publishing (OpenID Connect): no API token or secret is stored anywhere.
+#
+#   * Actions -> release -> "Run workflow" (workflow_dispatch) -> TestPyPI
+#   * publishing a GitHub release                               -> PyPI
+#
+# One-time setup (pending trusted publishers on PyPI and TestPyPI, the GitHub
+# environments `pypi` and `testpypi`): see docs/releasing.md.
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and check distributions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Build sdist and wheel
+        run: python -m build
+
+      - name: Check distributions (twine)
+        run: twine check --strict dist/*
+
+      - name: A release tag must match the package version
+        if: github.event_name == 'release'
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          version=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          if [ "${TAG#v}" != "$version" ]; then
+            echo "Release tag $TAG does not match the version in pyproject.toml ($version)." >&2
+            exit 1
+          fi
+
+      - name: Install the wheel into a clean venv and import it
+        run: |
+          python -m venv /tmp/cleanvenv
+          /tmp/cleanvenv/bin/pip install dist/*.whl
+          /tmp/cleanvenv/bin/python -c "import rtfreporter; print(rtfreporter.__version__)"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  publish-testpypi:
+    name: Publish to TestPyPI
+    if: github.event_name == 'workflow_dispatch'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/rtfreporter
+    permissions:
+      id-token: write   # Trusted Publishing (OIDC); nothing else
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  publish-pypi:
+    name: Publish to PyPI
+    if: github.event_name == 'release' && github.event.action == 'published'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/rtfreporter
+    permissions:
+      id-token: write   # Trusted Publishing (OIDC); nothing else
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1

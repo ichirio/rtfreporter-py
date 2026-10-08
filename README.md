@@ -1,4 +1,4 @@
-# rtfreporter <img src="docs/assets/logo.svg" align="right" height="120" alt="rtfreporter logo — a clinical TFL page" />
+# rtfreporter <img src="https://ichirio.github.io/rtfreporter-py/assets/logo.svg" align="right" height="120" alt="rtfreporter logo — a clinical TFL page" />
 
 **A Python toolkit for clinical RTF Tables, Listings and Figures (TLFs).**
 
@@ -81,13 +81,13 @@ doc.save("listing.rtf")
 Full documentation, including per-topic guides and the API reference, lives at
 <https://ichirio.github.io/rtfreporter-py/>.
 
-Runnable end-to-end examples are in [`examples/`](examples/):
+Runnable end-to-end examples are in [`examples/`](https://github.com/ichirio/rtfreporter-py/tree/main/examples):
 `demographics.py`, `pagination.py`, and `styling.py`.
 
 ## Citation
 
 If rtfreporter helps your work, please cite it. GitHub's "Cite this
-repository" button reads [`CITATION.cff`](CITATION.cff):
+repository" button reads [`CITATION.cff`](https://github.com/ichirio/rtfreporter-py/blob/main/CITATION.cff):
 
 > Masui Y (2026). rtfreporter: Clinical RTF Reporting Toolkit for Tables,
 > Listings and Figures (Python port). https://github.com/ichirio/rtfreporter-py
@@ -103,11 +103,11 @@ repository" button reads [`CITATION.cff`](CITATION.cff):
   tables and figures themselves are their work.
 - The example data are a subset of
   [pharmaverseadam](https://pharmaverse.github.io/pharmaverseadam/)
-  (from the CDISC pilot study; see [`examples/data/README.md`](examples/data/README.md)).
+  (from the CDISC pilot study; see [`examples/data/README.md`](https://github.com/ichirio/rtfreporter-py/blob/main/examples/data/README.md)).
 
 rtfreporter is an independent project and is not affiliated with, or endorsed
 by, the authors of these packages.
 
 ## License
 
-Apache-2.0. See [LICENSE](LICENSE).
+Apache-2.0. See [LICENSE](https://github.com/ichirio/rtfreporter-py/blob/main/LICENSE).

@@ -125,4 +125,6 @@ nav:
   - Relationship to R:
       - relationship-to-r.md
       - Differences from the R package: r-differences.md
+  - Development:
+      - Releasing to PyPI: releasing.md
   - API reference: reference.md
