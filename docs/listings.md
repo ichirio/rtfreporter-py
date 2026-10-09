@@ -19,7 +19,7 @@ whole thing, source data to `.rtf`.
 
 ## The source data
 
-A small ADSL, one row per subject, shaped like a baseline-characteristics
+A small ADSL, one row per subject, shaped like an adverse-event
 listing. Note the values that are longer than the column they will print in,
 and the missing ones:
 
@@ -27,20 +27,20 @@ and the missing ones:
 import pandas as pd
 
 adsl = pd.DataFrame({
-    "USUBJID": ["63016-204-1015", "63016-204-1023", "63016-205-100028",
-                "63016-206-1034", "63016-206-1045"],
-    "DISPTPD": ["COMPLETED", "COMPLETED", "DISCONTINUED", "ONGOING", "COMPLETED"],
-    "BRCA":    ["BRCA1", None, "BRCA2", "BRCA1", None],
-    "HIST":    ["ADENOCARCINOMA", "SQUAMOUS CELL CARCINOMA OF THE LUNG",
-                "SMALL CELL", "HIGH GRADE SEROUS CARCINOMA", "ADENOCARCINOMA"],
-    "STAGE":   ["IIIB", "IV", "IIIA", "IV", "IIB"],
-    "HISTGRD": ["GRADE 3", "GRADE 2", "GRADE 3", "GRADE 1", None],
-    "PRRAD":   ["Y", "N", "Y", "N", "Y"],
-    "CMBRFST": ["PARTIAL RESPONSE", "STABLE DISEASE", "COMPLETE RESPONSE",
-                "PROGRESSIVE DISEASE", "PARTIAL RESPONSE"],
-    "CMBRLST": ["STABLE DISEASE", "PROGRESSIVE DISEASE", "STABLE DISEASE",
-                None, "STABLE DISEASE"],
-    "ECOGPS":  ["0", "1", "1", "0", "2"],
+    "USUBJID":  ["PILOT-204-1015", "PILOT-204-1023", "PILOT-205-100028",
+                 "PILOT-206-1034", "PILOT-206-1045"],
+    "DCDECOD":  ["COMPLETED", "COMPLETED", "DISCONTINUED", "ONGOING", "COMPLETED"],
+    "AELOC":    ["UPPER", None, "LOWER", "UPPER", None],
+    "AEDECOD":  ["HYPERGLYCAEMIA", "UPPER RESPIRATORY TRACT INFECTION",
+                 "SKIN ULCER", "INJECTION SITE REACTION", "HYPERGLYCAEMIA"],
+    "AETOXGR":  ["3", "4", "3", "4", "2"],
+    "AESEV":    ["GRADE 3", "GRADE 2", "GRADE 3", "GRADE 1", None],
+    "AESER":    ["Y", "N", "Y", "N", "Y"],
+    "AEACN":    ["DOSE REDUCED", "DOSE NOT CHANGED", "DRUG INTERRUPTED",
+                 "DRUG WITHDRAWN", "DOSE REDUCED"],
+    "AEACNOTH": ["DOSE NOT CHANGED", "DRUG WITHDRAWN", "DOSE NOT CHANGED",
+                 None, "DOSE NOT CHANGED"],
+    "ECOGBL":   ["0", "1", "1", "0", "2"],
 })
 ```
 
@@ -52,24 +52,24 @@ built from, how wide it may be before its text wraps, and what its header says.
 ```python
 from rtfreporter import listing_col
 
-listing_col(["DISPTPD", "BRCA", "HIST"], width=22,
-            label="Disposition/\nAny (BRCA) Mutations/\nHistology")
+listing_col(["DCDECOD", "AELOC", "AEDECOD"], width=22,
+            label="Disposition/\nLocation/\nPreferred Term")
 ```
 
 Four things are worth reading twice.
 
 **`vars` may name several columns.** Their values are joined with the
 listing's separator (`/` by default), and **missing and empty values are
-skipped** -- a subject with no `BRCA` prints `COMPLETED/SQUAMOUS...`, not
-`COMPLETED//SQUAMOUS...`.
+skipped** -- a subject with no `AELOC` prints `COMPLETED/UPPER RES...`, not
+`COMPLETED//UPPER RES...`.
 
 That join is `catx()`, which the package exports for the columns you build
 yourself:
 
 ```python
 >>> from rtfreporter import catx
->>> catx("/", "COMPLETED", None, "ADENOCARCINOMA")
-['COMPLETED/ADENOCARCINOMA']
+>>> catx("/", "COMPLETED", None, "HYPERGLYCAEMIA")
+['COMPLETED/HYPERGLYCAEMIA']
 ```
 
 **`width` is a number of characters, not a rendered width.** It decides where
@@ -77,8 +77,8 @@ the text breaks onto another physical row, and therefore how tall the subject's
 block is. What the column *measures* in the table is `rel_width`, which
 defaults to `width`.
 
-**The output column takes the first variable's name** -- `DISPTPD` above --
-which is why the reshaped data below has a `DISPTPD` column holding the joined
+**The output column takes the first variable's name** -- `DCDECOD` above --
+which is why the reshaped data below has a `DCDECOD` column holding the joined
 text. It is an internal name, not a header; pass `name="COL01"` if you would
 rather read the columns positionally.
 
@@ -102,14 +102,14 @@ from rtfreporter import listing_spec
 
 spec = listing_spec([
     listing_col("USUBJID", width=15, label="Unique\nSubject ID"),
-    listing_col(["DISPTPD", "BRCA", "HIST"], width=22,
-                label="Disposition/\nAny (BRCA) Mutations/\nHistology"),
-    listing_col("STAGE", label="Stage at\nInitial\nDiagnosis"),
-    listing_col(["HISTGRD", "PRRAD"], width=18,
-                label="Histologic Grade/\nPrior Radiation\nTherapy"),
-    listing_col(["CMBRFST", "CMBRLST"], width=20,
-                label="Best Response to\nthe 1st Line/\nthe Last Line"),
-    listing_col("ECOGPS", label="ECOG\nPerformance\nStatus"),
+    listing_col(["DCDECOD", "AELOC", "AEDECOD"], width=22,
+                label="Disposition/\nLocation/\nPreferred Term"),
+    listing_col("AETOXGR", label="Grade at\nInitial\nDiagnosis"),
+    listing_col(["AESEV", "AESER"], width=18,
+                label="Severity/\nSerious\nEvent"),
+    listing_col(["AEACN", "AEACNOTH"], width=20,
+                label="Action Taken/\nOther Action\nTaken"),
+    listing_col("ECOGBL", label="ECOG\nPerformance\nat Baseline"),
 ])
 ```
 
@@ -127,11 +127,11 @@ from rtfreporter import fit_listing_widths, rtf_page
 
 bare = listing_spec([
     listing_col("USUBJID", collapse_repeats=True),
-    listing_col(["DISPTPD", "BRCA", "HIST"]),
-    listing_col("STAGE"),
-    listing_col(["HISTGRD", "PRRAD"]),
-    listing_col(["CMBRFST", "CMBRLST"]),
-    listing_col("ECOGPS"),
+    listing_col(["DCDECOD", "AELOC", "AEDECOD"]),
+    listing_col("AETOXGR"),
+    listing_col(["AESEV", "AESER"]),
+    listing_col(["AEACN", "AEACNOTH"]),
+    listing_col("ECOGBL"),
 ])
 
 fitted = fit_listing_widths(
@@ -149,7 +149,7 @@ of it, because they print too.
 Each column's **demand** is the 90th percentile of the display widths of its
 cells -- a quantile rather than the maximum, so one unusually long value wraps
 instead of pushing every other column narrow -- floored by the widest token
-its header cannot break. That floor is why a label like `"Stage at Initial
+its header cannot break. That floor is why a label like `"Grade at Initial
 Diagnosis"` asks for nine characters (`"Diagnosis"`) and not twenty-six: a
 header wraps, so a long one should not claim a column the data does not need.
 
@@ -159,11 +159,11 @@ and the rest fit around it:
 ```python
 >>> pinned = listing_spec([
 ...     listing_col("USUBJID", width=15),          # this one is a decision
-...     listing_col(["DISPTPD", "BRCA", "HIST"]),
-...     listing_col("STAGE"),
+...     listing_col(["DCDECOD", "AELOC", "AEDECOD"]),
+...     listing_col("AETOXGR"),
 ... ])
 >>> [c.width for c in fit_listing_widths(adsl, pinned, total_width=60).cols]
-[15, 37, 6]
+[15, 36, 7]
 ```
 
 ### Paste it back into the program
@@ -177,16 +177,16 @@ source:
 listing = listing_spec([
     listing_col('USUBJID', width=21, rel_width=21, collapse_repeats=True,
         label='USUBJID'),
-    listing_col(['DISPTPD', 'BRCA', 'HIST'], width=60, rel_width=60,
-        label='DISPTPD/BRCA/HIST'),
-    listing_col('STAGE', width=8, rel_width=8,
-        label='STAGE'),
-    listing_col(['HISTGRD', 'PRRAD'], width=12, rel_width=12,
-        label='HISTGRD/PRRAD'),
-    listing_col(['CMBRFST', 'CMBRLST'], width=45, rel_width=45,
-        label='CMBRFST/CMBRLST'),
-    listing_col('ECOGPS', width=8, rel_width=8,
-        label='ECOGPS'),
+    listing_col(['DCDECOD', 'AELOC', 'AEDECOD'], width=57, rel_width=57,
+        label='DCDECOD/AELOC/AEDECOD'),
+    listing_col('AETOXGR', width=10, rel_width=10,
+        label='AETOXGR'),
+    listing_col(['AESEV', 'AESER'], width=13, rel_width=13,
+        label='AESEV/AESER'),
+    listing_col(['AEACN', 'AEACNOTH'], width=45, rel_width=45,
+        label='AEACN/AEACNOTH'),
+    listing_col('ECOGBL', width=8, rel_width=8,
+        label='ECOGBL'),
 ])
 ```
 
@@ -205,39 +205,39 @@ pd.DataFrame(body.rows, columns=body.column_names)
 ```
 
 ```text
-           USUBJID .sp1                DISPTPD .sp2 STAGE .sp3   HISTGRD .sp4              CMBRFST .sp5 ECOGPS  .rtf_record
-0   63016-204-1015                  COMPLETED/       IIIB       GRADE 3/         PARTIAL RESPONSE/           0            1
-1                                       BRCA1/                         Y            STABLE DISEASE                        1
-2                               ADENOCARCINOMA                                                                            1
-3                                                                                                                         1
-4   63016-204-1023                  COMPLETED/         IV       GRADE 2/           STABLE DISEASE/           1            2
-5                                SQUAMOUS CELL                         N       PROGRESSIVE DISEASE                        2
-6                        CARCINOMA OF THE LUNG                                                                            2
-7                                                                                                                         2
-8       63016-205-               DISCONTINUED/       IIIA       GRADE 3/        COMPLETE RESPONSE/           1            3
-9           100028                      BRCA2/                         Y            STABLE DISEASE                        3
-10                                  SMALL CELL                                                                            3
-11                                                                                                                        3
-12  63016-206-1034                    ONGOING/         IV       GRADE 1/       PROGRESSIVE DISEASE           0            4
-13                                      BRCA1/                         N                                                  4
-14                           HIGH GRADE SEROUS                                                                            4
-15                                   CARCINOMA                                                                            4
-16                                                                                                                        4
-17  63016-206-1045                  COMPLETED/        IIB              Y         PARTIAL RESPONSE/           2            5
-18                              ADENOCARCINOMA                                      STABLE DISEASE                        5
-19                                                                                                                        5
+           USUBJID .sp1            DCDECOD .sp2 AETOXGR .sp3     AESEV .sp4              AEACN .sp5 ECOGBL  .rtf_record
+0   PILOT-204-1015              COMPLETED/            3       GRADE 3/           DOSE REDUCED/           0            1
+1                                   UPPER/                           Y        DOSE NOT CHANGED                        1
+2                           HYPERGLYCAEMIA                                                                            1
+3                                                                                                                     1
+4   PILOT-204-1023              COMPLETED/            4       GRADE 2/       DOSE NOT CHANGED/           1            2
+5                        UPPER RESPIRATORY                           N          DRUG WITHDRAWN                        2
+6                          TRACT INFECTION                                                                            2
+7                                                                                                                     2
+8       PILOT-205-           DISCONTINUED/            3       GRADE 3/       DRUG INTERRUPTED/           1            3
+9           100028                  LOWER/                           Y        DOSE NOT CHANGED                        3
+10                              SKIN ULCER                                                                            3
+11                                                                                                                    3
+12  PILOT-206-1034                ONGOING/            4       GRADE 1/          DRUG WITHDRAWN           0            4
+13                                  UPPER/                           N                                                4
+14                          INJECTION SITE                                                                            4
+15                                REACTION                                                                            4
+16                                                                                                                    4
+17  PILOT-206-1045              COMPLETED/            2              Y           DOSE REDUCED/           2            5
+18                          HYPERGLYCAEMIA                                    DOSE NOT CHANGED                        5
+19                                                                                                                    5
 ```
 
 Read that against the source data:
 
-* **`USUBJID` wrapped.** `63016-205-100028` is 16 characters and the column
+* **`USUBJID` wrapped.** `PILOT-205-100028` is 16 characters and the column
   takes 15, so it breaks after a hyphen -- `build_listing()` breaks at word
   boundaries (a space, a comma, a hyphen) and takes the break *after* the
   character, so the reader can see why the line ended.
 * **The joined column breaks at the separator first.** Each source variable
   starts its own line, which is what makes a listing of this shape readable at
   all. Only a piece that is *still* too long breaks again at a word boundary --
-  `SQUAMOUS CELL CARCINOMA OF THE LUNG` becomes two lines under a 22-character
+  `UPPER RESPIRATORY TRACT INFECTION` becomes two lines under a 22-character
   column.
 * **Every column of one subject is padded to the tallest**, so the block stays
   aligned across columns, and **a blank row closes each block**.
@@ -333,12 +333,12 @@ doc = rtf_document(
 )
 doc = rtf_section(
     doc,
-    header=rtf_header([["Listing 16.2.4.2.1.2"], ["Baseline Characteristics"],
+    header=rtf_header([["Listing 16.2.7.1"], ["Adverse Events"],
                        ["<Safety Analysis Set>"]]),
     footer=rtf_footer([{"l": "ECOG: Eastern Cooperative Oncology Group"}]),
 )
 doc = rtf_tables(doc, pages)
-generate_rtfreport(doc, "listing-16-2-4-2-1-2.rtf", overwrite=True)
+generate_rtfreport(doc, "listing-16-2-7-1.rtf", overwrite=True)
 ```
 
 That is the whole pipeline: `adsl` in, one `.rtf` out, with the column
@@ -358,7 +358,7 @@ Any argument you pass explicitly overrides the template, the same relationship
 `rtftable(border="tfl")` has with its preset:
 
 ```python
-listing_spec(["USUBJID", "STAGE"],
+listing_spec(["USUBJID", "AETOXGR"],
              sep=" | ",        # join with something else
              spacer=False,     # no gutter columns
              blank_row=False)  # no blank row between records
@@ -384,8 +384,8 @@ call it and fix up what comes back:
 ...     if width is not None and len(out) > 2:
 ...         out = [out[0], out[1][: width - 1] + "…"]
 ...     return out
->>> cap_two("SQUAMOUS CELL CARCINOMA OF THE LUNG", 12, "/", "stack")
-['SQUAMOUS', 'CELL…']
+>>> cap_two("UPPER RESPIRATORY TRACT INFECTION", 12, "/", "stack")
+['UPPER', 'RESPIRATORY…']
 ```
 
 **Change the rule from inside.** When the break logic itself has to differ --
